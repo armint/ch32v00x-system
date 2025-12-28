@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include <ch32v00X.h>
+#include <wch_device.h>
 
 class GpioPin {
    GPIO_TypeDef &_gpio;
@@ -35,11 +35,7 @@ class GpioPin {
    }
 
    inline void toggle() const {
-      if(_gpio.OUTDR & (1 << _pin)) {
-         clear();
-      } else {
-         set();
-      }
+      _gpio.BSHR = (1 << (_pin + (_gpio.OUTDR & (1 << _pin) ? 16 : 0)));
    }
 
    inline bool getOutputValue() const {
