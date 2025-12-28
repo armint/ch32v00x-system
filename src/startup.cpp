@@ -74,9 +74,11 @@ extern "C" int main();
 
 extern "C" {
 
-static void initialize_data(unsigned int *from, unsigned int *region_begin, unsigned int *region_end);
+static void initialize_data(unsigned int *from, unsigned int *region_begin,
+                            unsigned int *region_end);
 
-static void initialize_bss(unsigned int *region_begin, unsigned int *region_end);
+static void initialize_bss(unsigned int *region_begin,
+                           unsigned int *region_end);
 
 static void run_init_array(void);
 
@@ -86,53 +88,56 @@ void run_fini_array(void);
 
 // ----------------------------------------------------------------------------
 
-inline __attribute__((always_inline)) void initialize_data(unsigned int *from, unsigned int *region_begin, unsigned int *region_end) {
-   // Iterate and copy word by word.
-   // It is assumed that the pointers are word aligned.
-   unsigned int *p = region_begin;
-   while(p < region_end) {
-      *p++ = *from++;
-   }
+[[gnu::always_inline]] inline  void
+initialize_data(unsigned int *from, unsigned int *region_begin,
+                unsigned int *region_end) {
+  // Iterate and copy word by word.
+  // It is assumed that the pointers are word aligned.
+  unsigned int *p = region_begin;
+  while (p < region_end) {
+    *p++ = *from++;
+  }
 }
 
-inline __attribute__((always_inline)) void initialize_bss(unsigned int *region_begin, unsigned int *region_end) {
-   // Iterate and clear word by word.
-   // It is assumed that the pointers are word aligned.
-   unsigned int *p = region_begin;
-   while(p < region_end) {
-      *p++ = 0;
-   }
+[[gnu::always_inline]] inline  void
+initialize_bss(unsigned int *region_begin, unsigned int *region_end) {
+  // Iterate and clear word by word.
+  // It is assumed that the pointers are word aligned.
+  unsigned int *p = region_begin;
+  while (p < region_end) {
+    *p++ = 0;
+  }
 }
 
 // These magic symbols are provided by the linker.
-extern void (*__preinit_array_start[])(void) __attribute__((weak));
-extern void (*__preinit_array_end[])(void) __attribute__((weak));
-extern void (*__init_array_start[])(void) __attribute__((weak));
-extern void (*__init_array_end[])(void) __attribute__((weak));
-extern void (*__fini_array_start[])(void) __attribute__((weak));
-extern void (*__fini_array_end[])(void) __attribute__((weak));
+[[gnu::weak]] extern void (*__preinit_array_start[])(void);
+[[gnu::weak]] extern void (*__preinit_array_end[])(void);
+[[gnu::weak]] extern void (*__init_array_start[])(void);
+[[gnu::weak]] extern void (*__init_array_end[])(void);
+[[gnu::weak]] extern void (*__fini_array_start[])(void);
+[[gnu::weak]] extern void (*__fini_array_end[])(void);
 
 // Iterate over all the preinit/init routines (mainly static constructors).
-inline __attribute__((always_inline)) void run_init_array(void) {
-   //  trace_printf ("%s()\n", __func__);
+[[gnu::always_inline]] inline void run_init_array(void) {
+  //  trace_printf ("%s()\n", __func__);
 
-   int count = __preinit_array_end - __preinit_array_start;
-   for(int i = 0; i < count; i++) {
-      __preinit_array_start[i]();
-   }
+  int count = __preinit_array_end - __preinit_array_start;
+  for (int i = 0; i < count; i++) {
+    __preinit_array_start[i]();
+  }
 
-   count = __init_array_end - __init_array_start;
-   for(int i = 0; i < count; i++) {
-      __init_array_start[i]();
-   }
+  count = __init_array_end - __init_array_start;
+  for (int i = 0; i < count; i++) {
+    __init_array_start[i]();
+  }
 }
 
 // Run all the cleanup routines (mainly static destructors).
 void run_fini_array(void) {
-   int count = __fini_array_end - __fini_array_start;
-   for(int i = count; i > 0; i--) {
-      __fini_array_start[i - 1]();
-   }
+  int count = __fini_array_end - __fini_array_start;
+  for (int i = count; i > 0; i--) {
+    __fini_array_start[i - 1]();
+  }
 }
 
 /**
@@ -146,34 +151,34 @@ void run_fini_array(void) {
  * Debugging new system configurations usually begins with placing
  * a breakpoint at `_start()`, and stepping through the routine.
  */
-void __attribute__((section(".after_vectors"), noreturn, weak)) _start(void) {
-   cpuInit();
 
-   // Initialise hardware right after reset, to switch clock to higher
-   // frequency and have the rest of the initialisations run faster.
+[[gnu::section(".after_vectors"), gnu::noreturn, gnu::weak]] void _start(void) {
+  cpuInit();
 
-   startup_initialize_hardware_early();
+  // Initialise hardware right after reset, to switch clock to higher
+  // frequency and have the rest of the initialisations run faster.
 
+  startup_initialize_hardware_early();
 
-   // Copy the DATA segment from Flash to RAM (inlined).
-   initialize_data(&_sidata, &_sdata, &_edata);
+  // Copy the DATA segment from Flash to RAM (inlined).
+  initialize_data(&_sidata, &_sdata, &_edata);
 
-   // Zero fill the BSS section (inlined).
-   initialize_bss(&__bss_start__, &__bss_end__);
+  // Zero fill the BSS section (inlined).
+  initialize_bss(&__bss_start__, &__bss_end__);
 
-   // Hook to continue the initialisations. Usually compute and store the
-   // clock frequency in the global CMSIS variable, cleared above.
-   startup_initialize_hardware();
+  // Hook to continue the initialisations. Usually compute and store the
+  // clock frequency in the global CMSIS variable, cleared above.
+  startup_initialize_hardware();
 
-   // Call the standard library initialisation (mandatory for C++ to
-   // execute the constructors for the static objects).
-   run_init_array();
+  // Call the standard library initialisation (mandatory for C++ to
+  // execute the constructors for the static objects).
+  run_init_array();
 
-   // set mepc to be main as the root app.
-   __set_MEPC((uint32_t)main);
+  // set mepc to be main as the root app.
+  __set_MEPC((uint32_t)main);
 
-   asm volatile("mret\n");
-   while(true)
-      ;
-   /* NOTREACHED */
+  asm volatile("mret\n");
+  while (true)
+    ;
+  /* NOTREACHED */
 }
