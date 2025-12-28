@@ -58,7 +58,7 @@ __attribute__((section(".init"), used, naked)) void Reset_Handler() {
 // The vector table.
 // This relies on the linker script to place at correct location in memory.
 
-__attribute__((section(".isr_vector"), used)) pHandler g_pfnVectors[] = {
+__attribute__((section(".isr_vector"), used)) pHandler g_pfnVectors[INTERRUPT_VECTOR_TABLE_SIZE] = {
     0, NMI_Handler,                          /* NMI Handler */
     HardFault_Handler,                       /* Hard Fault Handler */
     0, 0, 0, 0, 0, 0, 0, 0, SysTick_Handler, /* SysTick Handler */

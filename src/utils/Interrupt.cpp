@@ -7,7 +7,6 @@
 #include <cstddef>
 
 extern uintptr_t __vectors_start;
-extern uintptr_t _sram_vectors;
 namespace Interrupt {
 
 // ram_vectors
@@ -15,16 +14,17 @@ static Handler_t& getInterruptHandler(size_t index) {
    [[gnu::section(".ram_vectors.interrupt_vector_table")]] static Handler_t handlers[INTERRUPT_VECTOR_TABLE_SIZE];
    return handlers[index];
 }
+
 static inline void prepareVectorTable(void) {
-   auto *p = reinterpret_cast<uint32_t *>(&_sram_vectors);
+   auto *p = reinterpret_cast<uint32_t *>(&getInterruptHandler(0));
    uint32_t *end = p + INTERRUPT_VECTOR_TABLE_SIZE;
    uint32_t *from = reinterpret_cast<uint32_t *>(&__vectors_start);
    while(p < end) {
       *p++ = *from++;
    }
    CriticalSection ics;
-   __DSB();
-   SCB->VTOR = &_sram_vectors;
+   __asm volatile ("fence.i" ::: "memory");
+   __set_MTVEC(reinterpret_cast<uintptr_t>(&getInterruptHandler(0)) | 0b11);
 }
 
 struct AdvancedHandler {
@@ -39,13 +39,13 @@ static inline AdvancedHandler &getAdvancedHandler(unsigned int index) {
 
 
 inline void handlerWithArgument() {
-   auto &advanced_handler = getAdvancedHandler(__get_IPSR() - 16);
+   auto &advanced_handler = getAdvancedHandler((__get_MCAUSE() & 0x3FF) - 16);
    advanced_handler.handler(advanced_handler.argument);
 }
 
 void connectHandler(IRQn_Type IRQn, AdvancedHandler_t handler, void *arg) {
-   assert(static_cast<int>(IRQn) >= 0);
-   auto &advanced_handler = getAdvancedHandler(static_cast<int>(IRQn));
+   assert(static_cast<int>(IRQn) >= 16);
+   auto &advanced_handler = getAdvancedHandler(static_cast<int>(IRQn) - 16);
    advanced_handler.handler = handler;
    advanced_handler.argument = arg;
    connectHandler(IRQn, &handlerWithArgument);
@@ -53,31 +53,31 @@ void connectHandler(IRQn_Type IRQn, AdvancedHandler_t handler, void *arg) {
 
 
 void connectHandler(IRQn_Type IRQn, Handler_t handler) {
-   auto *vTable = reinterpret_cast<Handler_t *>(&_sram_vectors);
-   if(SCB->VTOR != _sram_vectors) {
+   // auto *vTable = reinterpret_cast<Handler_t *>(&_sram_vectors);
+   if((__get_MTVEC() & ~0b11) != reinterpret_cast<uintptr_t>(&getInterruptHandler(0))) {
       prepareVectorTable();
    }
-   vTable[IRQn + 16] = handler;
-   __DSB();
+   getInterruptHandler(IRQn) = handler;
+   __asm volatile ("fence.i" ::: "memory");
 }
 
 void releaseHandler(IRQn_Type IRQn) {
    auto *vTableOrig = reinterpret_cast<Handler_t *>(&__vectors_start);
-   connectHandler(IRQn, vTableOrig[IRQn + 16]);
+   connectHandler(IRQn, vTableOrig[IRQn]);
 }
 
 AdvancedHandler getObjectHandler(IRQn_Type irq) {
    int i = static_cast<int>(irq);
-   if(i < 0 || i >= INTERRUPT_VECTOR_TABLE_SIZE) {
+   if(i < 16 || i >= INTERRUPT_VECTOR_TABLE_SIZE) {
       return {};
    }
-   return getAdvancedHandler(i);
+   return getAdvancedHandler(i - 16);
 }
 
 Handler_t getHandler(IRQn_Type irq) {
-   auto *handlers = reinterpret_cast<Handler_t *>(SCB->VTOR);
-   int index = static_cast<int>(irq) + 16;
-   return (index < 0 || index > INTERRUPT_VECTOR_TABLE_SIZE) ? nullptr : handlers[index];
+   auto *handlers = reinterpret_cast<Handler_t *>(__get_MTVEC() & ~0b11);
+   int index = static_cast<int>(irq);
+   return (index < 0 || index >= INTERRUPT_VECTOR_TABLE_SIZE) ? nullptr : handlers[index];
 }
 
 BlockingSection::BlockingSection(IRQn_Type IRQn) {
@@ -96,14 +96,14 @@ BlockingSection::~BlockingSection() {
 }
 
 CriticalSection::CriticalSection() {
-   // Read the current PRIMASK, to be later restored
-   _state = __get_PRIMASK();
+   // Read the current mstatus, to be later restored
+   _state = __get_MSTATUS();
    // Disable all interrupts
    __disable_irq();
 }
 
 CriticalSection::~CriticalSection() {
-   // Restore PRIMASK to the saved value
-   __set_PRIMASK(_state);
+   // Restore mstatus to the saved value
+   __set_MSTATUS(_state);
 }
 }; // namespace Interrupt

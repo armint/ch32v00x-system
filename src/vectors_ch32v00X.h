@@ -1,8 +1,14 @@
 #pragma once
 
+#include <stdint.h>
+#include <stddef.h>
+
+#define INTERRUPT_VECTOR_TABLE_SIZE 40
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 
 void __attribute__((interrupt)) NMI_Handler(void);
 void __attribute__((interrupt)) HardFault_Handler(void);
