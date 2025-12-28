@@ -62,9 +62,9 @@ SET(CMAKE_AR "${TOOLCHAIN_BIN_DIR}/${TARGET_TRIPLET}-ar${TOOL_EXECUTABLE_SUFFIX}
 SET(CMAKE_C_ARCHIVE_CREATE "<CMAKE_AR> qcs <TARGET> <LINK_FLAGS> <OBJECTS>")
 SET(CMAKE_C_ARCHIVE_FINISH true)
 # This is for CH32V003
-SET(MCU_FLAGS "-march=rv32ec_zicsr -mabi=ilp32e -fsingle-precision-constant")
+#SET(MCU_FLAGS "-march=rv32ec_zicsr_zifencei -mabi=ilp32e -fsingle-precision-constant")
 # This is for the rest of the CH32V00x family
-#SET(MCU_FLAGS "-march=rv32ec_zicsr_zmmul -mabi=ilp32e -fsingle-precision-constant")
+SET(MCU_FLAGS "-march=rv32ec_zicsr_zifencei_zmmul -mabi=ilp32e -fsingle-precision-constant")
 SET(CMAKE_C_FLAGS_DEBUG "-Og -g -fstack-usage -fno-move-loop-invariants -g3 ${MCU_FLAGS}" CACHE INTERNAL "c compiler flags debug")
 SET(CMAKE_CXX_FLAGS_DEBUG "-Og -g -fstack-usage -fno-move-loop-invariants -g3 -fabi-version=0 ${MCU_FLAGS}" CACHE INTERNAL "cxx compiler flags debug")
 SET(CMAKE_ASM_FLAGS_DEBUG "-g" CACHE INTERNAL "asm compiler flags debug")
