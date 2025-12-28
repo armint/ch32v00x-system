@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#define INTERRUPT_VECTOR_TABLE_SIZE 40
+#define INTERRUPT_VECTOR_TABLE_SIZE 48
 
 #ifdef __cplusplus
 extern "C" {

@@ -54,7 +54,7 @@ SECTIONS
     .ram_vectors (NOLOAD) : ALIGN(4)
     {
         _sram_vectors = .;
-        KEEP(*(.ram_vectors))
+        KEEP(*(.ram_vectors*))
         . = ALIGN(4);
         _eram_vectors = .;
     } >RAM
