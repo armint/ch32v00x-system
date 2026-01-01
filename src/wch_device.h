@@ -20,3 +20,4 @@
 #endif
 
 #include <ch32v00X.h>
+#include <vectors_ch32v00X.h>
