@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdint.h>
 #include <wch_device.h>
 
 void __attribute__((noreturn, weak)) __assert_func(const char *file, int line, const char *func, const char *failedexpr) {

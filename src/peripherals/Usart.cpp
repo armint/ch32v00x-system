@@ -1,5 +1,5 @@
 #include "Usart.h"
-#include <system_ch32v00X.h>
+#include <wch_device.h>
 
 void Usart::setBaudRate(uint32_t baudRate) const {
    usart.BRR = calculateBRR(baudRate, SystemCoreClock);

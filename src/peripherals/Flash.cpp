@@ -17,8 +17,8 @@ writable_section::writable_section() {
    //	FLASH->OBKEYR = FLASH_KEY2;
 
    // For unlocking programming, in general.
-   FLASH->MODEKEYR = FLASH_MODEKEYR_MODEKEYR1;
-   FLASH->MODEKEYR = FLASH_MODEKEYR_MODEKEYR2;
+   FLASH->MODEKEYR = KEY1;
+   FLASH->MODEKEYR = KEY2;
 }
 
 writable_section::~writable_section() {

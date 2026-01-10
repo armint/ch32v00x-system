@@ -1,4 +1,5 @@
 #pragma once
+#include <stdint.h>
 #if !defined(APB1PRSTR)
 #define APB1PRSTR PB1PRSTR
 #endif
@@ -19,5 +20,14 @@
 #define APB1PCENR PB1PCENR
 #endif
 
+#if defined(CH32V006) || defined(CH32V002)
 #include <ch32v00X.h>
 #include <vectors_ch32v00X.h>
+#include <system_ch32v00X.h>
+#elif defined (CH32V003)
+#include <ch32v00x.h>
+#include <vectors_ch32v00X.h>
+#include <system_ch32v00X.h>
+#else
+#error No device defined
+#endif

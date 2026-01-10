@@ -37,9 +37,10 @@ void __attribute__((interrupt)) TIM1_UP_IRQHandler(void);
 void __attribute__((interrupt)) TIM1_TRG_COM_IRQHandler(void);
 void __attribute__((interrupt)) TIM1_CC_IRQHandler(void);
 void __attribute__((interrupt)) TIM2_IRQHandler(void);
+#if !defined(CH32V003)
 void __attribute__((interrupt)) USART2_IRQHandler(void);
 void __attribute__((interrupt)) OPCM_IRQHandler(void);
-
+#endif
 #ifdef __cplusplus
 }
 #endif

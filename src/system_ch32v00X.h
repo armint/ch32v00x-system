@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 
-#include <ch32v00X.h>
+#include <wch_device.h>
 
 #ifdef __cplusplus
 extern "C" {

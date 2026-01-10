@@ -38,9 +38,10 @@ void __attribute__((weak, alias("Default_Handler"))) TIM1_UP_IRQHandler(void);
 void __attribute__((weak, alias("Default_Handler"))) TIM1_TRG_COM_IRQHandler(void);
 void __attribute__((weak, alias("Default_Handler"))) TIM1_CC_IRQHandler(void);
 void __attribute__((weak, alias("Default_Handler"))) TIM2_IRQHandler(void);
+#if defined (CH32V006)
 void __attribute__((weak, alias("Default_Handler"))) USART2_IRQHandler(void);
 void __attribute__((weak, alias("Default_Handler"))) OPCM_IRQHandler(void);
-
+#endif
 // ----------------------------------------------------------------------------
 
 extern unsigned int _estack;
@@ -88,8 +89,10 @@ __attribute__((section(".isr_vector"), used)) pHandler g_pfnVectors[INTERRUPT_VE
     TIM1_TRG_COM_IRQHandler,  /* TIM1 Trigger and Commutation */
     TIM1_CC_IRQHandler,       /* TIM1 Capture Compare */
     TIM2_IRQHandler,          /* TIM2 */
+#if !defined (CH32V003)
     USART2_IRQHandler,        /* USART2 */
     OPCM_IRQHandler,          /* Opanp and comparator */
+#endif
 };
 
 // ----------------------------------------------------------------------------
