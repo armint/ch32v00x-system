@@ -4,13 +4,13 @@ function(add_example name ADDITIONAL_SOURCES)
             "*.c"
             "*.cpp"
             "*.S"
-            )
+    )
 
     add_executable(${name}.elf
             ${EXAMPLE_SOURCES}
             ${SYSTEM_SOURCES}
             ${ADDITIONAL_SOURCES}
-            )
+    )
 
 
     # Central build-config interface: include and attach to ensure all deps build with the same flags/defines

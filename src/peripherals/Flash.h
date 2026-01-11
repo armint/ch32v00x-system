@@ -22,7 +22,7 @@ class writable_section {
 void erase_page(void *address);
 
 /**
-   Program a buffer into Flash starting at address. 
+   Program a buffer into Flash starting at address.
    Uses fast page programming (64-byte pages on CH32V00x, 256-byte pages on CH32V20x).
    Data will be padded to the page boundary if needed.
    Preconditions:

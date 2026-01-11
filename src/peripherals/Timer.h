@@ -1,7 +1,7 @@
 #pragma once
 
-#include <wch_device.h>
 #include <cstdint>
+#include <wch_device.h>
 
 class Timer {
    protected:
@@ -36,8 +36,7 @@ class Timer {
    };
 
    Timer(TIM_TypeDef *timerType)
-      : tim(*timerType) {
-   }
+      : tim(*timerType) {}
 
    inline uint16_t getValue() const {
       return tim.CNT;

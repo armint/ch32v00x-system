@@ -1,7 +1,7 @@
 #pragma once
 
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #define INTERRUPT_VECTOR_TABLE_SIZE 48
 

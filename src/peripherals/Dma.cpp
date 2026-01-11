@@ -12,8 +12,7 @@ namespace Dma {
 Channel::Channel(DMA_TypeDef *dma, uint8_t channelNumber)
    : _channelPosition(channelNumber - 1)
    , _dma(*dma)
-   , _channel(getChannelTypedef()) {
-}
+   , _channel(getChannelTypedef()) {}
 
 void Channel::configure(void *peripheralAddress,
                         void *memoryAddress,

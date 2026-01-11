@@ -3,8 +3,7 @@
 
 GpioPin::GpioPin(GPIO_TypeDef *gpio, uint8_t pin)
    : _gpio(*gpio)
-   , _pin(pin) {
-}
+   , _pin(pin) {}
 
 void GpioPin::configureOutput(GpioPin::OutputMode mode, GpioPin::OutputSpeed speed, bool alternateFunction) const {
    uint32_t pinCfg =

@@ -11,12 +11,11 @@ void __attribute__((weak)) Default_Handler(void);
 // to the Default_Handler, which is a 'forever' loop. When the application
 // defines a handler (with the same name), this will automatically take
 // precedence over these weak definitions
-// clang-format off
 void __attribute__((weak, alias("Default_Handler"))) NMI_Handler(void);
 void __attribute__((weak, alias("Default_Handler"))) HardFault_Handler(void);
 void __attribute__((weak, alias("Default_Handler"))) SysTick_Handler(void);
 void __attribute__((weak, alias("Default_Handler"))) SW_Handler(void);
-    /* External Interrupts */
+/* External Interrupts */
 void __attribute__((weak, alias("Default_Handler"))) WWDG_IRQHandler(void);
 void __attribute__((weak, alias("Default_Handler"))) PVD_IRQHandler(void);
 void __attribute__((weak, alias("Default_Handler"))) TAMPER_IRQHandler(void);
@@ -77,8 +76,6 @@ void __attribute__((weak, alias("Default_Handler"))) DMA1_Channel8_IRQHandler(vo
 void __attribute__((weak, alias("Default_Handler"))) OSC32KCal_IRQHandler(void);
 void __attribute__((weak, alias("Default_Handler"))) OSCWakeUp_IRQHandler(void);
 #endif
-
-// clang-format on
 // ----------------------------------------------------------------------------
 
 extern unsigned int _estack;
@@ -88,84 +85,93 @@ typedef void (*const pHandler)(void);
 // ----------------------------------------------------------------------------
 
 __attribute__((section(".init"), used, naked)) void Reset_Handler() {
-  asm volatile(".option   norvc;\n"
-               "j       _start\n"
-               ".option rvc;\n");
+   asm volatile(".option   norvc;\n"
+                "j       _start\n"
+                ".option rvc;\n");
 }
 
 // The vector table.
 // This relies on the linker script to place at correct location in memory.
 
-__attribute__((section(".isr_vector"),
-               used)) pHandler g_pfnVectors[INTERRUPT_VECTOR_TABLE_SIZE] = {
-    0, NMI_Handler,                          /* NMI Handler */
-    HardFault_Handler,                       /* Hard Fault Handler */
-    0, 0, 0, 0, 0, 0, 0, 0, SysTick_Handler, /* SysTick Handler */
-    0, SW_Handler,                           /* SW Handler */
-    0,
-    /* External Interrupts */
-    WWDG_IRQHandler,/* Window Watchdog */
-    PVD_IRQHandler,/* PVD through EXTI Line detect */
-    TAMPER_IRQHandler,/* TAMPER */
-    RTC_IRQHandler,/* RTC */
-    FLASH_IRQHandler,/* Flash */
-    RCC_IRQHandler,/* RCC */
-    EXTI0_IRQHandler,/* EXTI Line 0 */
-    EXTI1_IRQHandler,/* EXTI Line 1 */
-    EXTI2_IRQHandler,/* EXTI Line 2 */
-    EXTI3_IRQHandler,/* EXTI Line 3 */
-    EXTI4_IRQHandler,/* EXTI Line 4 */
-    DMA1_Channel1_IRQHandler,/* DMA1 Channel 1 */
-    DMA1_Channel2_IRQHandler,/* DMA1 Channel 2 */
-    DMA1_Channel3_IRQHandler,/* DMA1 Channel 3 */
-    DMA1_Channel4_IRQHandler,/* DMA1 Channel 4 */
-    DMA1_Channel5_IRQHandler,/* DMA1 Channel 5 */
-    DMA1_Channel6_IRQHandler,/* DMA1 Channel 6 */
-    DMA1_Channel7_IRQHandler,/* DMA1 Channel 7 */
-    ADC1_2_IRQHandler,/* ADC1_2 */
-    USB_HP_CAN1_TX_IRQHandler,/* USB HP and CAN1 TX */
-    USB_LP_CAN1_RX0_IRQHandler,/* USB LP and CAN1RX0 */
-    CAN1_RX1_IRQHandler,/* CAN1 RX1 */
-    CAN1_SCE_IRQHandler,/* CAN1 SCE */
-    EXTI9_5_IRQHandler,/* EXTI Line 9..5 */
-    TIM1_BRK_IRQHandler,/* TIM1 Break */
-    TIM1_UP_IRQHandler,/* TIM1 Update */
-    TIM1_TRG_COM_IRQHandler,/* TIM1 Trigger and Commutation */
-    TIM1_CC_IRQHandler,/* TIM1 Capture Compare */
-    TIM2_IRQHandler,/* TIM2 */
-    TIM3_IRQHandler,/* TIM3 */
-    TIM4_IRQHandler,/* TIM4 */
-    I2C1_EV_IRQHandler,/* I2C1 Event */
-    I2C1_ER_IRQHandler,/* I2C1 Error */
-    I2C2_EV_IRQHandler,/* I2C2 Event */
-    I2C2_ER_IRQHandler,/* I2C2 Error */
-    SPI1_IRQHandler,/* SPI1 */
-    SPI2_IRQHandler,/* SPI2 */
-    USART1_IRQHandler,/* USART1 */
-    USART2_IRQHandler,/* USART2 */
-    USART3_IRQHandler,/* USART3 */
-    EXTI15_10_IRQHandler,/* EXTI Line 15..10 */
-    RTCAlarm_IRQHandler,/* RTC Alarm through EXTI Line */
-    USBWakeUp_IRQHandler,/* USB Wake up from suspend */
-    USBFS_IRQHandler,/* USBFS Break */
-    USBFSWakeUp_IRQHandler,/* USBFS Wake up from suspend */
+__attribute__((section(".isr_vector"), used)) pHandler g_pfnVectors[INTERRUPT_VECTOR_TABLE_SIZE] = {
+   0,
+   NMI_Handler,       /* NMI Handler */
+   HardFault_Handler, /* Hard Fault Handler */
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   SysTick_Handler, /* SysTick Handler */
+   0,
+   SW_Handler, /* SW Handler */
+   0,
+   /* External Interrupts */
+   WWDG_IRQHandler,            /* Window Watchdog */
+   PVD_IRQHandler,             /* PVD through EXTI Line detect */
+   TAMPER_IRQHandler,          /* TAMPER */
+   RTC_IRQHandler,             /* RTC */
+   FLASH_IRQHandler,           /* Flash */
+   RCC_IRQHandler,             /* RCC */
+   EXTI0_IRQHandler,           /* EXTI Line 0 */
+   EXTI1_IRQHandler,           /* EXTI Line 1 */
+   EXTI2_IRQHandler,           /* EXTI Line 2 */
+   EXTI3_IRQHandler,           /* EXTI Line 3 */
+   EXTI4_IRQHandler,           /* EXTI Line 4 */
+   DMA1_Channel1_IRQHandler,   /* DMA1 Channel 1 */
+   DMA1_Channel2_IRQHandler,   /* DMA1 Channel 2 */
+   DMA1_Channel3_IRQHandler,   /* DMA1 Channel 3 */
+   DMA1_Channel4_IRQHandler,   /* DMA1 Channel 4 */
+   DMA1_Channel5_IRQHandler,   /* DMA1 Channel 5 */
+   DMA1_Channel6_IRQHandler,   /* DMA1 Channel 6 */
+   DMA1_Channel7_IRQHandler,   /* DMA1 Channel 7 */
+   ADC1_2_IRQHandler,          /* ADC1_2 */
+   USB_HP_CAN1_TX_IRQHandler,  /* USB HP and CAN1 TX */
+   USB_LP_CAN1_RX0_IRQHandler, /* USB LP and CAN1RX0 */
+   CAN1_RX1_IRQHandler,        /* CAN1 RX1 */
+   CAN1_SCE_IRQHandler,        /* CAN1 SCE */
+   EXTI9_5_IRQHandler,         /* EXTI Line 9..5 */
+   TIM1_BRK_IRQHandler,        /* TIM1 Break */
+   TIM1_UP_IRQHandler,         /* TIM1 Update */
+   TIM1_TRG_COM_IRQHandler,    /* TIM1 Trigger and Commutation */
+   TIM1_CC_IRQHandler,         /* TIM1 Capture Compare */
+   TIM2_IRQHandler,            /* TIM2 */
+   TIM3_IRQHandler,            /* TIM3 */
+   TIM4_IRQHandler,            /* TIM4 */
+   I2C1_EV_IRQHandler,         /* I2C1 Event */
+   I2C1_ER_IRQHandler,         /* I2C1 Error */
+   I2C2_EV_IRQHandler,         /* I2C2 Event */
+   I2C2_ER_IRQHandler,         /* I2C2 Error */
+   SPI1_IRQHandler,            /* SPI1 */
+   SPI2_IRQHandler,            /* SPI2 */
+   USART1_IRQHandler,          /* USART1 */
+   USART2_IRQHandler,          /* USART2 */
+   USART3_IRQHandler,          /* USART3 */
+   EXTI15_10_IRQHandler,       /* EXTI Line 15..10 */
+   RTCAlarm_IRQHandler,        /* RTC Alarm through EXTI Line */
+   USBWakeUp_IRQHandler,       /* USB Wake up from suspend */
+   USBFS_IRQHandler,           /* USBFS Break */
+   USBFSWakeUp_IRQHandler,     /* USBFS Wake up from suspend */
 #if defined(CH32V20x_D8W) || defined(CH32V20x_D8)
-    ETH_IRQHandler,/* ETH global */
-    ETHWakeUp_IRQHandler,/* ETH Wake up */
+   ETH_IRQHandler,       /* ETH global */
+   ETHWakeUp_IRQHandler, /* ETH Wake up */
 #if defined(CH32V20x_D8W)
-    BB_IRQHandler,/* BLE BB */
-    LLE_IRQHandler,/* BLE LLE */
+   BB_IRQHandler,  /* BLE BB */
+   LLE_IRQHandler, /* BLE LLE */
 #else
-    0,
-    0,
+   0,
+   0,
 #endif
-    TIM5_IRQHandler,/* TIM5 */
+   TIM5_IRQHandler, /* TIM5 */
 #endif
-    UART4_IRQHandler,/* UART4 */
-    DMA1_Channel8_IRQHandler,/* DMA1 Channel8 */
+   UART4_IRQHandler,         /* UART4 */
+   DMA1_Channel8_IRQHandler, /* DMA1 Channel8 */
 #if defined(CH32V20x_D8W) || defined(CH32V20x_D8)
-    OSC32KCal_IRQHandler,/* OSC32KCal */
-    OSCWakeUp_IRQHandler,/* OSC Wake Up */
+   OSC32KCal_IRQHandler, /* OSC32KCal */
+   OSCWakeUp_IRQHandler, /* OSC Wake Up */
 #endif
 };
 
@@ -175,8 +181,8 @@ __attribute__((section(".isr_vector"),
 // handler is not present in the application code.
 
 void __attribute__((section(".after_vectors"))) Default_Handler(void) {
-  while (1) {
-  }
+   while(1) {
+   }
 }
 
 #pragma GCC diagnostic pop

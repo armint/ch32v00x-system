@@ -12,8 +12,7 @@ class I2c {
    enum class AddressingMode { addressingMode7Bit = 0, addressingMode10Bit = I2C_STAR1_ADD10 };
 
    I2c(I2C_TypeDef *i2c)
-      : i2c(*i2c) {
-   }
+      : i2c(*i2c) {}
    void setMode(MasterMode mode) const {
       i2c.CKCFGR = (i2c.CKCFGR & ~I2C_CKCFGR_FS) | static_cast<uint16_t>(mode);
    }

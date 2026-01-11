@@ -1,8 +1,8 @@
 
 #include "Flash.h"
 
-#include <wch_device.h>
 #include <algorithm>
+#include <wch_device.h>
 
 namespace Flash {
 

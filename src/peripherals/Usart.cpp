@@ -8,8 +8,8 @@ void Usart::setBaudRate(uint32_t baudRate) const {
 uint32_t Usart::getBaudRate() const {
    uint32_t clk = SystemCoreClock;
    uint32_t brr = usart.BRR;
-   if (brr == 0) return 0;
-   
+   if(brr == 0)
+      return 0;
+
    return clk / brr;
 }
-

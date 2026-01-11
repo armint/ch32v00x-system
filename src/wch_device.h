@@ -22,16 +22,16 @@
 
 #if defined(CH32V006) || defined(CH32V002)
 #include <ch32v00X.h>
-#include <vectors_ch32v00X.h>
 #include <system_ch32v00X.h>
-#elif defined (CH32V003)
+#include <vectors_ch32v00X.h>
+#elif defined(CH32V003)
 #include <ch32v00x.h>
-#include <vectors_ch32v00X.h>
 #include <system_ch32v00X.h>
+#include <vectors_ch32v00X.h>
 #elif defined(CH32V20x_D8W) || defined(CH32V20x_D8) || defined(CH32V20x_D6)
 #include <ch32v20x.h>
-#include <vectors_ch32v20x.h>
 #include <system_ch32v20x.h>
+#include <vectors_ch32v20x.h>
 #else
 #error No device defined
 #endif

@@ -64,10 +64,10 @@ target_include_directories(ch32v00x-system
 # Export CMSIS headers to dependents as part of the public interface
 target_include_directories(ch32v00x-system
         PUBLIC
-            $<BUILD_INTERFACE:${cmsis_device_l0_SOURCE_DIR}/Include>
-            $<BUILD_INTERFACE:${cmsis54st_SOURCE_DIR}/Core/Include>
-            $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/cmsis_device_l0/Include>
-            $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/cmsis_core/Core/Include>
+        $<BUILD_INTERFACE:${cmsis_device_l0_SOURCE_DIR}/Include>
+        $<BUILD_INTERFACE:${cmsis54st_SOURCE_DIR}/Core/Include>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/cmsis_device_l0/Include>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/cmsis_core/Core/Include>
 )
 
 target_compile_features(ch32v00x-system PUBLIC cxx_std_23)

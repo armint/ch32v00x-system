@@ -20,8 +20,7 @@ class Usart {
    USART_TypeDef &usart;
 
    Usart(USART_TypeDef *uartBase)
-      : usart(*uartBase) {
-   }
+      : usart(*uartBase) {}
 
    inline void enableTx() const {
       usart.CTLR1 |= USART_CTLR1_TE;
