@@ -13,6 +13,13 @@
 *******************************************************************************/
 #include <wch_device.h>
 #if defined(CH32V20x_D8W) || defined(CH32V20x_D8) || defined(CH32V20x_D6)
+uint32_t SystemCoreClock = HSI_VALUE;
+
+#ifndef RCC_USB5PRE_JUDGE
+#define RCC_USB5PRE_JUDGE()     ((RCC->CFGR2 & (1<<31))>>31)
+#endif
+
+static void SetSysClock(void);
 
 __I uint8_t AHBPrescTable[16] = {0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 6, 7, 8, 9};
 
@@ -125,31 +132,31 @@ static void SetSysClock(void)
 {
   //GPIO_IPD_Unused();
 #ifdef SYSCLK_FREQ_HSE
-    SetSysClockToHSE();
+    SetSysClockTo_HSE();
 #elif defined SYSCLK_FREQ_48MHz_HSE
-    SetSysClockTo48_HSE();
+    SetSysClockTo_48MHz_HSE();
 #elif defined SYSCLK_FREQ_56MHz_HSE
-    SetSysClockTo56_HSE();
+    SetSysClockTo_56MHz_HSE();
 #elif defined SYSCLK_FREQ_72MHz_HSE
-    SetSysClockTo72_HSE();
+    SetSysClockTo_72MHz_HSE();
 #elif defined SYSCLK_FREQ_96MHz_HSE
-    SetSysClockTo96_HSE();
+    SetSysClockTo_96MHz_HSE();
 #elif defined SYSCLK_FREQ_120MHz_HSE
-    SetSysClockTo120_HSE();
+    SetSysClockTo_120MHz_HSE();
 #elif defined SYSCLK_FREQ_144MHz_HSE
-    SetSysClockTo144_HSE();
+    SetSysClockTo_144MHz_HSE();
 #elif defined SYSCLK_FREQ_48MHz_HSI
-    SetSysClockTo48_HSI();
+    SetSysClockTo_48MHz_HSI();
 #elif defined SYSCLK_FREQ_56MHz_HSI
-    SetSysClockTo56_HSI();
+    SetSysClockTo_56MHz_HSI();
 #elif defined SYSCLK_FREQ_72MHz_HSI
-    SetSysClockTo72_HSI();
+    SetSysClockTo_72MHz_HSI();
 #elif defined SYSCLK_FREQ_96MHz_HSI
-    SetSysClockTo96_HSI();
+    SetSysClockTo_96MHz_HSI();
 #elif defined SYSCLK_FREQ_120MHz_HSI
-    SetSysClockTo120_HSI();
+    SetSysClockTo_120MHz_HSI();
 #elif defined SYSCLK_FREQ_144MHz_HSI
-    SetSysClockTo144_HSI();
+    SetSysClockTo_144MHz_HSI();
 
 #endif
  
@@ -159,16 +166,14 @@ static void SetSysClock(void)
 }
 
 
-#ifdef SYSCLK_FREQ_HSE
-
 /*********************************************************************
- * @fn      SetSysClockToHSE
+ * @fn      SetSysClockTo_HSE
  *
  * @brief   Sets HSE as System clock source and configure HCLK, PCLK2 and PCLK1 prescalers.
  *
  * @return  none
  */
-static void SetSysClockToHSE(void)
+void SetSysClockTo_HSE(void)
 {
   __IO uint32_t StartUpCounter = 0, HSEStatus = 0;
   
@@ -221,16 +226,15 @@ static void SetSysClockToHSE(void)
   }  
 }
 
-#elif defined SYSCLK_FREQ_48MHz_HSE
 
 /*********************************************************************
- * @fn      SetSysClockTo48_HSE
+ * @fn      SetSysClockTo_48MHz_HSE
  *
  * @brief   Sets System clock frequency to 48MHz and configure HCLK, PCLK2 and PCLK1 prescalers.
  *
  * @return  none
  */
-static void SetSysClockTo48_HSE(void)
+void SetSysClockTo_48MHz_HSE(void)
 {
   __IO uint32_t StartUpCounter = 0, HSEStatus = 0;
      
@@ -292,16 +296,15 @@ static void SetSysClockTo48_HSE(void)
   } 
 }
 
-#elif defined SYSCLK_FREQ_56MHz_HSE
 
 /*********************************************************************
- * @fn      SetSysClockTo56_HSE
+ * @fn      SetSysClockTo_56MHz_HSE
  *
  * @brief   Sets System clock frequency to 56MHz and configure HCLK, PCLK2 and PCLK1 prescalers.
  *
  * @return  none
  */
-static void SetSysClockTo56_HSE(void)
+void SetSysClockTo_56MHz_HSE(void)
 {
   __IO uint32_t StartUpCounter = 0, HSEStatus = 0;
      
@@ -364,16 +367,15 @@ static void SetSysClockTo56_HSE(void)
   } 
 }
 
-#elif defined SYSCLK_FREQ_72MHz_HSE
 
 /*********************************************************************
- * @fn      SetSysClockTo72_HSE
+ * @fn      SetSysClockTo_72MHz_HSE
  *
  * @brief   Sets System clock frequency to 72MHz and configure HCLK, PCLK2 and PCLK1 prescalers.
  *
  * @return  none
  */
-static void SetSysClockTo72_HSE(void)
+void SetSysClockTo_72MHz_HSE(void)
 {
   __IO uint32_t StartUpCounter = 0, HSEStatus = 0;
      
@@ -437,16 +439,7 @@ static void SetSysClockTo72_HSE(void)
 }
 
 
-#elif defined SYSCLK_FREQ_96MHz_HSE
-
-/*********************************************************************
- * @fn      SetSysClockTo96_HSE
- *
- * @brief   Sets System clock frequency to 96MHz and configure HCLK, PCLK2 and PCLK1 prescalers.
- *
- * @return  none
- */
-static void SetSysClockTo96_HSE(void)
+void SetSysClockTo_96MHz_HSE(void)
 {
   __IO uint32_t StartUpCounter = 0, HSEStatus = 0;
 
@@ -510,16 +503,14 @@ static void SetSysClockTo96_HSE(void)
 }
 
 
-#elif defined SYSCLK_FREQ_120MHz_HSE
-
 /*********************************************************************
- * @fn      SetSysClockTo120_HSE
+ * @fn      SetSysClockTo_120MHz_HSE
  *
  * @brief   Sets System clock frequency to 120MHz and configure HCLK, PCLK2 and PCLK1 prescalers.
  *
  * @return  none
  */
-static void SetSysClockTo120_HSE(void)
+void SetSysClockTo_120MHz_HSE(void)
 {
     __IO uint32_t StartUpCounter = 0, HSEStatus = 0;
 
@@ -587,16 +578,16 @@ static void SetSysClockTo120_HSE(void)
          */
     }
 }
-#elif defined SYSCLK_FREQ_144MHz_HSE
+
 
 /*********************************************************************
- * @fn      SetSysClockTo144_HSE
+ * @fn      SetSysClockTo_144MHz_HSE
  *
  * @brief   Sets System clock frequency to 144MHz and configure HCLK, PCLK2 and PCLK1 prescalers.
  *
  * @return  none
  */
-static void SetSysClockTo144_HSE(void)
+void SetSysClockTo_144MHz_HSE(void)
 {
   __IO uint32_t StartUpCounter = 0, HSEStatus = 0;
 
@@ -659,16 +650,15 @@ static void SetSysClockTo144_HSE(void)
   }
 }
 
-#elif defined SYSCLK_FREQ_48MHz_HSI
 
 /*********************************************************************
- * @fn      SetSysClockTo48_HSI
+ * @fn      SetSysClockTo_48MHz_HSI
  *
  * @brief   Sets System clock frequency to 48MHz and configure HCLK, PCLK2 and PCLK1 prescalers.
  *
  * @return  none
  */
-static void SetSysClockTo48_HSI(void)
+void SetSysClockTo_48MHz_HSI(void)
 {
     EXTEN->EXTEN_CTR |= EXTEN_PLL_HSI_PRE;
 
@@ -699,16 +689,15 @@ static void SetSysClockTo48_HSI(void)
     }
 }
 
-#elif defined SYSCLK_FREQ_56MHz_HSI
 
 /*********************************************************************
- * @fn      SetSysClockTo56_HSI
+ * @fn      SetSysClockTo_56MHz_HSI
  *
  * @brief   Sets System clock frequency to 56MHz and configure HCLK, PCLK2 and PCLK1 prescalers.
  *
  * @return  none
  */
-static void SetSysClockTo56_HSI(void)
+void SetSysClockTo_56MHz_HSI(void)
 {
     EXTEN->EXTEN_CTR |= EXTEN_PLL_HSI_PRE;
 
@@ -739,16 +728,15 @@ static void SetSysClockTo56_HSI(void)
     }
 }
 
-#elif defined SYSCLK_FREQ_72MHz_HSI
 
 /*********************************************************************
- * @fn      SetSysClockTo72_HSI
+ * @fn      SetSysClockTo_72MHz_HSI
  *
  * @brief   Sets System clock frequency to 72MHz and configure HCLK, PCLK2 and PCLK1 prescalers.
  *
  * @return  none
  */
-static void SetSysClockTo72_HSI(void)
+void SetSysClockTo_72MHz_HSI(void)
 {
     EXTEN->EXTEN_CTR |= EXTEN_PLL_HSI_PRE;
 
@@ -780,16 +768,14 @@ static void SetSysClockTo72_HSI(void)
 }
 
 
-#elif defined SYSCLK_FREQ_96MHz_HSI
-
 /*********************************************************************
- * @fn      SetSysClockTo96_HSI
+ * @fn      SetSysClockTo_96MHz_HSI
  *
  * @brief   Sets System clock frequency to 96MHz and configure HCLK, PCLK2 and PCLK1 prescalers.
  *
  * @return  none
  */
-static void SetSysClockTo96_HSI(void)
+void SetSysClockTo_96MHz_HSI(void)
 {
     EXTEN->EXTEN_CTR |= EXTEN_PLL_HSI_PRE;
 
@@ -821,16 +807,14 @@ static void SetSysClockTo96_HSI(void)
 }
 
 
-#elif defined SYSCLK_FREQ_120MHz_HSI
-
 /*********************************************************************
- * @fn      SetSysClockTo120_HSI
+ * @fn      SetSysClockTo_120MHz_HSI
  *
  * @brief   Sets System clock frequency to 120MHz and configure HCLK, PCLK2 and PCLK1 prescalers.
  *
  * @return  none
  */
-static void SetSysClockTo120_HSI(void)
+void SetSysClockTo_120MHz_HSI(void)
 {
     EXTEN->EXTEN_CTR |= EXTEN_PLL_HSI_PRE;
 
@@ -861,16 +845,16 @@ static void SetSysClockTo120_HSI(void)
     {
     }
 }
-#elif defined SYSCLK_FREQ_144MHz_HSI
+
 
 /*********************************************************************
- * @fn      SetSysClockTo144_HSI
+ * @fn      SetSysClockTo_144MHz_HSI
  *
  * @brief   Sets System clock frequency to 144MHz and configure HCLK, PCLK2 and PCLK1 prescalers.
  *
  * @return  none
  */
-static void SetSysClockTo144_HSI(void)
+void SetSysClockTo_144MHz_HSI(void)
 {
     EXTEN->EXTEN_CTR |= EXTEN_PLL_HSI_PRE;
 
@@ -902,5 +886,4 @@ static void SetSysClockTo144_HSI(void)
 }
 
 
-#endif
 #endif

@@ -15,7 +15,7 @@ extern "C" {
 
  void SetSysClockTo_24MHz_HSI(void);
  void SetSysClockTo_24MHz_HSE(void);
- void SetSysClockTo_48MHZ_HSI(void);
+ void SetSysClockTo_48MHz_HSI(void);
  void SetSysClockTo_48MHz_HSE(void);
  void SetSysClockTo_8MHz_HSI(void);
  void SetSysClockTo_8MHz_HSE(void);

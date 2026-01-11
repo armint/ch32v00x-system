@@ -106,14 +106,14 @@ void SetSysClockTo_8MHz_HSI(void) {
 }
 
 /*********************************************************************
- * @fn      SetSysClockTo_24MHZ_HSI
+ * @fn      SetSysClockTo_24MHz_HSI
  *
  * @brief   Sets System clock frequency to 24MHz and configure HCLK, PCLK2 and
  * PCLK1 prescalers.
  *
  * @return  none
  */
-void SetSysClockTo_24MHZ_HSI(void) {
+void SetSysClockTo_24MHz_HSI(void) {
 #if defined(CH32V006) || defined(CH32V002)
   /* HCLK = SYSCLK = APB1 */
   RCC->CFGR0 |= (uint32_t)RCC_HPRE_DIV1;
@@ -131,14 +131,14 @@ void SetSysClockTo_24MHZ_HSI(void) {
 }
 
 /*********************************************************************
- * @fn      SetSysClockTo_48MHZ_HSI
+ * @fn      SetSysClockTo_48MHz_HSI
  *
  * @brief   Sets System clock frequency to 48MHz and configure HCLK, PCLK2 and
  * PCLK1 prescalers.
  *
  * @return  none
  */
-void SetSysClockTo_48MHZ_HSI(void) {
+void SetSysClockTo_48MHz_HSI(void) {
   /* HCLK = SYSCLK = APB1 */
   RCC->CFGR0 |= (uint32_t)RCC_HPRE_DIV1;
 
