@@ -2,8 +2,17 @@
 #include "Flash.h"
 
 #include <wch_device.h>
+#include <algorithm>
 
 namespace Flash {
+
+#if defined(CH32V20x_D8W) || defined(CH32V20x_D8) || defined(CH32V20x_D6)
+constexpr uint32_t PAGE_SIZE = 256;
+#else
+constexpr uint32_t PAGE_SIZE = 64;
+#endif
+constexpr uint32_t PAGE_MASK = PAGE_SIZE - 1;
+
 writable_section::writable_section() {
    while(FLASH->STATR & FLASH_STATR_BSY) {
       // Wait while the flash is busy
@@ -50,7 +59,7 @@ void erase_page(void *address) {
 
 bool write_buffer(void *address, std::span<uint8_t> data) {
    // Preconditions: address must be 16-byte aligned.
-   // For 64-byte page programming, we should ideally be on a 64-byte boundary.
+   // For fast page programming, we should ideally be on a page boundary.
    if((reinterpret_cast<uintptr_t>(address) & 0xFu) != 0u) {
       return false;
    }
@@ -65,12 +74,14 @@ bool write_buffer(void *address, std::span<uint8_t> data) {
 
    // Initialize the first page
    FLASH->CTLR = FLASH_CTLR_PAGE_PG;
+#ifdef FLASH_CTLR_BUF_RST
    FLASH->CTLR |= FLASH_CTLR_BUF_RST;
+#endif
    FLASH->ADDR = addr;
    while(FLASH->STATR & FLASH_STATR_BSY) {
    }
 
-   while(remaining > 0 || (addr & 0x3F) != 0) {
+   while(remaining > 0 || (addr & PAGE_MASK) != 0) {
       // 2. Prepare 4 bytes to write
       uint32_t word = 0xFFFFFFFF;
       size_t to_copy = std::min(remaining, (size_t)4);
@@ -85,41 +96,36 @@ bool write_buffer(void *address, std::span<uint8_t> data) {
 
       // 3. Load word into buffer
       *reinterpret_cast<volatile uint32_t *>(addr) = word;
+#ifdef FLASH_CTLR_BUF_LOAD
       FLASH->CTLR = FLASH_CTLR_PAGE_PG | FLASH_CTLR_BUF_LOAD;
       while(FLASH->STATR & FLASH_STATR_BSY) {
       }
+#endif
 
       addr += 4;
 
-      // 4. If we reached the end of a 64-byte page, or no more data (and we want to finish the page)
-      if((addr & 0x3F) == 0) {
+      // 4. If we reached the end of a page, or no more data (and we want to finish the page)
+      if((addr & PAGE_MASK) == 0) {
+#ifdef FLASH_CTLR_PG_STRT
+         FLASH->CTLR = FLASH_CTLR_PAGE_PG | FLASH_CTLR_PG_STRT;
+#else
          FLASH->CTLR = FLASH_CTLR_PAGE_PG | FLASH_CTLR_STRT;
+#endif
          while(FLASH->STATR & FLASH_STATR_BSY) {
          }
 
          if(remaining > 0) {
             // Prepare for next page
-            FLASH->CTLR = FLASH_CTLR_PAGE_PG | FLASH_CTLR_BUF_RST;
+            FLASH->CTLR = FLASH_CTLR_PAGE_PG;
+#ifdef FLASH_CTLR_BUF_RST
+            FLASH->CTLR |= FLASH_CTLR_BUF_RST;
+#endif
             FLASH->ADDR = addr;
             while(FLASH->STATR & FLASH_STATR_BSY) {
             }
          } else {
             break;
          }
-      }
-   }
-
-   // 5. If we finished all data but didn't reach a 64-byte boundary, we must finish the page
-   if((addr & 0x3F) != 0) {
-      while((addr & 0x3F) != 0) {
-         *reinterpret_cast<volatile uint32_t *>(addr) = 0xFFFFFFFF;
-         FLASH->CTLR = FLASH_CTLR_PAGE_PG | FLASH_CTLR_BUF_LOAD;
-         while(FLASH->STATR & FLASH_STATR_BSY) {
-         }
-         addr += 4;
-      }
-      FLASH->CTLR = FLASH_CTLR_PAGE_PG | FLASH_CTLR_STRT;
-      while(FLASH->STATR & FLASH_STATR_BSY) {
       }
    }
 
