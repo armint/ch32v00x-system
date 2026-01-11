@@ -1,5 +1,4 @@
 #include "systick.h"
-#include "core_riscv.h"
 #include "wch_device.h"
 
 static volatile timestamp_t sysTickCount;
