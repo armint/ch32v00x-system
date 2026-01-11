@@ -1,5 +1,6 @@
 // ----------------------------------------------------------------------------
 #include "vectors_ch32v00X.h"
+#if defined(CH32V006) || defined(CH32V002) || defined(CH32V003)
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-function"
@@ -10,7 +11,7 @@ void __attribute__((weak)) Default_Handler(void);
 // to the Default_Handler, which is a 'forever' loop. When the application
 // defines a handler (with the same name), this will automatically take
 // precedence over these weak definitions
-
+// clang-format off
 void __attribute__((weak, alias("Default_Handler"))) NMI_Handler(void);
 void __attribute__((weak, alias("Default_Handler"))) HardFault_Handler(void);
 void __attribute__((weak, alias("Default_Handler"))) SysTick_Handler(void);
@@ -38,10 +39,11 @@ void __attribute__((weak, alias("Default_Handler"))) TIM1_UP_IRQHandler(void);
 void __attribute__((weak, alias("Default_Handler"))) TIM1_TRG_COM_IRQHandler(void);
 void __attribute__((weak, alias("Default_Handler"))) TIM1_CC_IRQHandler(void);
 void __attribute__((weak, alias("Default_Handler"))) TIM2_IRQHandler(void);
-#if defined (CH32V006)
+#if defined(CH32V006)
 void __attribute__((weak, alias("Default_Handler"))) USART2_IRQHandler(void);
 void __attribute__((weak, alias("Default_Handler"))) OPCM_IRQHandler(void);
 #endif
+// clang-format on
 // ----------------------------------------------------------------------------
 
 extern unsigned int _estack;
@@ -51,15 +53,16 @@ typedef void (*const pHandler)(void);
 // ----------------------------------------------------------------------------
 
 __attribute__((section(".init"), used, naked)) void Reset_Handler() {
-   asm volatile(".option   norvc;\n"
-                "j       _start\n"
-                ".option rvc;\n");
+  asm volatile(".option   norvc;\n"
+               "j       _start\n"
+               ".option rvc;\n");
 }
 
 // The vector table.
 // This relies on the linker script to place at correct location in memory.
 
-__attribute__((section(".isr_vector"), used)) pHandler g_pfnVectors[INTERRUPT_VECTOR_TABLE_SIZE] = {
+__attribute__((section(".isr_vector"),
+               used)) pHandler g_pfnVectors[INTERRUPT_VECTOR_TABLE_SIZE] = {
     0, NMI_Handler,                          /* NMI Handler */
     HardFault_Handler,                       /* Hard Fault Handler */
     0, 0, 0, 0, 0, 0, 0, 0, SysTick_Handler, /* SysTick Handler */
@@ -89,9 +92,9 @@ __attribute__((section(".isr_vector"), used)) pHandler g_pfnVectors[INTERRUPT_VE
     TIM1_TRG_COM_IRQHandler,  /* TIM1 Trigger and Commutation */
     TIM1_CC_IRQHandler,       /* TIM1 Capture Compare */
     TIM2_IRQHandler,          /* TIM2 */
-#if !defined (CH32V003)
-    USART2_IRQHandler,        /* USART2 */
-    OPCM_IRQHandler,          /* Opanp and comparator */
+#if !defined(CH32V003)
+    USART2_IRQHandler, /* USART2 */
+    OPCM_IRQHandler,   /* Opanp and comparator */
 #endif
 };
 
@@ -101,10 +104,11 @@ __attribute__((section(".isr_vector"), used)) pHandler g_pfnVectors[INTERRUPT_VE
 // handler is not present in the application code.
 
 void __attribute__((section(".after_vectors"))) Default_Handler(void) {
-   while(1) {
-   }
+  while (1) {
+  }
 }
 
 #pragma GCC diagnostic pop
 
 // ----------------------------------------------------------------------------
+#endif

@@ -1,23 +1,22 @@
-/********************************** (C) COPYRIGHT *******************************
- * File Name          : system_ch32v00X.c
- * Author             : WCH
- * Version            : V1.0.0
- * Date               : 2024/11/04
- * Description        : CH32V00x Device Peripheral Access Layer System Source File.
- * Copyright (c) 2021 Nanjing Qinheng Microelectronics Co., Ltd.
- * SPDX-License-Identifier: Apache-2.0
+/********************************** (C) COPYRIGHT
+ ******************************** File Name          : system_ch32v00X.c Author
+ *: WCH Version            : V1.0.0 Date               : 2024/11/04 Description
+ *: CH32V00x Device Peripheral Access Layer System Source File. Copyright (c)
+ *2021 Nanjing Qinheng Microelectronics Co., Ltd. SPDX-License-Identifier:
+ *Apache-2.0
  *********************************************************************************/
 #include <wch_device.h>
-
+#if defined(CH32V006) || defined(CH32V002) || defined(CH32V003)
 uint32_t SystemCoreClock = HSI_VALUE;
 
-__I uint8_t AHBPrescTable[16] = { 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8 };
+__I uint8_t AHBPrescTable[16] = {1, 2, 3, 4, 5, 6, 7, 8,
+                                 1, 2, 3, 4, 5, 6, 7, 8};
 
 /*********************************************************************
  * @fn      SystemInit
  *
- * @brief   Setup the microcontroller system Initialize the Embedded Flash Interface,
- *        the PLL and update the SystemCoreClock variable.
+ * @brief   Setup the microcontroller system Initialize the Embedded Flash
+ * Interface, the PLL and update the SystemCoreClock variable.
  *
  * @return  none
  */
@@ -60,29 +59,29 @@ void SystemCoreClockUpdate(void) {
 
   tmp = RCC->CFGR0 & RCC_SWS;
 
-  switch(tmp) {
-    case 0x00:
-      SystemCoreClock = HSI_VALUE;
-      break;
-    case 0x04:
-      SystemCoreClock = HSE_VALUE;
-      break;
-    case 0x08:
-      pllsource = RCC->CFGR0 & RCC_PLLSRC;
-      if(pllsource == 0x00) {
-        SystemCoreClock = HSI_VALUE * 2;
-      } else {
-        SystemCoreClock = HSE_VALUE * 2;
-      }
-      break;
-    default:
-      SystemCoreClock = HSI_VALUE;
-      break;
+  switch (tmp) {
+  case 0x00:
+    SystemCoreClock = HSI_VALUE;
+    break;
+  case 0x04:
+    SystemCoreClock = HSE_VALUE;
+    break;
+  case 0x08:
+    pllsource = RCC->CFGR0 & RCC_PLLSRC;
+    if (pllsource == 0x00) {
+      SystemCoreClock = HSI_VALUE * 2;
+    } else {
+      SystemCoreClock = HSE_VALUE * 2;
+    }
+    break;
+  default:
+    SystemCoreClock = HSI_VALUE;
+    break;
   }
 
   tmp = AHBPrescTable[((RCC->CFGR0 & RCC_HPRE) >> 4)];
 
-  if(((RCC->CFGR0 & RCC_HPRE) >> 4) < 8) {
+  if (((RCC->CFGR0 & RCC_HPRE) >> 4) < 8) {
     SystemCoreClock /= tmp;
   } else {
     SystemCoreClock >>= tmp;
@@ -92,7 +91,8 @@ void SystemCoreClockUpdate(void) {
 /*********************************************************************
  * @fn      SetSysClockTo_8MHz_HSI
  *
- * @brief   Sets HSI as System clock source and configure HCLK, PCLK2 and PCLK1 prescalers.
+ * @brief   Sets HSI as System clock source and configure HCLK, PCLK2 and PCLK1
+ * prescalers.
  *
  * @return  none
  */
@@ -108,7 +108,8 @@ void SetSysClockTo_8MHz_HSI(void) {
 /*********************************************************************
  * @fn      SetSysClockTo_24MHZ_HSI
  *
- * @brief   Sets System clock frequency to 24MHz and configure HCLK, PCLK2 and PCLK1 prescalers.
+ * @brief   Sets System clock frequency to 24MHz and configure HCLK, PCLK2 and
+ * PCLK1 prescalers.
  *
  * @return  none
  */
@@ -132,7 +133,8 @@ void SetSysClockTo_24MHZ_HSI(void) {
 /*********************************************************************
  * @fn      SetSysClockTo_48MHZ_HSI
  *
- * @brief   Sets System clock frequency to 48MHz and configure HCLK, PCLK2 and PCLK1 prescalers.
+ * @brief   Sets System clock frequency to 48MHz and configure HCLK, PCLK2 and
+ * PCLK1 prescalers.
  *
  * @return  none
  */
@@ -147,13 +149,13 @@ void SetSysClockTo_48MHZ_HSI(void) {
   /* Enable PLL */
   RCC->CTLR |= RCC_PLLON;
   /* Wait till PLL is ready */
-  while((RCC->CTLR & RCC_PLLRDY) == 0) {
+  while ((RCC->CTLR & RCC_PLLRDY) == 0) {
   }
   /* Select PLL as system clock source */
   RCC->CFGR0 &= (uint32_t)((uint32_t)~(RCC_SW));
   RCC->CFGR0 |= (uint32_t)RCC_SW_PLL;
   /* Wait till PLL is used as system clock source */
-  while((RCC->CFGR0 & (uint32_t)RCC_SWS) != (uint32_t)0x08) {
+  while ((RCC->CFGR0 & (uint32_t)RCC_SWS) != (uint32_t)0x08) {
   }
 
 #if defined(CH32V006) || defined(CH32V002)
@@ -169,7 +171,8 @@ void SetSysClockTo_48MHZ_HSI(void) {
 /*********************************************************************
  * @fn      SetSysClockTo_8MHz_HSE
  *
- * @brief   Sets HSE as System clock source and configure HCLK, PCLK2 and PCLK1 prescalers.
+ * @brief   Sets HSE as System clock source and configure HCLK, PCLK2 and PCLK1
+ * prescalers.
  *
  * @return  none
  */
@@ -192,15 +195,15 @@ void SetSysClockTo_8MHz_HSE(void) {
   do {
     HSEStatus = RCC->CTLR & RCC_HSERDY;
     StartUpCounter++;
-  } while((HSEStatus == 0) && (StartUpCounter != HSE_STARTUP_TIMEOUT));
+  } while ((HSEStatus == 0) && (StartUpCounter != HSE_STARTUP_TIMEOUT));
 
-  if((RCC->CTLR & RCC_HSERDY) != RESET) {
+  if ((RCC->CTLR & RCC_HSERDY) != RESET) {
     HSEStatus = (uint32_t)0x01;
   } else {
     HSEStatus = (uint32_t)0x00;
   }
 
-  if(HSEStatus == (uint32_t)0x01) {
+  if (HSEStatus == (uint32_t)0x01) {
     /* HCLK = SYSCLK = APB1 */
     RCC->CFGR0 |= (uint32_t)RCC_HPRE_DIV3;
 
@@ -208,7 +211,7 @@ void SetSysClockTo_8MHz_HSE(void) {
     RCC->CFGR0 &= (uint32_t)((uint32_t)~(RCC_SW));
     RCC->CFGR0 |= (uint32_t)RCC_SW_HSE;
     /* Wait till HSE is used as system clock source */
-    while((RCC->CFGR0 & (uint32_t)RCC_SWS) != (uint32_t)0x04) {
+    while ((RCC->CFGR0 & (uint32_t)RCC_SWS) != (uint32_t)0x04) {
     }
 
     /* Flash 0 wait state */
@@ -232,7 +235,8 @@ void SetSysClockTo_8MHz_HSE(void) {
 /*********************************************************************
  * @fn      SetSysClockTo_24MHz_HSE
  *
- * @brief   Sets HSE as System clock source and configure HCLK, PCLK2 and PCLK1 prescalers.
+ * @brief   Sets HSE as System clock source and configure HCLK, PCLK2 and PCLK1
+ * prescalers.
  *
  * @return  none
  */
@@ -255,15 +259,15 @@ void SetSysClockTo_24MHz_HSE(void) {
   do {
     HSEStatus = RCC->CTLR & RCC_HSERDY;
     StartUpCounter++;
-  } while((HSEStatus == 0) && (StartUpCounter != HSE_STARTUP_TIMEOUT));
+  } while ((HSEStatus == 0) && (StartUpCounter != HSE_STARTUP_TIMEOUT));
 
-  if((RCC->CTLR & RCC_HSERDY) != RESET) {
+  if ((RCC->CTLR & RCC_HSERDY) != RESET) {
     HSEStatus = (uint32_t)0x01;
   } else {
     HSEStatus = (uint32_t)0x00;
   }
 
-  if(HSEStatus == (uint32_t)0x01) {
+  if (HSEStatus == (uint32_t)0x01) {
     /* HCLK = SYSCLK = APB1 */
     RCC->CFGR0 |= (uint32_t)RCC_HPRE_DIV1;
 
@@ -271,7 +275,7 @@ void SetSysClockTo_24MHz_HSE(void) {
     RCC->CFGR0 &= (uint32_t)((uint32_t)~(RCC_SW));
     RCC->CFGR0 |= (uint32_t)RCC_SW_HSE;
     /* Wait till HSE is used as system clock source */
-    while((RCC->CFGR0 & (uint32_t)RCC_SWS) != (uint32_t)0x04) {
+    while ((RCC->CFGR0 & (uint32_t)RCC_SWS) != (uint32_t)0x04) {
     }
 
 #if defined(CH32V006) || defined(CH32V002)
@@ -300,7 +304,8 @@ void SetSysClockTo_24MHz_HSE(void) {
 /*********************************************************************
  * @fn      SetSysClockTo_48MHz_HSE
  *
- * @brief   Sets HSE as System clock source and configure HCLK, PCLK2 and PCLK1 prescalers.
+ * @brief   Sets HSE as System clock source and configure HCLK, PCLK2 and PCLK1
+ * prescalers.
  *
  * @return  none
  */
@@ -323,15 +328,15 @@ void SetSysClockTo_48MHz_HSE(void) {
   do {
     HSEStatus = RCC->CTLR & RCC_HSERDY;
     StartUpCounter++;
-  } while((HSEStatus == 0) && (StartUpCounter != HSE_STARTUP_TIMEOUT));
+  } while ((HSEStatus == 0) && (StartUpCounter != HSE_STARTUP_TIMEOUT));
 
-  if((RCC->CTLR & RCC_HSERDY) != RESET) {
+  if ((RCC->CTLR & RCC_HSERDY) != RESET) {
     HSEStatus = (uint32_t)0x01;
   } else {
     HSEStatus = (uint32_t)0x00;
   }
 
-  if(HSEStatus == (uint32_t)0x01) {
+  if (HSEStatus == (uint32_t)0x01) {
     /* HCLK = SYSCLK = APB1 */
     RCC->CFGR0 |= (uint32_t)RCC_HPRE_DIV1;
 
@@ -342,13 +347,13 @@ void SetSysClockTo_48MHz_HSE(void) {
     /* Enable PLL */
     RCC->CTLR |= RCC_PLLON;
     /* Wait till PLL is ready */
-    while((RCC->CTLR & RCC_PLLRDY) == 0) {
+    while ((RCC->CTLR & RCC_PLLRDY) == 0) {
     }
     /* Select PLL as system clock source */
     RCC->CFGR0 &= (uint32_t)((uint32_t)~(RCC_SW));
     RCC->CFGR0 |= (uint32_t)RCC_SW_PLL;
     /* Wait till PLL is used as system clock source */
-    while((RCC->CFGR0 & (uint32_t)RCC_SWS) != (uint32_t)0x08) {
+    while ((RCC->CFGR0 & (uint32_t)RCC_SWS) != (uint32_t)0x08) {
     }
 
 #if defined(CH32V006) || defined(CH32V002)
@@ -383,8 +388,10 @@ void SetSysClockTo_48MHz_HSE(void) {
  */
 uint32_t getAHBClockFrequency() {
   uint32_t div = (RCC->CFGR0 & ~(RCC_HPRE_0 | RCC_HPRE_1 | RCC_HPRE_2)) >> 4;
-  if(RCC->CFGR0 & RCC_HPRE_3) {
+  if (RCC->CFGR0 & RCC_HPRE_3) {
     div = 1ul << div;
   }
   return SystemCoreClock / div;
 }
+
+#endif
