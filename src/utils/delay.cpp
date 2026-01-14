@@ -1,4 +1,4 @@
-#include <system_ch32v00X.h>
+#include <wch_device.h>
 
 #include "delay.h"
 #include <peripherals/systick.h>
