@@ -147,7 +147,7 @@ void run_fini_array(void) {
  * a breakpoint at `_start()`, and stepping through the routine.
  */
 
-[[gnu::section(".after_vectors"), gnu::noreturn, gnu::weak]] void _start(void) {
+extern "C" [[gnu::section(".after_vectors"), gnu::noreturn, gnu::weak, gnu::used]] void _start(void) {
    cpuInit();
 
    // Initialise hardware right after reset, to switch clock to higher
