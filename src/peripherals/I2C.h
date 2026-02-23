@@ -9,6 +9,8 @@ class I2c {
    public:
    enum class MasterMode { Standard = 0, Fast = I2C_CKCFGR_FS };
 
+   enum class FastModeDutyCycle { Duty_2_1 = 0, Duty_16_9 = I2C_CKCFGR_DUTY };
+
    enum class AddressingMode { addressingMode7Bit = 0, addressingMode10Bit = I2C_STAR1_ADD10 };
 
    I2c(I2C_TypeDef *i2c)
@@ -82,6 +84,10 @@ class I2c {
       i2c.CTLR1 |= I2C_CTLR1_ACK;
    }
 
+   inline void disableAck() const {
+      i2c.CTLR1 &= ~I2C_CTLR1_ACK;
+   }
+
    inline void enableErrorInterrupt() const {
       i2c.CTLR2 |= I2C_CTLR2_ITERREN;
    }
@@ -111,11 +117,21 @@ class I2c {
    }
 
    inline void setPeripheralFrequency(uint8_t frequencyInMHz) const {
-      i2c.CTLR2 = (i2c.CTLR2 & ~I2C_CTLR2_FREQ) | (frequencyInMHz & 0x1F);
+      i2c.CTLR2 = (i2c.CTLR2 & ~I2C_CTLR2_FREQ) | (frequencyInMHz & I2C_CTLR2_FREQ);
+   }
+
+   void configure(uint32_t busSpeedHz, MasterMode mode = MasterMode::Standard, FastModeDutyCycle dutyCycle = FastModeDutyCycle::Duty_2_1) const;
+
+   bool startSent() const {
+      return i2c.STAR1 & I2C_STAR1_SB;
    }
 
    bool addressMatched() const {
       return i2c.STAR1 & I2C_STAR1_ADDR;
+   }
+
+   bool byteTransferFinished() const {
+      return i2c.STAR1 & I2C_STAR1_BTF;
    }
 
    bool stopDetected() const {
@@ -135,6 +151,18 @@ class I2c {
       return i2c.STAR1 & I2C_STAR1_TXE;
    }
 
+   bool busError() const {
+      return i2c.STAR1 & I2C_STAR1_BERR;
+   }
+
+   bool arbitrationLost() const {
+      return i2c.STAR1 & I2C_STAR1_ARLO;
+   }
+
+   bool acknowledgeFailure() const {
+      return i2c.STAR1 & I2C_STAR1_AF;
+   }
+
    void clearErrorFlags() const {
       i2c.STAR1 &= ~(I2C_STAR1_BERR | I2C_STAR1_ARLO | I2C_STAR1_AF);
    }
@@ -147,7 +175,15 @@ class I2c {
       return i2c.STAR1;
    }
 
-   uint16_t getStatus2() const {
+   inline uint16_t getStatus2() const {
       return i2c.STAR2;
+   }
+
+   inline void setRiseTime(uint16_t trise) const {
+#if defined(CH32V20x_D8W) || defined(CH32V20x_D8) || defined(CH32V20x_D6)
+      i2c.RTR = trise;
+#else
+      *(__IO uint16_t*)((uintptr_t)&i2c + 0x20) = trise;
+#endif
    }
 };
