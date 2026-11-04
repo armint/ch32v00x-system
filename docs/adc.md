@@ -12,8 +12,9 @@ The steps below apply to CH32V002 and CH32V006 only.
 
 1. Read channel 10 (`Channel::CH10_Vcal`) at start-up. Store the value.
 2. Read your input channel, for example channel 0 on pin PA2.
-3. Correct the reading with the stored value. The formula is not confirmed
-   in this document. Check it against the reference manual before use.
+3. Correct the reading: `corrected = reading x V_ref / reading_Vcal`. `V_ref`
+   is the reference voltage of Vcal. This formula is not confirmed. Check it
+   against the reference manual before use.
 
 The value depends on VDD (supply voltage). The exact relation is not confirmed.
 

@@ -45,9 +45,10 @@ cmake --build build --target ch32v00x-system
 | CH32V006 | `CH32V00X` | `CH32V006` | `rv32ec_zicsr_zifencei_zmmul` | `ilp32e` |
 | CH32V208 | `CH32V20X` | `CH32V20x_D8W` | `rv32imac_zicsr_zifencei` | `ilp32` |
 
-The examples in `ch32v00x-examples` use the same device macro, `-march` and
-`-mabi`. They also add `-fsingle-precision-constant`, `-fno-exceptions` and
-`-fno-rtti`. Use these flags in your project too.
+The examples in [ch32v00x-examples](https://gitlab.vandertogt.org/riscv/ch32v00x-examples)
+use the same device macro, `-march` and `-mabi`. They also add
+`-fsingle-precision-constant`. For C++ files only, they add `-fno-exceptions`
+and `-fno-rtti`.
 
 ## Using the library in a project
 

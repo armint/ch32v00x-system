@@ -20,16 +20,17 @@ It gives these projects one C++ interface to the hardware:
   peripheral, its driver exposes the functions of that peripheral.
 
 Higher layers are not in this library. The stream classes that connect
-[libArT](https://gitlab.vandertogt.org/embedded-libraries/libArT) to this
+[libArT](https://gitlab.vandertogt.org/embedded-libraries/libart) to this
 library are in [ch32v00x-art](https://gitlab.vandertogt.org/riscv/ch32v00x-art).
 
 ## Supported chips
 
 | `CH32_FAMILY` | Device macro | Chips | Status |
 |---|---|---|---|
-| `CH32V00X` | `CH32V003` | CH32V003 | Builds. Not tested on hardware. |
-| `CH32V00X` | `CH32V006` | CH32V002, CH32V006 | Builds. Not tested on hardware. |
-| `CH32V20X` | `CH32V20x_D8W` | CH32V208 | Builds. Not tested on hardware. No ADC driver. |
+| `CH32V00X` | `CH32V003` | CH32V003 | Builds. Hardware test not recorded. |
+| `CH32V00X` | `CH32V002` | CH32V002 | Builds. Hardware test not recorded. |
+| `CH32V00X` | `CH32V006` | CH32V006 | Builds. Hardware test not recorded. |
+| `CH32V20X` | `CH32V20x_D8W` | CH32V208 | Builds. Hardware test not recorded. No ADC driver. |
 
 CH32V30x is not supported yet. The family list is in
 [Chip families](docs/families.md).
