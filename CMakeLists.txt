@@ -63,7 +63,7 @@ list(APPEND PROJECT_SOURCES ${ACTIVE_FAMILY_SOURCES})
 # port exists in src/families/ch32v30x/.
 if (CH32_FAMILY STREQUAL "CH32V30X")
     foreach (unported peripherals/Dma.cpp peripherals/Exti.cpp peripherals/Flash.cpp
-                      peripherals/I2C.cpp peripherals/Timer.cpp peripherals/Usart.cpp)
+                      peripherals/I2C.cpp peripherals/Timer.cpp)
         list(REMOVE_ITEM PROJECT_SOURCES "${PROJECT_SOURCE_DIR}/src/${unported}")
     endforeach ()
 endif ()
