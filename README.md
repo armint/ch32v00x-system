@@ -66,7 +66,8 @@ toolchain file `cmake/gcc_riscv.cmake`. For all options, see
 
 | Path | Contents |
 |---|---|
-| `src/` | Shared start-up code, shared drivers and utilities. |
+| `src/` | Shared drivers, the start-up hooks, `syscalls.c` and the hardware initialization. |
+| `src/bare-metal/` | Start-up code (`startup.cpp`) and the `assert` handler. |
 | `src/peripherals/` | Drivers that more than one family shares. |
 | `src/families/<family>/` | Family-specific code. CMake adds only the selected family to the include path. |
 | `src/utils/` | `Interrupt` (interrupt binding), `hw::span` and the delay functions. |
