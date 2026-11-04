@@ -1,10 +1,13 @@
 @PACKAGE_INIT@
 
-# Ensure dependencies are available before loading the targets they reference
-include(CMakeFindDependencyMacro)
-
-# Load the exported targets for this package (installed by install(EXPORT ...))
-include("${CMAKE_CURRENT_LIST_DIR}/ch32v00x-system-targets.cmake")
+# The package provides the headers only. The library sources are not installed,
+# so this target has no objects: add the sources with add_subdirectory().
+# The name matches the former export (art::), and is not the OBJECT target name.
+if (NOT TARGET art::ch32v00x-system)
+    add_library(art::ch32v00x-system INTERFACE IMPORTED)
+    set_target_properties(art::ch32v00x-system PROPERTIES
+            INTERFACE_INCLUDE_DIRECTORIES "@PACKAGE_CMAKE_INSTALL_INCLUDEDIR@")
+endif ()
 
 # Optional: ensure all requested components are found (if you define any)
 check_required_components(ch32v00x-system)

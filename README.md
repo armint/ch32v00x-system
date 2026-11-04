@@ -48,6 +48,8 @@ target_link_libraries(${PROJECT_NAME} PRIVATE ch32v00x-system)
 
 Ensure you are using a compatible RISC-V toolchain. A sample toolchain file is provided in `cmake/gcc_riscv.cmake`.
 
+The installed package (`cmake --install`) provides the headers only. `find_package(ch32v00x-system)` gives the interface target `art::ch32v00x-system` with the include path, but no compiled code. Add the sources with `add_subdirectory()`, as above.
+
 Set `CH32_FAMILY` to the family of your chip. The values are `CH32V00X` and `CH32V20X`. The default is `CH32V00X`.
 
 Also define the device macro of your chip, for example `CH32V003` or `CH32V20x_D8W`. The family and the device macro must match.
