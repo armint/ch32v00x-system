@@ -21,6 +21,15 @@ Your project sets the device macro of the chip, for example `CH32V003` or
 `CH32V20x_D8W`. The device macro and `CH32_FAMILY` must match. If they do
 not match, the build stops with an error.
 
+## C++ standard
+
+The target requires C++17 (`cxx_std_17`). It does not force a later
+standard on its consumers. The consumer selects the standard with
+`CMAKE_CXX_STANDARD`. A value that the superproject sets before
+`add_subdirectory()` also applies to this library. A standalone build of
+this library uses C++23 if you do not set `CMAKE_CXX_STANDARD`. To build
+it at C++17, give `-D CMAKE_CXX_STANDARD=17`.
+
 ## Span type
 
 The public interface uses one span type: `hw::span` (`src/utils/Span.h`).

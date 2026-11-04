@@ -79,7 +79,7 @@ toolchain file `cmake/gcc_riscv.cmake`. For all options, see
 
 | Document | Contents |
 |---|---|
-| [Building and using ch32v00x-system](docs/building.md) | Requirements, CMake variables, `hw::span`, compiler flags, installed package |
+| [Building and using ch32v00x-system](docs/building.md) | Requirements, CMake variables, C++ standard, `hw::span`, compiler flags, installed package |
 | [Chip families](docs/families.md) | `CH32_FAMILY`, family directories, device-specific code, adding a family |
 | [ADC calibration on CH32V002 and CH32V006](docs/adc.md) | Calibration of the ADC on these chips |
 
