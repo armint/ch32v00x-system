@@ -60,6 +60,6 @@ sources with the flags of your project.
 ## Installed package
 
 `cmake --install` installs the headers only. The installed package does not
-contain compiled code. `find_package(ch32v00x-system)` gives an interface
-target with the include path. Add the library sources with
+contain compiled code. `find_package(ch32v00x-system)` gives the interface
+target `art::ch32v00x-system` with the include path. Add the library sources with
 `add_subdirectory()`, as shown above.
