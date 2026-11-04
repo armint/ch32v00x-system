@@ -31,7 +31,8 @@ families. The goal is to have a reusable, easy to read and efficient HAL-like la
 
 ## Directory Structure
 
-- `src/`: Source code for the system and peripheral drivers.
+- `src/`: Shared source code for the startup, the peripheral drivers and the utilities.
+- `src/families/<family>/`: Source code and headers of one chip family, for example `src/families/ch32v00x/`. The build uses only the family set by `CH32_FAMILY`.
 - `ldscripts/`: Linker scripts for memory mapping.
 - `etc/svd/`: SVD files for peripheral debugging.
 - `cmake/`: CMake build scripts and toolchain configurations.
@@ -46,6 +47,10 @@ target_link_libraries(${PROJECT_NAME} PRIVATE ch32v00x-system)
 ```
 
 Ensure you are using a compatible RISC-V toolchain. A sample toolchain file is provided in `cmake/gcc_riscv.cmake`.
+
+Set `CH32_FAMILY` to the family of your chip. The values are `CH32V00X` and `CH32V20X`. The default is `CH32V00X`.
+
+Also define the device macro of your chip, for example `CH32V003` or `CH32V20x_D8W`. The family and the device macro must match.
 
 ## Development
 
