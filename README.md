@@ -74,6 +74,7 @@ toolchain file `cmake/gcc_riscv.cmake`. For all options, see
 | `ldscripts/` | Linker scripts, one memory script per chip. |
 | `cmake/` | The RISC-V toolchain file, the package configuration and helper modules for the examples build. |
 | `svd/` | SVD register descriptions, for reference and debug tools. |
+| `tests/` | Checks of the library. `check-svd-offsets.py` compares the CH32V30x device header with the SVD. |
 | `etc/openocd.cfg` | OpenOCD configuration for the WCH-LinkE debug adapter. It needs the WCH fork of OpenOCD. |
 
 ## Documentation
