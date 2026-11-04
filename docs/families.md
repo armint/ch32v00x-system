@@ -34,8 +34,8 @@ that names the value to set.
 CMake compiles the shared sources and the sources of the selected family
 only. The other family directories are not compiled.
 
-The CH32V30X family does not support the shared `Dma`, `Exti`, `Flash`, `I2C`,
-`Timer` and `Usart` drivers yet. `CMakeLists.txt` excludes these files for that
+The CH32V30X family does not support the shared `Dma`, `Exti`, `Flash`, `I2C`
+and `Timer` drivers yet. `CMakeLists.txt` excludes these files for that
 family. Their headers are still installed, but they do not compile for CH32V30X.
 
 ## Include paths
