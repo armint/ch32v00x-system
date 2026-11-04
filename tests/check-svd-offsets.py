@@ -27,6 +27,7 @@ STRUCTS = {
     "RCC": ("RCC_TypeDef", ["CTLR", "CFGR0", "INTR", "APB2PRSTR", "APB1PRSTR", "AHBPCENR",
                             "APB2PCENR", "APB1PCENR", "BDCTLR", "RSTSCKR", "AHBRSTR", "CFGR2"]),
     "GPIOA": ("GPIO_TypeDef", ["CFGLR", "CFGHR", "INDR", "OUTDR", "BSHR", "BCR", "LCKR"]),
+    "USART1": ("USART_TypeDef", ["STATR", "DATAR", "BRR", "CTLR1", "CTLR2", "CTLR3", "GPR"]),
 }
 
 # Header macro -> (SVD register, SVD field). The macro is a single bit or a mask.
@@ -54,9 +55,25 @@ FIELDS = {
     "RCC_IOPEEN": ("APB2PCENR", "IOPEEN"),
 }
 
+# Same, for the bits of the USART registers. USART1 stands for all USART blocks.
+USART_FIELDS = {
+    "USART_STATR_RXNE": ("STATR", "RXNE"), "USART_STATR_TC": ("STATR", "TC"),
+    "USART_STATR_TXE": ("STATR", "TXE"),
+    "USART_CTLR1_SBK": ("CTLR1", "SBK"), "USART_CTLR1_RE": ("CTLR1", "RE"),
+    "USART_CTLR1_TE": ("CTLR1", "TE"), "USART_CTLR1_RXNEIE": ("CTLR1", "RXNEIE"),
+    "USART_CTLR1_TCIE": ("CTLR1", "TCIE"), "USART_CTLR1_TXEIE": ("CTLR1", "TXEIE"),
+    "USART_CTLR1_PS": ("CTLR1", "PS"), "USART_CTLR1_PCE": ("CTLR1", "PCE"),
+    "USART_CTLR1_UE": ("CTLR1", "UE"),
+    "USART_CTLR2_STOP": ("CTLR2", "STOP"),
+    "USART_CTLR3_DMAR": ("CTLR3", "DMAR"), "USART_CTLR3_DMAT": ("CTLR3", "DMAT"),
+}
+
 # Base addresses in the header -> SVD peripheral.
 BASES = {"RCC_BASE": "RCC", "GPIOA_BASE": "GPIOA", "GPIOB_BASE": "GPIOB",
-         "GPIOC_BASE": "GPIOC", "GPIOD_BASE": "GPIOD", "GPIOE_BASE": "GPIOE"}
+         "GPIOC_BASE": "GPIOC", "GPIOD_BASE": "GPIOD", "GPIOE_BASE": "GPIOE",
+         "USART1_BASE": "USART1", "USART2_BASE": "USART2", "USART3_BASE": "USART3",
+         "UART4_BASE": "UART4", "UART5_BASE": "UART5", "UART6_BASE": "UART6",
+         "UART7_BASE": "UART7", "UART8_BASE": "UART8"}
 
 
 def load_svd():
@@ -100,8 +117,10 @@ def build_asserts(periphs):
             lines.append(f'_Static_assert(offsetof({struct}, {member}) == 0x{off:02X}, '
                          f'"{struct}.{member} differs from SVD");')
         lines.append("")
-    for macro, (reg, field) in FIELDS.items():
-        lsb, width = field_position(periphs["RCC"], reg, field)
+    checks = [(m, "RCC", rf) for m, rf in FIELDS.items()]
+    checks += [(m, "USART1", rf) for m, rf in USART_FIELDS.items()]
+    for macro, svd_name, (reg, field) in checks:
+        lsb, width = field_position(periphs[svd_name], reg, field)
         mask = ((1 << width) - 1) << lsb
         lines.append(f'_Static_assert(({macro}) == 0x{mask:08X}UL, "{macro} differs from SVD {reg}.{field}");')
     return "\n".join(lines) + "\n"
