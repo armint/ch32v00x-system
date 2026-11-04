@@ -13,6 +13,16 @@ uint32_t SystemCoreClock = HSI_VALUE;
 void SystemInit(void) {
    uint32_t timeout = 0;
 
+   /* PLLMUL, PLLSRC and PREDIV1 can change only while the PLL is off. A start
+    * from a warm PLL (for example a boot loader) moves SYSCLK to HSI first. */
+   RCC->CTLR |= RCC_HSION;
+   RCC->CFGR0 &= ~RCC_CFGR0_SW_MASK;
+   while ((RCC->CFGR0 & RCC_CFGR0_SWS_MASK) != 0) {
+   }
+   RCC->CTLR &= ~RCC_PLLON;
+   while (RCC->CTLR & RCC_PLLRDY) {
+   }
+
    RCC->CTLR |= RCC_HSEON;
    while (!(RCC->CTLR & RCC_HSERDY)) {
       if (++timeout > HSE_STARTUP_TIMEOUT) {
