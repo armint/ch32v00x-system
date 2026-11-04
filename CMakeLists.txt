@@ -97,12 +97,9 @@ endif ()
 # Ensure the exported interface does not pull non-exported targets.
 set_property(TARGET ch32v00x-system PROPERTY INTERFACE_LINK_LIBRARIES "")
 
-install(TARGETS ch32v00x-system
-        EXPORT ch32v00x-system-targets
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+# The installed package is header-only. The library is an OBJECT library, and
+# install(TARGETS) does not install its objects, so no compiled code is exported.
+# Consumers build the sources with add_subdirectory(). See README.md.
 # Headers: the shared tree, then the headers of the selected family. Both go
 # flat into the include directory, as the build-tree include path expects.
 install(DIRECTORY src/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
@@ -110,10 +107,6 @@ install(DIRECTORY src/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
         PATTERN "families" EXCLUDE)
 install(DIRECTORY ${FAMILY_DIR}/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
         FILES_MATCHING PATTERN "*.h")
-
-install(EXPORT ch32v00x-system-targets
-        NAMESPACE art::
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/ch32v00x-system)
 
 # Generate a Config file so consumers can `find_package(ch32v00x-system)`
 include(CMakePackageConfigHelpers)
