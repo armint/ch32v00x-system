@@ -26,9 +26,9 @@ set(CMAKE_C_DIALECT gnu)
 
 # Chip family of the build. It selects the directory src/families/<family>.
 # The device macro (CH32V003, CH32V20x_D8W, ...) is still set by the consumer.
-set(CH32_FAMILY "CH32V00X" CACHE STRING "CH32 family to build for (CH32V00X, CH32V20X)")
-set_property(CACHE CH32_FAMILY PROPERTY STRINGS CH32V00X CH32V20X)
-if (NOT CH32_FAMILY MATCHES "^(CH32V00X|CH32V20X)$")
+set(CH32_FAMILY "CH32V00X" CACHE STRING "CH32 family to build for (CH32V00X, CH32V20X, CH32V30X)")
+set_property(CACHE CH32_FAMILY PROPERTY STRINGS CH32V00X CH32V20X CH32V30X)
+if (NOT CH32_FAMILY MATCHES "^(CH32V00X|CH32V20X|CH32V30X)$")
     message(FATAL_ERROR "Unknown CH32_FAMILY '${CH32_FAMILY}'")
 endif ()
 string(TOLOWER ${CH32_FAMILY} FAMILY_LOWER)
@@ -53,6 +53,15 @@ file(GLOB_RECURSE ACTIVE_FAMILY_SOURCES
         "${FAMILY_DIR}/*.cpp"
 )
 list(APPEND PROJECT_SOURCES ${ACTIVE_FAMILY_SOURCES})
+
+# Shared drivers that are not ported to CH32V30x yet. Remove an entry when its
+# port exists in src/families/ch32v30x/.
+if (CH32_FAMILY STREQUAL "CH32V30X")
+    foreach (unported peripherals/Dma.cpp peripherals/Exti.cpp peripherals/Flash.cpp
+                      peripherals/I2C.cpp peripherals/Timer.cpp peripherals/Usart.cpp)
+        list(REMOVE_ITEM PROJECT_SOURCES "${PROJECT_SOURCE_DIR}/src/${unported}")
+    endforeach ()
+endif ()
 
 
 file(GLOB_RECURSE PROJECT_HEADERS

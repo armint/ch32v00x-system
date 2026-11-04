@@ -398,11 +398,10 @@ extern uint32_t __get_MIMPID(void);
 extern uint32_t __get_MHARTID(void);
 extern uint32_t __get_SP(void);
 
-// Early core setup, called first by _start(). Used by CH32V00x and CH32V20x.
+// Early core setup, called first by _start(). Used by every family.
 // INTSYSCR 0x2 enables interrupt nesting and leaves the hardware stack off
-// (RM section 9.5.3.1). CH32V30x (QingKe V4F) is not covered: PMTCFG must be
-// set for nesting, and mstatus.FS must be enabled for floating point. Handle
-// both when the V30x family lands.
+// (RM section 9.5.3.1). On CH32V30x (QingKe V4F) the same value does not turn
+// nesting on: PMTCFG stays 00. mstatus.FS is set for floating point on FPU targets.
 inline void __attribute__((always_inline)) cpuInit(void) {
    extern void Reset_Handler();
    // Set the GP register to allow relative memory access
@@ -413,7 +412,12 @@ inline void __attribute__((always_inline)) cpuInit(void) {
                 "la sp, __stack\n"
                 "li t0, 0x2\n"
                 "csrw 0x804, t0\n");
+#if __riscv_flen
+   // Enable the floating-point unit: mstatus.FS = Initial.
+   __set_MSTATUS(0x1880 | 0x2000);
+#else
    __set_MSTATUS(0x1880);
+#endif
    // Configure the interrupt vector table
    __set_MTVEC(((uint32_t)&Reset_Handler | 0b11));
 }

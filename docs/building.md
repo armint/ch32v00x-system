@@ -13,7 +13,7 @@
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `CH32_FAMILY` | `CH32V00X` | Chip family of the build: `CH32V00X` or `CH32V20X`. See [Chip families](families.md). |
+| `CH32_FAMILY` | `CH32V00X` | Chip family of the build: `CH32V00X`, `CH32V20X` or `CH32V30X`. See [Chip families](families.md). |
 | `GCC_TOOLCHAIN_PREFIX` | `/usr`, or the parent of the `bin/` directory of `CMAKE_C_COMPILER` when that is set | Directory that contains `bin/` with the toolchain tools. |
 | `TARGET_TRIPLET` | `riscv-none-elf` | Prefix of the tool names, for example `riscv64-unknown-elf`. |
 
@@ -44,6 +44,7 @@ cmake --build build --target ch32v00x-system
 | CH32V002 | `CH32V00X` | `CH32V002` | `rv32ec_zicsr_zifencei_zmmul` | `ilp32e` |
 | CH32V006 | `CH32V00X` | `CH32V006` | `rv32ec_zicsr_zifencei_zmmul` | `ilp32e` |
 | CH32V208 | `CH32V20X` | `CH32V20x_D8W` | `rv32imac_zicsr_zifencei` | `ilp32` |
+| CH32V307 | `CH32V30X` | `CH32V30x_D8C` | `rv32imafc_zicsr_zifencei` | `ilp32f` |
 
 The examples in [ch32v00x-examples](https://gitlab.vandertogt.org/riscv/ch32v00x-examples)
 use the same device macro, `-march` and `-mabi`. They also add

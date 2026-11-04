@@ -47,7 +47,6 @@
  */
 void __attribute__((weak)) startup_initialize_hardware_early(void) {
    SystemInit();
-   SetSysClockTo_48MHz_HSI();
 }
 
 /**

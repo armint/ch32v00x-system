@@ -40,6 +40,7 @@ void SystemInit(void) {
    RCC->CFGR0 &= (uint32_t)0xFF00FFFF;
    RCC->INTR = 0x009F0000;
    SetSysClock();
+   SetSysClockTo_48MHz_HSI();
 }
 
 
