@@ -1,14 +1,26 @@
 #include "systick.h"
+#include "utils/Interrupt.h"
 #include "wch_device.h"
 
 static volatile timestamp_t sysTickCount;
 
 extern "C" void __attribute__((section(".after_vectors"), interrupt)) SysTick_Handler(void) {
    SysTick->SR &= ~SYSTICK_SR_CNTIF;
-   sysTickUpdateHook(++sysTickCount);
+   // Count under the guard: a higher-priority IRQ must not read the count
+   // between the two 32-bit stores. The hook runs outside the guard.
+   timestamp_t now;
+   {
+      Interrupt::CriticalSection guard;
+      sysTickCount = sysTickCount + 1;
+      now = sysTickCount;
+   }
+   sysTickUpdateHook(now);
 }
 
 timestamp_t getSysTick() {
+   // The 64-bit count takes two 32-bit loads. Block the interrupt during the read,
+   // so the SysTick handler cannot change the count between the two loads.
+   Interrupt::CriticalSection guard;
    return sysTickCount;
 }
 
