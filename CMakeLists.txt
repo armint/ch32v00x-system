@@ -158,7 +158,9 @@ endif ()
 # flat into the include directory, as the build-tree include path expects.
 install(DIRECTORY src/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
         FILES_MATCHING PATTERN "*.h"
-        PATTERN "families" EXCLUDE)
+        PATTERN "families" EXCLUDE
+        # Sources only; exclude it so the install has no empty directory.
+        PATTERN "bare-metal" EXCLUDE)
 install(DIRECTORY ${FAMILY_DIR}/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
         FILES_MATCHING PATTERN "*.h")
 

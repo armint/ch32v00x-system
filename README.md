@@ -66,13 +66,15 @@ toolchain file `cmake/gcc_riscv.cmake`. For all options, see
 
 | Path | Contents |
 |---|---|
-| `src/` | Shared start-up code, shared drivers and utilities. |
+| `src/` | Shared drivers, the start-up hooks, `syscalls.c` and the hardware initialization. |
+| `src/bare-metal/` | Start-up code (`startup.cpp`) and the `assert` handler. |
 | `src/peripherals/` | Drivers that more than one family shares. |
 | `src/families/<family>/` | Family-specific code. CMake adds only the selected family to the include path. |
 | `src/utils/` | `Interrupt` (interrupt binding), `hw::span` and the delay functions. |
 | `ldscripts/` | Linker scripts, one memory script per chip. |
 | `cmake/` | The RISC-V toolchain file, the package configuration and helper modules for the examples build. |
-| `etc/svd/` | SVD register descriptions, for reference and debug tools. |
+| `svd/` | SVD register descriptions, for reference and debug tools. |
+| `tests/` | Checks of the library. `check-svd-offsets.py` compares the CH32V30x device header with the SVD. |
 | `etc/openocd.cfg` | OpenOCD configuration for the WCH-LinkE debug adapter. It needs the WCH fork of OpenOCD. |
 
 ## Documentation

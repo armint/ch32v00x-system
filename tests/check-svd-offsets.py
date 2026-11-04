@@ -20,7 +20,7 @@ import tempfile
 import xml.etree.ElementTree as ET
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
-SVD = os.path.join(ROOT, "etc", "svd", "vendor", "CH32V307xx.svd")
+SVD = os.path.join(ROOT, "svd", "vendor", "CH32V307xx.svd")
 
 # Struct members that map to SVD registers of the same name.
 STRUCTS = {
