@@ -72,7 +72,7 @@ toolchain file `cmake/gcc_riscv.cmake`. For all options, see
 | `src/utils/` | `Interrupt` (interrupt binding), `hw::span` and the delay functions. |
 | `ldscripts/` | Linker scripts, one memory script per chip. |
 | `cmake/` | The RISC-V toolchain file, the package configuration and helper modules for the examples build. |
-| `etc/svd/` | SVD register descriptions, for reference and debug tools. |
+| `svd/` | SVD register descriptions, for reference and debug tools. |
 | `etc/openocd.cfg` | OpenOCD configuration for the WCH-LinkE debug adapter. It needs the WCH fork of OpenOCD. |
 
 ## Documentation

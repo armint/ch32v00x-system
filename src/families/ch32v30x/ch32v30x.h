@@ -3,7 +3,7 @@
  *
  * Hand-written from CH32FV2x_V3xRM.PDF (reference manual) for the peripherals
  * of the start-up, clock and GPIO code. The IRQ numbers come from
- * etc/svd/vendor/CH32V307xx.svd. Check the register offsets with
+ * svd/vendor/CH32V307xx.svd. Check the register offsets with
  * tests/check-svd-offsets.py after a change.
  */
 #pragma once
