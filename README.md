@@ -52,6 +52,8 @@ Set `CH32_FAMILY` to the family of your chip. The values are `CH32V00X` and `CH3
 
 Also define the device macro of your chip, for example `CH32V003` or `CH32V20x_D8W`. The family and the device macro must match.
 
+The code uses the `fence.i` instruction. Its extension is `zifencei`. Add it to the `-march` flag of your build, for example `-march=rv32ec_zicsr_zifencei -mabi=ilp32e` for CH32V003.
+
 ## Development
 
 When contributing to this library:
