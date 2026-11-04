@@ -1,7 +1,7 @@
 
 #include "Interrupt.h"
 
-#include "vectors_ch32v00X.h"
+#include "wch_device.h"
 
 #include <cassert>
 #include <cstddef>
