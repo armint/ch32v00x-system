@@ -398,7 +398,7 @@ extern uint32_t __get_MIMPID(void);
 extern uint32_t __get_MHARTID(void);
 extern uint32_t __get_SP(void);
 
-// Early core setup, called first by _start(). Used by CH32V00x and CH32V20x.
+// Early core setup, called first by _start(). Used by every family.
 // INTSYSCR 0x2 enables interrupt nesting and leaves the hardware stack off
 // (RM section 9.5.3.1). On CH32V30x (QingKe V4F) the same value does not turn
 // nesting on: PMTCFG stays 00. mstatus.FS is set for floating point on FPU targets.
