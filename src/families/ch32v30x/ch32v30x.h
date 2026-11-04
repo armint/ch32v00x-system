@@ -56,7 +56,7 @@ typedef enum IRQn {
    CAN1_SCE_IRQn = 38,
    EXTI9_5_IRQn = 39,
    TIM1_BRK_IRQn = 40,
-   TIM1_UP__IRQn = 41,
+   TIM1_UP_IRQn = 41,
    TIM1_TRG_COM_IRQn = 42,
    TIM1_CC_IRQn = 43,
    TIM2_IRQn = 44,
@@ -75,7 +75,7 @@ typedef enum IRQn {
    RTCAlarm_IRQn = 57,
    USBWakeUp_IRQn = 58,
    TIM8_BRK_IRQn = 59,
-   TIM8_UP__IRQn = 60,
+   TIM8_UP_IRQn = 60,
    TIM8_TRG_COM_IRQn = 61,
    TIM8_CC_IRQn = 62,
    RNG_IRQn = 63,
@@ -105,11 +105,11 @@ typedef enum IRQn {
    UART7_IRQn = 88,
    UART8_IRQn = 89,
    TIM9_BRK_IRQn = 90,
-   TIM9_UP__IRQn = 91,
+   TIM9_UP_IRQn = 91,
    TIM9_TRG_COM_IRQn = 92,
    TIM9_CC_IRQn = 93,
    TIM10_BRK_IRQn = 94,
-   TIM10_UP__IRQn = 95,
+   TIM10_UP_IRQn = 95,
    TIM10_TRG_COM_IRQn = 96,
    TIM10_CC_IRQn = 97,
    DMA2_Channel6_IRQn = 98,
@@ -165,9 +165,6 @@ typedef struct {
 #define RCC_IOPCEN (1ul << 4)
 #define RCC_IOPDEN (1ul << 5)
 #define RCC_IOPEEN (1ul << 6)
-
-/* Name used by the CH32V00x and CH32V20x code */
-#define PB2PCENR APB2PCENR
 
 /* RCC_CFGR0 fields */
 #define RCC_CFGR0_SW_MASK (3ul << 0)
