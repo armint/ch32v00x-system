@@ -69,7 +69,7 @@ toolchain file `cmake/gcc_riscv.cmake`. For all options, see
 | `src/` | Shared start-up code, shared drivers and utilities. |
 | `src/peripherals/` | Drivers that more than one family shares. |
 | `src/families/<family>/` | Family-specific code. CMake adds only the selected family to the include path. |
-| `src/utils/` | `Interrupt` (interrupt binding) and the delay functions. |
+| `src/utils/` | `Interrupt` (interrupt binding), `hw::span` and the delay functions. |
 | `ldscripts/` | Linker scripts, one memory script per chip. |
 | `cmake/` | The RISC-V toolchain file, the package configuration and helper modules for the examples build. |
 | `etc/svd/` | SVD register descriptions, for reference and debug tools. |
@@ -79,7 +79,7 @@ toolchain file `cmake/gcc_riscv.cmake`. For all options, see
 
 | Document | Contents |
 |---|---|
-| [Building and using ch32v00x-system](docs/building.md) | Requirements, CMake variables, compiler flags, installed package |
+| [Building and using ch32v00x-system](docs/building.md) | Requirements, CMake variables, `hw::span`, compiler flags, installed package |
 | [Chip families](docs/families.md) | `CH32_FAMILY`, family directories, device-specific code, adding a family |
 | [ADC calibration on CH32V002 and CH32V006](docs/adc.md) | Calibration of the ADC on these chips |
 

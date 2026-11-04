@@ -21,6 +21,34 @@ Your project sets the device macro of the chip, for example `CH32V003` or
 `CH32V20x_D8W`. The device macro and `CH32_FAMILY` must match. If they do
 not match, the build stops with an error.
 
+## Span type
+
+The public interface uses one span type: `hw::span` (`src/utils/Span.h`).
+`Flash::write_buffer()` uses it. Use `hw::span` in your code, not
+`std::span` or `span_compat::span`.
+
+- At C++20 and later, `hw::span` is `std::span`. CMake adds no other
+  library.
+- Below C++20, the standard library has no `std::span`. Then CMake gets
+  [span-compat](https://github.com/armint/span-compat)
+  with `FetchContent` and links it. It also defines
+  `CH32V00X_SYSTEM_USE_SPAN_COMPAT`. Then `hw::span` is `span_compat::span`.
+
+CMake selects the type from `CMAKE_CXX_STANDARD`. If `CMAKE_CXX_STANDARD`
+is not set, CMake also uses span-compat.
+
+All translation units of one program must see the same span type. The
+firmware can build at C++23 and this library at C++17. Thus, when CMake
+fetches span-compat, it sets `SPAN_COMPAT_USE_STD_SPAN` to `OFF`. Then
+`span_compat::span` is its own implementation at every standard. CMake
+keeps a value that the superproject sets before.
+
+If the superproject already has the target `span-compat::span-compat`,
+CMake uses that target. If the superproject mixes C++ standards, it must
+set `SPAN_COMPAT_USE_STD_SPAN` to `OFF`. The span-compat README tells how
+to select its type for the full build. Below C++20, the installed package
+needs an installed span-compat package.
+
 ## Standalone build
 
 This command builds the library for CH32V003:
