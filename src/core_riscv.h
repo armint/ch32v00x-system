@@ -398,9 +398,11 @@ extern uint32_t __get_MIMPID(void);
 extern uint32_t __get_MHARTID(void);
 extern uint32_t __get_SP(void);
 
-// Early core setup, called first by _start(). The CSR layout is the same on
-// CH32V00x, CH32V20x and CH32V30x (RM section 9.5.3). INTSYSCR 0x2 enables
-// interrupt nesting and leaves the hardware stack off.
+// Early core setup, called first by _start(). Used by CH32V00x and CH32V20x.
+// INTSYSCR 0x2 enables interrupt nesting and leaves the hardware stack off
+// (RM section 9.5.3.1). CH32V30x (QingKe V4F) is not covered: PMTCFG must be
+// set for nesting, and mstatus.FS must be enabled for floating point. Handle
+// both when the V30x family lands.
 inline void __attribute__((always_inline)) cpuInit(void) {
    extern void Reset_Handler();
    // Set the GP register to allow relative memory access
