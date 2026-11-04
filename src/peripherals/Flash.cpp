@@ -57,7 +57,7 @@ void erase_page(void *address) {
    FLASH->CTLR &= ~FLASH_CTLR_PAGE_ER;
 }
 
-bool write_buffer(void *address, std::span<uint8_t> data) {
+bool write_buffer(void *address, hw::span<uint8_t> data) {
    // Preconditions: address must be 16-byte aligned.
    // For fast page programming, we should ideally be on a page boundary.
    if((reinterpret_cast<uintptr_t>(address) & 0xFu) != 0u) {

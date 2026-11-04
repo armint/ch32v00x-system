@@ -16,8 +16,13 @@ list(APPEND CMAKE_MODULE_PATH ../../cmake)
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/generate_version.cmake")
 
 # Compiler settings
-set(CMAKE_CXX_STANDARD 23)
-#set(CMAKE_CXX_STANDARD_REQUIRED True)
+# The public interface needs C++17 only (cxx_std_17 below). The consumer
+# selects the standard: CMAKE_CXX_STANDARD of the superproject applies here
+# too. Only a standalone build of this library, without a value from the
+# command line, defaults to C++23.
+if (CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR AND NOT DEFINED CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD 23)
+endif ()
 set(CXX_DIALECT gnu)
 
 set(CMAKE_C_STANDARD 11)
@@ -94,7 +99,7 @@ target_include_directories(
         $<BUILD_INTERFACE:${FAMILY_DIR}>
         )
 
-target_compile_features(ch32v00x-system PUBLIC cxx_std_23)
+target_compile_features(ch32v00x-system PUBLIC cxx_std_17)
 
 # If a central build configuration target exists in the superproject,
 # link it so this OBJECT library is compiled with the same flags/defines.
@@ -105,6 +110,46 @@ endif ()
 
 # Keep the build interface free of linked targets, so consumers get no extra link dependencies.
 set_property(TARGET ch32v00x-system PROPERTY INTERFACE_LINK_LIBRARIES "")
+
+# hw::span (src/utils/Span.h) is std::span from C++20 on. Below C++20 the
+# standard library has no std::span, so link the span-compat header library
+# and make hw::span the span_compat::span. This link comes after the line
+# above, because consumers that include Flash.h also need the span-compat
+# headers. The C++20 and later build links nothing extra.
+# A superproject that already provides span-compat::span-compat keeps its
+# target, so the whole build has one span type. The installed package needs
+# an installed span-compat package: cmake/ch32v00x-systemConfig.cmake.in
+# finds it and links it to the imported target.
+# An unset CMAKE_CXX_STANDARD (the consumer sets the standard elsewhere, or
+# uses the compiler default) also takes the span-compat branch: with
+# SPAN_COMPAT_USE_STD_SPAN=OFF, span-compat is correct at every standard.
+if (NOT DEFINED CMAKE_CXX_STANDARD OR CMAKE_CXX_STANDARD LESS 20)
+    set(CH32V00X_SYSTEM_USE_SPAN_COMPAT ON)
+    if (NOT TARGET span-compat::span-compat)
+        # A C++17 build of this library can be part of a C++20 or C++23
+        # build. With AUTO, the C++23 translation units would see std::span
+        # and the C++17 ones the own span: two span types in one program.
+        # OFF gives the own span at every standard. A value that the
+        # superproject already set is kept.
+        if (NOT DEFINED SPAN_COMPAT_USE_STD_SPAN)
+            set(SPAN_COMPAT_USE_STD_SPAN OFF CACHE STRING "Span type: AUTO (by __cpp_lib_span), ON (std::span) or OFF (own)")
+        endif ()
+        include(FetchContent)
+        FetchContent_Declare(
+                span_compat
+                GIT_REPOSITORY https://github.com/armint/span-compat.git
+                GIT_TAG 15b7f429d1ba45d1d5e092d8c0c4d97c0bc4968c
+        )
+        FetchContent_GetProperties(span_compat)
+        if (NOT span_compat_POPULATED)
+            FetchContent_MakeAvailable(span_compat)
+        endif ()
+    endif ()
+    target_link_libraries(ch32v00x-system PUBLIC $<BUILD_INTERFACE:span-compat::span-compat>)
+    target_compile_definitions(ch32v00x-system PUBLIC CH32V00X_SYSTEM_USE_SPAN_COMPAT)
+else ()
+    set(CH32V00X_SYSTEM_USE_SPAN_COMPAT OFF)
+endif ()
 
 # The installed package is header-only. The library is an OBJECT library, and
 # install(TARGETS) does not install its objects, so no compiled code is exported.

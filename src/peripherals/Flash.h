@@ -2,7 +2,7 @@
 #pragma once
 #include <cstddef>
 #include <cstdint>
-#include <span>
+#include "utils/Span.h"
 
 namespace Flash {
 
@@ -29,5 +29,5 @@ void erase_page(void *address);
    - Flash must be unlocked (e.g., via Flash::writable_section lifetime)
    - address must be 16-byte aligned
 */
-bool write_buffer(void *address, std::span<uint8_t> data);
+bool write_buffer(void *address, hw::span<uint8_t> data);
 } // namespace Flash
