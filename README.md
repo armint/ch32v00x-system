@@ -1,64 +1,84 @@
-# CH32V00x System Library
+# ch32v00x-system
 
-The **CH32V00x System Library** is not really a Hardware Abstraction Layer but more a peripheral access layer and
-startup framework for the WCH CH32V series of RISC-V microcontrollers, curretly supporting the CH32V00x and CH32V20x
-families. The goal is to have a reusable, easy to read and efficient HAL-like layer for these microcontrollers.
+ch32v00x-system is a C++ hardware layer for WCH CH32V microcontrollers. It
+contains the start-up code, the interrupt vector tables and register-level
+peripheral drivers. It contains no vendor HAL code. It uses only the vendor
+register header files.
 
-## Features
+## Purpose
 
-- **Low-level Hardware Support**: Linker scripts (`.ld`) and startup code (`startup.cpp`) tailored for WCH RISC-V MCUs.
-- **Peripheral Drivers**:
-    - **ADC**: Analog-to-Digital Converter with calibration support.
-    - **DMA**: Direct Memory Access for efficient data transfer.
-    - **EXTI**: External interrupt management.
-    - **GPIO**: Simplified pin configuration and I/O operations.
-    - **I2C**: Support for I2C communication.
-    - **USART**: Serial communication drivers.
-    - **Timers/PWM**: Timer configuration and PWM generation.
-    - **Flash**: Internal flash memory programming.
-- **System Utilities**:
-    - **Interrupt Handling**: A dynamic interrupt connection system.
-    - **Delays**: Precise microsecond (`delay_us`) and millisecond (`delay_ms`) delay functions.
-- **Debugging**: Includes SVD (System View Description) files for register-level debugging in IDEs like CLion or VS
-  Code.
+The library is the lowest layer of a set of bare-metal firmware projects.
+It gives these projects one C++ interface to the hardware:
 
-## Supported Devices
+- Small, direct drivers. Many functions are inline register accesses. The
+  library uses no heap and no exceptions.
+- One code base for several chip families. CMake selects the family code at
+  configure time with `CH32_FAMILY`. Family-specific code goes into
+  `src/families/`.
+- Drivers that follow the hardware. When a family has a different
+  peripheral, its driver exposes the functions of that peripheral.
 
-| Family       | Supported MCUs               |
-|:-------------|:-----------------------------|
-| **CH32V00x** | CH32V002, CH32V003, CH32V006 |
-| **CH32V20x** | CH32V208_D8W                 |
+Higher layers are not in this library. For example, the `libArT` utilities
+and the stream classes are in `ch32v00x-art`.
 
-## Directory Structure
+## Supported chips
 
-- `src/`: Shared source code for the startup, the peripheral drivers and the utilities.
-- `src/families/<family>/`: Source code and headers of one chip family, for example `src/families/ch32v00x/`. The build uses only the family set by `CH32_FAMILY`.
-- `ldscripts/`: Linker scripts for memory mapping.
-- `etc/svd/`: SVD files for peripheral debugging.
-- `cmake/`: CMake build scripts and toolchain configurations.
+| `CH32_FAMILY` | Device macro | Chips | Status |
+|---|---|---|---|
+| `CH32V00X` | `CH32V003` | CH32V003 | Builds. |
+| `CH32V00X` | `CH32V006` | CH32V002, CH32V006 | Builds. |
+| `CH32V20X` | `CH32V20x_D8W` | CH32V208 | Builds. No ADC driver. |
 
-## Usage in CMake
+CH32V30x is not supported yet. The family list is in
+[Chip families](docs/families.md).
 
-This library is intended to be used as a submodule or dependency. In your `CMakeLists.txt`:
+## Drivers
+
+| Area | Drivers |
+|---|---|
+| Start-up | Reset handler, weak exception handlers, vector table per family |
+| Clocks and timing | `SysTick` (the application sets the tick rate), delay functions |
+| GPIO and EXTI | `GpioPin`, `Exti` |
+| Communication | `Usart`, `I2C` |
+| Analog and timing | `Adc` (CH32V00X only), `Timer`, `Dma` |
+| Other | `Flash`, `Interrupt` (C++ member functions as interrupt handlers) |
+
+## Quick start
+
+Add the repository as a git submodule. Then add it to your CMake project:
 
 ```cmake
 add_subdirectory(dependencies/ch32v00x-system)
 target_link_libraries(${PROJECT_NAME} PRIVATE ch32v00x-system)
 ```
 
-Ensure you are using a compatible RISC-V toolchain. A sample toolchain file is provided in `cmake/gcc_riscv.cmake`.
+Set `CH32_FAMILY` and the device macro of your chip. Use the RISC-V
+toolchain file `cmake/gcc_riscv.cmake`. For all options, see
+[Building and using ch32v00x-system](docs/building.md).
 
-The installed package (`cmake --install`) provides the headers only. `find_package(ch32v00x-system)` gives the interface target `art::ch32v00x-system` with the include path, but no compiled code. Add the sources with `add_subdirectory()`, as above.
+## Repository layout
 
-Set `CH32_FAMILY` to the family of your chip. The values are `CH32V00X` and `CH32V20X`. The default is `CH32V00X`.
+| Path | Contents |
+|---|---|
+| `src/` | Shared start-up code, shared drivers and utilities. |
+| `src/peripherals/` | Drivers that more than one family shares. |
+| `src/families/<family>/` | Family-specific code. CMake adds only the active family to the include path. |
+| `src/utils/` | `Interrupt` (interrupt binding) and the delay functions. |
+| `ldscripts/` | Linker scripts, one memory script per chip. |
+| `cmake/` | The RISC-V toolchain file and the package configuration. |
+| `etc/svd/` | SVD register descriptions, for reference and debug tools. |
+| `etc/openocd.cfg` | OpenOCD configuration. |
 
-Also define the device macro of your chip, for example `CH32V003` or `CH32V20x_D8W`. The family and the device macro must match.
+## Documentation
 
-The code uses the `fence.i` instruction. Its extension is `zifencei`. Add it to the `-march` flag of your build, for example `-march=rv32ec_zicsr_zifencei -mabi=ilp32e` for CH32V003.
+| Document | Contents |
+|---|---|
+| [Building and using ch32v00x-system](docs/building.md) | Requirements, CMake variables, compiler flags, installed package |
+| [Chip families](docs/families.md) | `CH32_FAMILY`, family directories, device folders, adding a family |
+| [ADC calibration on CH32V006](docs/adc.md) | Calibration of the ADC on CH32V00X |
 
-## Development
+## Contributing
 
-When contributing to this library:
-
-- Peripheral implementations are located in `src/peripherals/`.
-- Ensure new drivers follow the existing pattern of separating header and implementation.
+All work goes to the `main` branch through merge requests, bug fixes too.
+Every merge request needs a review by someone other than its author. The
+project has no releases yet. Use a commit of `main` in your submodule.
