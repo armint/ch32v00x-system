@@ -43,6 +43,13 @@
 #include <ch32v20x.h>
 #include <system_ch32v20x.h>
 #include <vectors_ch32v20x.h>
+#elif defined(CH32V30x_D8C)
+#if !__has_include(<ch32v30x.h>)
+#error "CH32V307 devices need -DCH32_FAMILY=CH32V30X"
+#endif
+#include <ch32v30x.h>
+#include <system_ch32v30x.h>
+#include <vectors_ch32v30x.h>
 #else
 #error No device defined
 #endif

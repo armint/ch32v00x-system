@@ -413,7 +413,12 @@ inline void __attribute__((always_inline)) cpuInit(void) {
                 "la sp, __stack\n"
                 "li t0, 0x2\n"
                 "csrw 0x804, t0\n");
+#if __riscv_flen
+   // Enable the floating-point unit: mstatus.FS = Initial.
+   __set_MSTATUS(0x1880 | 0x2000);
+#else
    __set_MSTATUS(0x1880);
+#endif
    // Configure the interrupt vector table
    __set_MTVEC(((uint32_t)&Reset_Handler | 0b11));
 }
