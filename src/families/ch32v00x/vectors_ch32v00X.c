@@ -38,7 +38,8 @@ void __attribute__((weak, alias("Default_Handler"))) TIM1_UP_IRQHandler(void);
 void __attribute__((weak, alias("Default_Handler"))) TIM1_TRG_COM_IRQHandler(void);
 void __attribute__((weak, alias("Default_Handler"))) TIM1_CC_IRQHandler(void);
 void __attribute__((weak, alias("Default_Handler"))) TIM2_IRQHandler(void);
-#if defined(CH32V006)
+// Same condition as the vector table below: every chip except CH32V003.
+#if !defined(CH32V003)
 void __attribute__((weak, alias("Default_Handler"))) USART2_IRQHandler(void);
 void __attribute__((weak, alias("Default_Handler"))) OPCM_IRQHandler(void);
 #endif
