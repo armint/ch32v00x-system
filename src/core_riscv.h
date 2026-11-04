@@ -398,6 +398,24 @@ extern uint32_t __get_MIMPID(void);
 extern uint32_t __get_MHARTID(void);
 extern uint32_t __get_SP(void);
 
+// Early core setup, called first by _start(). The CSR layout is the same on
+// CH32V00x, CH32V20x and CH32V30x (RM section 9.5.3). INTSYSCR 0x2 enables
+// interrupt nesting and leaves the hardware stack off.
+inline void __attribute__((always_inline)) cpuInit(void) {
+   extern void Reset_Handler();
+   // Set the GP register to allow relative memory access
+   asm volatile(".option push\n"
+                ".option norelax\n"
+                "la gp, __global_pointer$\n"
+                ".option pop\n"
+                "la sp, __stack\n"
+                "li t0, 0x2\n"
+                "csrw 0x804, t0\n");
+   __set_MSTATUS(0x1880);
+   // Configure the interrupt vector table
+   __set_MTVEC(((uint32_t)&Reset_Handler | 0b11));
+}
+
 #ifdef __cplusplus
 }
 #endif
