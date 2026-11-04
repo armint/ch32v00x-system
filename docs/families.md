@@ -11,7 +11,7 @@ Set `CH32_FAMILY` at configure time. The value is one of:
 - `CH32V00X`: CH32V002, CH32V003 and CH32V006. This is the default.
 - `CH32V20X`: CH32V208.
 - `CH32V30X`: CH32V307. Only the start-up, clock, SysTick, delay, interrupt and
-  GPIO code (pins 0 to 7) is ported. See the exclusion list below.
+  GPIO code is ported. See the exclusion list below.
 
 CMake stops with an error for any other value. It also stops when the
 family directory is missing.

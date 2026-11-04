@@ -34,8 +34,7 @@ library are in [ch32v00x-art](https://gitlab.vandertogt.org/riscv/ch32v00x-art).
 | `CH32V30X` | `CH32V30x_D8C` | CH32V307 | Start-up, clock and GPIO build. Hardware test not recorded. Other drivers not ported yet. |
 
 On CH32V30X, the start-up, the clock, SysTick, the delays, `Interrupt` and
-`GpioPin` for pins 0 to 7 build. `GpioPin` pins 8 to 15 do not work yet
-([issue #6](https://gitlab.vandertogt.org/riscv/ch32v00x-system/-/work_items/6)).
+`GpioPin` build. `GpioPin` sets pins 0 to 7 in `CFGLR` and pins 8 to 15 in `CFGHR`.
 The USART, DMA, timer, EXTI, I2C and flash drivers are not ported yet. The family list is
 in [Chip families](docs/families.md).
 
