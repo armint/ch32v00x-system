@@ -173,6 +173,16 @@ typedef struct {
 #define RCC_IOPCEN (1ul << 4)
 #define RCC_IOPDEN (1ul << 5)
 #define RCC_IOPEEN (1ul << 6)
+#define RCC_USART1EN (1ul << 14)
+
+/* APB1 peripheral clock enable bits (RCC_APB1PCENR) */
+#define RCC_UART6EN (1ul << 6)
+#define RCC_UART7EN (1ul << 7)
+#define RCC_UART8EN (1ul << 8)
+#define RCC_USART2EN (1ul << 17)
+#define RCC_USART3EN (1ul << 18)
+#define RCC_UART4EN (1ul << 19)
+#define RCC_UART5EN (1ul << 20)
 
 /* RCC_CFGR0 fields */
 #define RCC_CFGR0_SW_MASK (3ul << 0)
