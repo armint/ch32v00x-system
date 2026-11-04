@@ -31,11 +31,12 @@ library are in [ch32v00x-art](https://gitlab.vandertogt.org/riscv/ch32v00x-art).
 | `CH32V00X` | `CH32V002` | CH32V002 | Builds. Hardware test not recorded. |
 | `CH32V00X` | `CH32V006` | CH32V006 | Builds. Hardware test not recorded. |
 | `CH32V20X` | `CH32V20x_D8W` | CH32V208 | Builds. Hardware test not recorded. No ADC driver. |
-| `CH32V30X` | `CH32V30x_D8C` | CH32V307 | Start-up, clock and GPIO build. Hardware test not recorded. Other drivers not ported yet. |
+| `CH32V30X` | `CH32V30x_D8C` | CH32V307 | Start-up, clock, GPIO and USART build. Hardware test not recorded. Other drivers not ported yet. |
 
 On CH32V30X, the start-up, the clock, SysTick, the delays, `Interrupt` and
 `GpioPin` build. `GpioPin` sets pins 0 to 7 in `CFGLR` and pins 8 to 15 in `CFGHR`.
-The USART, DMA, timer, EXTI, I2C and flash drivers are not ported yet. The family list is
+The `Usart` driver builds for USART1 to USART3 and UART4 to UART8. A loopback test on hardware is not done yet.
+The DMA, timer, EXTI, I2C and flash drivers are not ported yet. The family list is
 in [Chip families](docs/families.md).
 
 ## Drivers

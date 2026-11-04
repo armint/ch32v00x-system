@@ -132,6 +132,14 @@ typedef enum IRQn {
 #define GPIOC_BASE 0x40011000UL
 #define GPIOD_BASE 0x40011400UL
 #define GPIOE_BASE 0x40011800UL
+#define USART1_BASE 0x40013800UL
+#define USART2_BASE 0x40004400UL
+#define USART3_BASE 0x40004800UL
+#define UART4_BASE 0x40004C00UL
+#define UART5_BASE 0x40005000UL
+#define UART6_BASE 0x40001800UL
+#define UART7_BASE 0x40001C00UL
+#define UART8_BASE 0x40002000UL
 
 typedef struct {
    volatile uint32_t CTLR;     /* 0x00 Clock control */
@@ -165,6 +173,16 @@ typedef struct {
 #define RCC_IOPCEN (1ul << 4)
 #define RCC_IOPDEN (1ul << 5)
 #define RCC_IOPEEN (1ul << 6)
+#define RCC_USART1EN (1ul << 14)
+
+/* APB1 peripheral clock enable bits (RCC_APB1PCENR) */
+#define RCC_UART6EN (1ul << 6)
+#define RCC_UART7EN (1ul << 7)
+#define RCC_UART8EN (1ul << 8)
+#define RCC_USART2EN (1ul << 17)
+#define RCC_USART3EN (1ul << 18)
+#define RCC_UART4EN (1ul << 19)
+#define RCC_UART5EN (1ul << 20)
 
 /* RCC_CFGR0 fields */
 #define RCC_CFGR0_SW_MASK (3ul << 0)
@@ -197,6 +215,58 @@ typedef struct {
 #define GPIOC ((GPIO_TypeDef *)GPIOC_BASE)
 #define GPIOD ((GPIO_TypeDef *)GPIOD_BASE)
 #define GPIOE ((GPIO_TypeDef *)GPIOE_BASE)
+
+/* Same layout as the USART of CH32V20x. The SVD also has CTLR4 at 0x1C. */
+typedef struct {
+   volatile uint16_t STATR; /* 0x00 Status */
+   uint16_t RESERVED0;
+   volatile uint16_t DATAR; /* 0x04 Data */
+   uint16_t RESERVED1;
+   volatile uint16_t BRR; /* 0x08 Baud rate */
+   uint16_t RESERVED2;
+   volatile uint16_t CTLR1; /* 0x0C Control 1 */
+   uint16_t RESERVED3;
+   volatile uint16_t CTLR2; /* 0x10 Control 2 */
+   uint16_t RESERVED4;
+   volatile uint16_t CTLR3; /* 0x14 Control 3 */
+   uint16_t RESERVED5;
+   volatile uint16_t GPR; /* 0x18 Guard time and prescaler */
+   uint16_t RESERVED6;
+} USART_TypeDef;
+
+#define USART1 ((USART_TypeDef *)USART1_BASE)
+#define USART2 ((USART_TypeDef *)USART2_BASE)
+#define USART3 ((USART_TypeDef *)USART3_BASE)
+#define UART4 ((USART_TypeDef *)UART4_BASE)
+#define UART5 ((USART_TypeDef *)UART5_BASE)
+#define UART6 ((USART_TypeDef *)UART6_BASE)
+#define UART7 ((USART_TypeDef *)UART7_BASE)
+#define UART8 ((USART_TypeDef *)UART8_BASE)
+
+/* USART_STATR bits */
+#define USART_STATR_RXNE ((uint16_t)0x0020)
+#define USART_STATR_TC ((uint16_t)0x0040)
+#define USART_STATR_TXE ((uint16_t)0x0080)
+
+/* USART_CTLR1 bits */
+#define USART_CTLR1_SBK ((uint16_t)0x0001)
+#define USART_CTLR1_RE ((uint16_t)0x0004)
+#define USART_CTLR1_TE ((uint16_t)0x0008)
+#define USART_CTLR1_RXNEIE ((uint16_t)0x0020)
+#define USART_CTLR1_TCIE ((uint16_t)0x0040)
+#define USART_CTLR1_TXEIE ((uint16_t)0x0080)
+#define USART_CTLR1_PS ((uint16_t)0x0200)
+#define USART_CTLR1_PCE ((uint16_t)0x0400)
+#define USART_CTLR1_UE ((uint16_t)0x2000)
+
+/* USART_CTLR2 bits */
+#define USART_CTLR2_STOP ((uint16_t)0x3000)
+#define USART_CTLR2_STOP_0 ((uint16_t)0x1000)
+#define USART_CTLR2_STOP_1 ((uint16_t)0x2000)
+
+/* USART_CTLR3 bits */
+#define USART_CTLR3_DMAR ((uint16_t)0x0040)
+#define USART_CTLR3_DMAT ((uint16_t)0x0080)
 
 #ifdef __cplusplus
 }
