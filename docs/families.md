@@ -10,7 +10,8 @@ Set `CH32_FAMILY` at configure time. The value is one of:
 
 - `CH32V00X`: CH32V002, CH32V003 and CH32V006. This is the default.
 - `CH32V20X`: CH32V208.
-- `CH32V30X`: CH32V307. Only the start-up, clock and GPIO code is ported.
+- `CH32V30X`: CH32V307. Only the start-up, clock, SysTick, delay, interrupt and
+  GPIO code (pins 0 to 7) is ported. See the exclusion list below.
 
 CMake stops with an error for any other value. It also stops when the
 family directory is missing.
@@ -24,13 +25,18 @@ that names the value to set.
 
 | Path | Contents |
 |---|---|
-| `src/` | Shared code. It compiles for every family. |
+| `src/` | Shared code. CMake compiles it for every family, except the files on the exclusion list of the family. |
 | `src/families/ch32v00x/` | Code and headers of the CH32V00X family. |
 | `src/families/ch32v00x/ch32v003/` | The device header of CH32V003. It differs from the header of the other CH32V00X chips. |
 | `src/families/ch32v20x/` | Code and headers of the CH32V20X family. |
+| `src/families/ch32v30x/` | Code and headers of the CH32V30X family. |
 
 CMake compiles the shared sources and the sources of the selected family
 only. The other family directories are not compiled.
+
+The CH32V30X family does not support the shared `Dma`, `Exti`, `Flash`, `I2C`,
+`Timer` and `Usart` drivers yet. `CMakeLists.txt` excludes these files for that
+family. Their headers are still installed, but they do not compile for CH32V30X.
 
 ## Include paths
 
@@ -70,4 +76,5 @@ filter to `CMakeLists.txt`.
    to the regular expression in `CMakeLists.txt`.
 4. Add the device macro check to `src/wch_device.h`.
 5. Check the three shared files that test device macros: `Adc.h`, `Flash.cpp` and `I2C.h`.
+   Exclude the shared drivers that the new family does not support in the `foreach` list of `CMakeLists.txt`.
 6. Update the family list in this document, in [Building and using ch32v00x-system](building.md) and in [the README](../README.md).
