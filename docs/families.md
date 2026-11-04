@@ -10,12 +10,13 @@ Set `CH32_FAMILY` at configure time. The value is one of:
 
 - `CH32V00X`: CH32V002, CH32V003 and CH32V006. This is the default.
 - `CH32V20X`: CH32V208.
+- `CH32V30X`: CH32V307. Only the start-up, clock and GPIO code is ported.
 
 CMake stops with an error for any other value. It also stops when the
 family directory is missing.
 
 Your project sets the device macro of the chip, for example `CH32V003` or
-`CH32V20x_D8W`. The header `src/wch_device.h` checks that the device macro
+`CH32V20x_D8W` or `CH32V30x_D8C`. The header `src/wch_device.h` checks that the device macro
 and `CH32_FAMILY` agree. If they do not agree, the build stops with an error
 that names the value to set.
 

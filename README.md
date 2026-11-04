@@ -31,9 +31,11 @@ library are in [ch32v00x-art](https://gitlab.vandertogt.org/riscv/ch32v00x-art).
 | `CH32V00X` | `CH32V002` | CH32V002 | Builds. Hardware test not recorded. |
 | `CH32V00X` | `CH32V006` | CH32V006 | Builds. Hardware test not recorded. |
 | `CH32V20X` | `CH32V20x_D8W` | CH32V208 | Builds. Hardware test not recorded. No ADC driver. |
+| `CH32V30X` | `CH32V30x_D8C` | CH32V307 | Start-up, clock and GPIO build. Hardware test not recorded. Other drivers not ported yet. |
 
-CH32V30x is not supported yet. The family list is in
-[Chip families](docs/families.md).
+The CH32V30x family has a start-up, a clock and a GPIO driver. The USART,
+DMA, timer, EXTI, I2C and flash drivers are not ported yet. The family list is
+in [Chip families](docs/families.md).
 
 ## Drivers
 

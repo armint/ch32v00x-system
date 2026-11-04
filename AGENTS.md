@@ -1,7 +1,7 @@
 # Agent Instructions for ch32v00x-system
 
 ## Purpose
-This library provides the start-up code, the interrupt vector tables and the register-level peripheral drivers for WCH CH32V microcontrollers. It supports several chip families (CH32V00X and CH32V20X). It uses `CH32_FAMILY` at configure time to select the family code.
+This library provides the start-up code, the interrupt vector tables and the register-level peripheral drivers for WCH CH32V microcontrollers. It supports several chip families (CH32V00X, CH32V20X and CH32V30X). It uses `CH32_FAMILY` at configure time to select the family code.
 
 ## Key Features
 - **Multi-Family Support**: `CH32_FAMILY` selects the family directory `src/families/<family>/`. CMake compiles only the selected family.
@@ -23,5 +23,6 @@ This library provides the start-up code, the interrupt vector tables and the reg
 
 ## Verification
 - Build the library once for each row of the table in [Compiler flags per chip](docs/building.md#compiler-flags-per-chip). Set the `CH32_FAMILY` value of the row and the device macro.
-- Build `ch32v00x-examples` once for each `MCU` value: `CH32V002`, `CH32V003`, `CH32V006` and `CH32V208_D8W`. On `CH32V208_D8W`, the ADC examples are not built.
+- After a change to `src/families/ch32v30x/ch32v30x.h`, run `python3 tests/check-svd-offsets.py` with the cross compiler. It compares the header with the SVD.
+- Build `ch32v00x-examples` once for each `MCU` value: `CH32V002`, `CH32V003`, `CH32V006` and `CH32V208_D8W`. The examples do not yet build for `CH32V307`. On `CH32V208_D8W`, the ADC examples are not built.
 - After a change to `CMakeLists.txt` or to the package configuration, run `cmake --install`. Check that the include directory contains `wch_device.h` and the headers of the selected family.
