@@ -87,7 +87,8 @@ def field_position(periph, reg_name, field_name):
 
 
 def build_asserts(periphs):
-    lines = ['#include "ch32v30x.h"', '#include <stddef.h>', '']
+    # wch_device.h first: the checks then see the same macros as a consumer.
+    lines = ['#include "wch_device.h"', '#include <stddef.h>', '']
     for base_macro, svd_name in BASES.items():
         base = int(periphs[svd_name].findtext("baseAddress"), 0)
         lines.append(f'_Static_assert({base_macro} == 0x{base:08X}UL, "{base_macro} differs from SVD");')
@@ -126,7 +127,7 @@ def main():
         sys.stderr.write(result.stderr)
         print("FAIL: the header differs from the SVD")
         return 1
-    print(f"PASS: {len(text.splitlines())} checks against {os.path.basename(SVD)}")
+    print(f"PASS: {text.count('_Static_assert')} checks against {os.path.basename(SVD)}")
     return 0
 
 
