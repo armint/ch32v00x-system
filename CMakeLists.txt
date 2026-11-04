@@ -83,7 +83,7 @@ target_include_directories(
         ch32v00x-system
         PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
         $<BUILD_INTERFACE:${FAMILY_DIR}>
-        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+        )
 
 target_compile_features(ch32v00x-system PUBLIC cxx_std_23)
 
@@ -94,7 +94,7 @@ if (TARGET art-build-config)
     target_link_libraries(ch32v00x-system PRIVATE $<BUILD_INTERFACE:art-build-config>)
 endif ()
 
-# Ensure the exported interface does not pull non-exported targets.
+# Keep the build interface free of linked targets, so consumers get no extra link dependencies.
 set_property(TARGET ch32v00x-system PROPERTY INTERFACE_LINK_LIBRARIES "")
 
 # The installed package is header-only. The library is an OBJECT library, and
@@ -118,7 +118,8 @@ write_basic_package_version_file(
 configure_package_config_file(
         ${CMAKE_CURRENT_LIST_DIR}/cmake/ch32v00x-systemConfig.cmake.in
         ${CMAKE_CURRENT_BINARY_DIR}/ch32v00x-systemConfig.cmake
-        INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/ch32v00x-system)
+        INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/ch32v00x-system
+        PATH_VARS CMAKE_INSTALL_INCLUDEDIR)
 
 install(FILES
         ${CMAKE_CURRENT_BINARY_DIR}/ch32v00x-systemConfig.cmake
