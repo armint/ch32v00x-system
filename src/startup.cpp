@@ -28,7 +28,7 @@
  */
 
 #include "startup-hooks.h"
-#include "system_ch32v00X.h"
+#include "wch_device.h"
 // ----------------------------------------------------------------------------
 // This file defines the system code for a portable embedded
 // C/C++ application, built with newlib.

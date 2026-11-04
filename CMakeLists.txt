@@ -8,6 +8,9 @@ project(ch32v00x-system
 )
 
 
+# Provides CMAKE_INSTALL_*DIR for the install() calls below.
+include(GNUInstallDirs)
+
 # Add our CMAKE modules folder
 list(APPEND CMAKE_MODULE_PATH ../../cmake)
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/generate_version.cmake")
@@ -21,10 +24,35 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED True)
 set(CMAKE_C_DIALECT gnu)
 
+# Chip family of the build. It selects the directory src/families/<family>.
+# The device macro (CH32V003, CH32V20x_D8W, ...) is still set by the consumer.
+set(CH32_FAMILY "CH32V00X" CACHE STRING "CH32 family to build for (CH32V00X, CH32V20X)")
+set_property(CACHE CH32_FAMILY PROPERTY STRINGS CH32V00X CH32V20X)
+if (NOT CH32_FAMILY MATCHES "^(CH32V00X|CH32V20X)$")
+    message(FATAL_ERROR "Unknown CH32_FAMILY '${CH32_FAMILY}'")
+endif ()
+string(TOLOWER ${CH32_FAMILY} FAMILY_LOWER)
+set(FAMILY_DIR "${PROJECT_SOURCE_DIR}/src/families/${FAMILY_LOWER}")
+if (NOT IS_DIRECTORY "${FAMILY_DIR}")
+    message(FATAL_ERROR "No source directory for ${CH32_FAMILY}: ${FAMILY_DIR}")
+endif ()
+
+# Gather all project sources, then take the family files out and add back
+# only the files of the selected family.
 file(GLOB_RECURSE PROJECT_SOURCES
         "${PROJECT_SOURCE_DIR}/src/*.c"
         "${PROJECT_SOURCE_DIR}/src/*.cpp"
 )
+file(GLOB_RECURSE ALL_FAMILY_SOURCES
+        "${PROJECT_SOURCE_DIR}/src/families/*.c"
+        "${PROJECT_SOURCE_DIR}/src/families/*.cpp"
+)
+list(REMOVE_ITEM PROJECT_SOURCES ${ALL_FAMILY_SOURCES})
+file(GLOB_RECURSE ACTIVE_FAMILY_SOURCES
+        "${FAMILY_DIR}/*.c"
+        "${FAMILY_DIR}/*.cpp"
+)
+list(APPEND PROJECT_SOURCES ${ACTIVE_FAMILY_SOURCES})
 
 
 file(GLOB_RECURSE PROJECT_HEADERS
@@ -48,27 +76,14 @@ IF (CMAKE_CROSSCOMPILING)
 else ()
 endif ()
 
-add_library(ch32v00x-system OBJECT ${PROJECT_SOURCES} ${STM32_SOURCES})
+add_library(ch32v00x-system OBJECT ${PROJECT_SOURCES})
 
+# The family directory is flat in the installed package, like src/.
 target_include_directories(
         ch32v00x-system
         PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
+        $<BUILD_INTERFACE:${FAMILY_DIR}>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
-
-
-target_include_directories(ch32v00x-system
-        PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>
-        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-)
-
-# Export CMSIS headers to dependents as part of the public interface
-target_include_directories(ch32v00x-system
-        PUBLIC
-        $<BUILD_INTERFACE:${cmsis_device_l0_SOURCE_DIR}/Include>
-        $<BUILD_INTERFACE:${cmsis54st_SOURCE_DIR}/Core/Include>
-        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/cmsis_device_l0/Include>
-        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/cmsis_core/Core/Include>
-)
 
 target_compile_features(ch32v00x-system PUBLIC cxx_std_23)
 
@@ -88,13 +103,13 @@ install(TARGETS ch32v00x-system
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
         INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-
-# Install the CMSIS headers so consumers can include them from the installed package
-install(DIRECTORY ${cmsis_device_l0_SOURCE_DIR}/Include/
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/cmsis_device_l0/Include)
-install(DIRECTORY ${cmsis54st_SOURCE_DIR}/Core/Include/
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/cmsis_core/Core/Include)
+# Headers: the shared tree, then the headers of the selected family. Both go
+# flat into the include directory, as the build-tree include path expects.
+install(DIRECTORY src/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+        FILES_MATCHING PATTERN "*.h"
+        PATTERN "families" EXCLUDE)
+install(DIRECTORY ${FAMILY_DIR}/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+        FILES_MATCHING PATTERN "*.h")
 
 install(EXPORT ch32v00x-system-targets
         NAMESPACE art::
