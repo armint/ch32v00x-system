@@ -63,6 +63,13 @@ process it in the main loop.
 - An OUT packet with the wrong data toggle is a repeated packet. The
   driver ignores it, and the endpoint stays armed.
 
+## Hardware test
+
+The program in `tests/ch32v30x-usb-loopback/` tests the driver on a
+CH32V307 board. It enumerates with a vendor interface named
+`CMSIS-DAP v2` and sends each bulk OUT packet back on the bulk IN
+endpoint. Its README gives the build and test steps.
+
 ## Known limits
 
 - The hardware test is not done. Enumeration on a host and a bulk loopback
