@@ -43,9 +43,12 @@ the pins and the cycle counts are different.
 - `ClockDivider` divides PCLK2 by 2, 4, 6 or 8. The ADC clock must not
   exceed 14 MHz. The start-up code of this library does not divide APB2,
   so PCLK2 is 144 MHz. Then even `div8` gives 18 MHz, which is too fast.
-  Divide APB2 by 2 (`RCC_CFGR0` PPRE2) only while the ADC is on. Then
-  `div6` gives 12 MHz and `div8` gives 9 MHz. `Usart` assumes PCLK2 equals
-  `SystemCoreClock`, so set PPRE2 back before any USART1 output.
+  Set the APB2 prescaler (`RCC_CFGR0` PPRE2) to 2 before you start the
+  USART. Then `div6` gives 12 MHz and `div8` gives 9 MHz. The `Usart`
+  driver must know the prescaler, or the baud rate of USART1 is wrong.
+  The `Usart` change in
+  [PR 5](https://github.com/armint/ch32v00x-system/pull/5) does this. This
+  ADC driver does not change PPRE2 itself.
 - There is no `setCalibrationVoltage()` and no injected trigger.
 - `enableClock()` and `reset()` act on the ADC of the object.
 - `enableInternalChannels()` switches channels 16 and 17 on. Wait for the
@@ -53,9 +56,9 @@ the pins and the cycle counts are different.
 
 ## Steps
 
-1. Call `enableClock()`. Divide APB2 by 2 (PPRE2), then call
-   `Adc::setClockDivider(Adc::ClockDivider::div6)` (12 MHz) or `div8` (9 MHz).
-   Keep PPRE2 at 2 only while the ADC is on. Set it back before USART1 output.
+1. Set PPRE2 to 2 (`RCC->CFGR0`) before you initialize USART1. Call
+   `enableClock()`. Then call `Adc::setClockDivider(Adc::ClockDivider::div6)`
+   (12 MHz) or `div8` (9 MHz).
 2. Call `setSamplingTime()` for each channel. Vrefint and the temperature
    sensor need at least 17.1 us.
 3. Call `enable()`, then `calibrate()`. `calibrate()` blocks until the
