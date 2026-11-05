@@ -14,9 +14,6 @@ concurrency:
 permissions:
   contents: read
 
-env:
-  GCC_TOOLCHAIN_PREFIX: /opt/xpack-riscv-none-elf-gcc-15.2.0-1
-
 jobs:
   # Builds the OBJECT library standalone for each family. Device macro, -march and -mabi are the values of
   # docs/building.md. At C++23 hw::span is std::span, at C++17 it is span_compat::span.
@@ -27,7 +24,7 @@ jobs:
       fail-fast: false
       matrix:
         std: [23, 17]
-        include:
+        target:
           - { family: CH32V00X, flags: "-DCH32V003 -march=rv32ec_zicsr_zifencei -mabi=ilp32e" }
           # CH32V006 compiles the V006 ADC driver, which CH32V003 does not.
           - { family: CH32V00X, flags: "-DCH32V006 -march=rv32ec_zicsr_zifencei_zmmul -mabi=ilp32e" }
@@ -35,6 +32,13 @@ jobs:
           - { family: CH32V30X, flags: "-DCH32V30x_D8C -march=rv32imafc_zicsr_zifencei -mabi=ilp32f" }
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # cmake/generate_version.cmake needs the tags
+      - name: Prepare the checkout and find the toolchain
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          command -v riscv-none-elf-gcc || { echo "riscv-none-elf-gcc not found in the image"; exit 1; }
+          echo "GCC_TOOLCHAIN_PREFIX=$(dirname "$(dirname "$(command -v riscv-none-elf-gcc)")")" >> "$GITHUB_ENV"
       - name: Configure
         run: |
           cmake -B build -G "Unix Makefiles" \
@@ -42,9 +46,9 @@ jobs:
             -D GCC_TOOLCHAIN_PREFIX="$GCC_TOOLCHAIN_PREFIX" \
             -D CMAKE_BUILD_TYPE=Release \
             -D CMAKE_CXX_STANDARD=${{ matrix.std }} \
-            -D CH32_FAMILY=${{ matrix.family }} \
-            -D "CMAKE_C_FLAGS=${{ matrix.flags }}" \
-            -D "CMAKE_CXX_FLAGS=${{ matrix.flags }}"
+            -D CH32_FAMILY=${{ matrix.target.family }} \
+            -D "CMAKE_C_FLAGS=${{ matrix.target.flags }}" \
+            -D "CMAKE_CXX_FLAGS=${{ matrix.target.flags }}"
       - name: Build
         run: cmake --build build --target ch32v00x-system -j"$(nproc)"
       - name: Check the C++ standard and the span type
@@ -76,6 +80,13 @@ jobs:
     container: ghcr.io/armint/firmware-build-image:v1.15.0
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # cmake/generate_version.cmake needs the tags
+      - name: Prepare the checkout and find the toolchain
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          command -v riscv-none-elf-gcc || { echo "riscv-none-elf-gcc not found in the image"; exit 1; }
+          echo "GCC_TOOLCHAIN_PREFIX=$(dirname "$(dirname "$(command -v riscv-none-elf-gcc)")")" >> "$GITHUB_ENV"
       - name: Build
         run: |
           flags="-DCH32V30x_D8C -march=rv32imafc_zicsr_zifencei -mabi=ilp32f"
