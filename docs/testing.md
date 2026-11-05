@@ -44,6 +44,7 @@ On CH32V00X, it checks that the reserved word after `CFGLR` stays the same.
 - `GpioInterrupt`: the routing, the edge and the enable bits of a connected pin.
   A second port on the same line number is refused.
   The dispatch code calls the handler of the pending line only, and not the handler of a masked line.
+  The dispatch code does not clear the flag of a masked line. `GpioInterrupt` does not clear a PFIC pending bit.
   A shared interrupt stays on until the last line disconnects.
 
 The test does not model the write-1-to-clear behavior of `INTFR`: it checks the value that the code writes.

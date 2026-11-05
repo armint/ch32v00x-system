@@ -27,7 +27,10 @@ inline void NVIC_EnableIRQ(IRQn_Type irq) {
 inline void NVIC_DisableIRQ(IRQn_Type irq) {
    hostNvicEnabled[irq] = false;
 }
+// GpioInterrupt must not clear the pending bit of a shared vector: the test counts the calls.
+extern int hostNvicClearPendingCalls;
 inline void NVIC_ClearPendingIRQ(IRQn_Type) {
+   ++hostNvicClearPendingCalls;
 }
 
 typedef struct {

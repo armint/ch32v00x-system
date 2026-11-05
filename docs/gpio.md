@@ -58,6 +58,10 @@ interrupt, and so do the lines 10 to 15. The dispatch code calls the handler
 of each line that has a flag.
 
 The dispatch code clears the EXTI flag before it calls the handler. An edge
-during the handler stays pending.
+during the handler stays pending. The dispatch code does not clear the flag
+of a masked line, so code can poll that line with `isInterruptPending()`.
+`GpioInterrupt` does not clear the PFIC pending bit. On a shared vector
+(lines 5 to 9 and 10 to 15), an edge on another line can set that bit at
+any time. A clear can lose that request.
 
 The handler runs in the interrupt. Keep it short.

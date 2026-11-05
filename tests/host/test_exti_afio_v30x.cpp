@@ -8,6 +8,7 @@
 #include <Afio.h>
 
 bool hostNvicEnabled[64];
+int hostNvicClearPendingCalls = 0;
 GPIO_TypeDef hostGpio[5];
 RCC_TypeDef hostRcc;
 AFIO_TypeDef hostAfio;
@@ -166,11 +167,13 @@ void testGpioInterrupt() {
    hostExti.INTFR = 1u << 8;
    fire(EXTI9_5_IRQn);
    CHECK(callsA == 2 && callsB == 1);
-   // A masked line does not call.
+   // A masked line does not call and keeps its flag (line 9 is masked too).
+   // The stub INTFR keeps the last write, so any clear changes the value.
    Exti::disableInterrupt(8);
-   hostExti.INTFR = 1u << 8;
+   hostExti.INTFR = (1u << 8) | (1u << 9);
    fire(EXTI9_5_IRQn);
    CHECK(callsB == 1);
+   CHECK(hostExti.INTFR == ((1u << 8) | (1u << 9)));
 
    // Disconnect keeps the shared IRQ on while line 6 stays connected.
    CHECK(!GpioInterrupt::disconnectHandler(GPIOA, 6)); // wrong port
@@ -181,6 +184,8 @@ void testGpioInterrupt() {
    CHECK((hostExti.INTENR & ((1u << 6) | (1u << 8))) == 0);
    // After disconnect, another port can use the line.
    CHECK(GpioInterrupt::connectHandler(&handlerB, nullptr, GPIOA, 6, Exti::TriggerEdge::Both));
+   // No PFIC pending clear in connect, dispatch or disconnect.
+   CHECK(hostNvicClearPendingCalls == 0);
 }
 
 } // namespace

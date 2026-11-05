@@ -39,20 +39,23 @@ const Vector &vectorOfLine(uint8_t line) {
 }
 
 // The interrupt entry is Interrupt::handlerWithArgument, which calls this.
+// The code never clears the PFIC pending bit of a shared vector: an edge on
+// another line of the vector can set it at any time, and a clear would lose
+// that request. The EXTI flag (INTFR) is the source of the request.
 void dispatch(void *arg) {
    const Vector &vector = *static_cast<const Vector *>(arg);
    for(uint8_t line = vector.first; line <= vector.last; ++line) {
-      if(!Exti::isInterruptPending(line)) {
+      // A masked line keeps its flag, for code that polls it.
+      if(!Exti::isInterruptPending(line) || Exti::isInterruptMasked(line)) {
          continue;
       }
       // Clear before the call: an edge during the handler stays pending.
       Exti::clearInterruptPending(line);
       const LineConnection &connection = lineConnections[line];
-      if(!Exti::isInterruptMasked(line) && connection.handler != nullptr) {
+      if(connection.handler != nullptr) {
          connection.handler(connection.handlerArg);
       }
    }
-   NVIC_ClearPendingIRQ(Exti::getExtiIRQnForGPIOLine(vector.first));
 }
 
 } // namespace
@@ -74,7 +77,6 @@ bool connectHandler(Interrupt::AdvancedHandler_t handler, void *handler_arg, GPI
       Exti::enableInterrupt(pin);
    }
    Exti::clearInterruptPending(pin);
-   NVIC_ClearPendingIRQ(irq);
    Interrupt::connectHandler(irq, &dispatch, const_cast<Vector *>(&vectorOfLine(pin)));
    NVIC_EnableIRQ(irq);
    return true;
@@ -95,7 +97,6 @@ bool disconnectHandler(GPIO_TypeDef *port, uint8_t pin) {
    lineConnections[pin] = { nullptr, nullptr, Exti::Port::Undefined };
    Exti::disableInterrupt(pin);
    Exti::clearInterruptPending(pin);
-   NVIC_ClearPendingIRQ(irq);
    if(otherLineConnected) {
       NVIC_EnableIRQ(irq);
    }
