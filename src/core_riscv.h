@@ -380,6 +380,10 @@ __attribute__((always_inline)) RV_STATIC_INLINE void NVIC_SystemReset(void) {
 
 
 /* Core_Exported_Functions */
+// Starts the SysTick interrupt every ticks core clocks, as the CMSIS
+// function of the same name does. Returns 0, or 1 for ticks == 0. In
+// Timekeeping.cpp.
+extern uint32_t SysTick_Config(uint32_t ticks);
 extern uint32_t __get_MSTATUS(void);
 extern void __set_MSTATUS(uint32_t value);
 extern uint32_t __get_MISA(void);

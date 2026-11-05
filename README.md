@@ -45,7 +45,7 @@ in [Chip families](docs/families.md).
 | Area | Drivers |
 |---|---|
 | Start-up | Reset handler, weak exception handlers, vector table per family |
-| System timer and delays | `initSysTick()` and `getSysTick()` (your project sets the tick rate), `delaymS()` and `delayuS()` |
+| System timer and delays | `SysTick_Config()` and `getUptimeTicks()` in `utils/Timekeeping.h` (your project sets the tick rate), `delaymS()` and `delayuS()` in `delaybusywait.h` |
 | GPIO and EXTI | `hw::GpioPin` and `hw::FastPin` (the API of `system-stm32`), `Exti` |
 | Communication | `Usart`, `I2c`, `hw::UsbDevice` (CH32V30X only, USB device on USBHS) |
 | Analog and timing | `Adc` (CH32V00X only), `Timer`, `Dma` |
