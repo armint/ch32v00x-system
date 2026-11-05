@@ -5,6 +5,12 @@
 // System tick count, with the names of system-stm32. SysTick_Config()
 // (core_riscv.h) starts the tick; the application chooses the tick rate,
 // e.g. SysTick_Config(SystemCoreClock / 1000) for 1 ms.
+//
+// On CH32V20X and CH32V30X the SysTick counter is 64 bits wide and runs free at the core clock
+// (STCLK, no auto reload). SysTick->CNT, its low word, is then a 32-bit cycle counter: it wraps
+// every 2^32 cycles (29.8 s at 144 MHz), so use it for differences only. The interrupt comes from
+// the compare value, which the handler moves forward by the tick period. On CH32V00X the counter
+// reloads at each tick, so SysTick->CNT is not a cycle counter there.
 
 #if defined(__cplusplus)
 extern "C" {

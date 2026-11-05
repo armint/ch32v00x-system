@@ -6,7 +6,7 @@ Host tests run on the build machine. They do not need a board or the RISC-V tool
 They compile library sources with the native compiler (C++23).
 A stub `wch_device.h` replaces the device header.
 The stub gives the registers of one family as plain variables in memory.
-The GPIO tests use `stubs-<family>/`. The USB test uses `stubs-usb-v307/`. The Usart test uses `stubs-usart-v30x/`. The ADC test uses `stubs-adc-v30x/`. The AFIO and EXTI test uses `stubs-exti-v30x/`.
+The GPIO tests use `stubs-<family>/`. The USB test uses `stubs-usb-v307/`. The SysTick test uses `stubs-systick-v30x/`. The Usart test uses `stubs-usart-v30x/`. The ADC test uses `stubs-adc-v30x/`. The AFIO and EXTI test uses `stubs-exti-v30x/`.
 
 Run the tests:
 
@@ -49,6 +49,16 @@ On CH32V00X, it checks that the reserved word after `CFGLR` stays the same.
 
 The test does not model the write-1-to-clear behavior of `INTFR`: it checks the value that the code writes.
 The test also does not check the PFIC priority or the vector entry.
+
+`test-systick-v30x` tests the time base of CH32V30X (`src/Timekeeping.cpp`). The test plays the hardware: it sets the counter to the value at the match and calls `SysTick_Handler()`. It checks these items:
+
+- `SysTick_Config()` starts a free-running counter: STCLK, STIE and STE are set, STRE (auto reload) is not, the counter is 0 and the compare value is one period.
+- Each match counts one tick and moves the compare value forward by one period.
+- An interrupt that is late by more than one period counts the periods that passed, and the compare value is ahead of the counter again.
+- A second interrupt for one match, and a match a few cycles before the compare value, count correctly.
+- The tick count and the compare value stay right across the carry of the low word at 2^32 cycles.
+
+The test does not check that the hardware counts past the compare value without auto reload, or the compare rule (equal, or greater or equal). The `clock-time` example of `ch32v00x-examples` checks them on the board.
 
 `test-usb-v307` tests the USBHS device driver of CH32V307
 (`src/families/ch32v30x/UsbDevice.cpp`, see [USB device driver](usb.md)).
