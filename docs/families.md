@@ -10,8 +10,9 @@ Set `CH32_FAMILY` at configure time. The value is one of:
 
 - `CH32V00X`: CH32V002, CH32V003 and CH32V006. This is the default.
 - `CH32V20X`: CH32V208.
-- `CH32V30X`: CH32V307. Only the start-up, clock, SysTick, delay, interrupt and
-  GPIO code is ported. See the exclusion list below.
+- `CH32V30X`: CH32V307. Only the start-up, clock, SysTick, delay, interrupt,
+  GPIO, USART and USB device code is ported. See the exclusion list below.
+  The USB device driver is in [USB device driver](usb.md).
 
 CMake stops with an error for any other value. It also stops when the
 family directory is missing.

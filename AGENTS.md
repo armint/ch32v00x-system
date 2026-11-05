@@ -6,7 +6,7 @@ This library provides the start-up code, the interrupt vector tables and the reg
 ## Key Features
 - **Multi-Family Support**: `CH32_FAMILY` selects the family directory `src/families/<family>/`. CMake compiles only the selected family.
 - **Start-up**: Linker scripts and start-up code (`src/bare-metal/startup.cpp`, `vectors_*.c`).
-- **Peripherals**: Drivers for ADC (analog-to-digital converter), DMA (direct memory access), EXTI (external interrupt), GPIO (general-purpose input/output), I2C (Inter-Integrated Circuit), Flash, USART (universal synchronous/asynchronous receiver-transmitter) and timers.
+- **Peripherals**: Drivers for ADC (analog-to-digital converter), DMA (direct memory access), EXTI (external interrupt), GPIO (general-purpose input/output), I2C (Inter-Integrated Circuit), Flash, USART (universal synchronous/asynchronous receiver-transmitter), timers and the USB device on CH32V30X (`docs/usb.md`).
 - **System**: Delay functions, the SysTick timer, interrupt handling and hardware initialization.
 
 ## Guidelines

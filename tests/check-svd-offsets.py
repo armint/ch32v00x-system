@@ -22,12 +22,28 @@ import xml.etree.ElementTree as ET
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 SVD = os.path.join(ROOT, "svd", "vendor", "CH32V307xx.svd")
 
-# Struct members that map to SVD registers of the same name.
+# Struct members that map to SVD registers of the same name. A tuple
+# (member, SVD register) maps a member whose name differs from the SVD.
 STRUCTS = {
     "RCC": ("RCC_TypeDef", ["CTLR", "CFGR0", "INTR", "APB2PRSTR", "APB1PRSTR", "AHBPCENR",
                             "APB2PCENR", "APB1PCENR", "BDCTLR", "RSTSCKR", "AHBRSTR", "CFGR2"]),
     "GPIOA": ("GPIO_TypeDef", ["CFGLR", "CFGHR", "INDR", "OUTDR", "BSHR", "BCR", "LCKR"]),
     "USART1": ("USART_TypeDef", ["STATR", "DATAR", "BRR", "CTLR1", "CTLR2", "CTLR3", "GPR"]),
+    "USBHS": ("USBHS_TypeDef", [
+        ("CTRL", "USB_CTRL"), ("HOST_CTRL", "UHOST_CTRL"), ("INT_EN", "USB_INT_EN"),
+        ("DEV_AD", "USB_DEV_AD"), ("FRAME_NO", "USB_FRAME_NO"), ("SUSPEND", "USB_USB_SUSPEND"),
+        ("SPEED_TYPE", "USB_SPEED_TYPE"), ("MIS_ST", "USB_MIS_ST"), ("INT_FG", "USB_INT_FG"),
+        ("INT_ST", "USB_INT_ST"), ("RX_LEN", "USB_RX_LEN"), ("UEP_CONFIG", "UEP_CONFIG__UHOST_CTRL"),
+        ("UEP_TYPE", "UEP_TYPE"), ("UEP_BUF_MOD", "UEP_BUF_MOD"), ("UEP0_DMA", "UEP0_DMA"),
+        ("UEP_RX_DMA[0]", "UEP1_RX_DMA"), ("UEP_RX_DMA[14]", "UEP15_RX_DMA"),
+        ("UEP_TX_DMA[0]", "UEP1_TX_DMA"), ("UEP_TX_DMA[14]", "UEP15_TX_DMA"),
+        ("UEP_MAX_LEN[0].MAX_LEN", "UEP0_MAX_LEN"), ("UEP_MAX_LEN[1].MAX_LEN", "UEP1_MAX_LEN"),
+        ("UEP_MAX_LEN[15].MAX_LEN", "UEP15_MAX_LEN"),
+        ("UEP[0].T_LEN", "UEP0_T_LEN"), ("UEP[0].TX_CTRL", "UEP0_TX_CTRL"), ("UEP[0].RX_CTRL", "UEP0_RX_CTRL"),
+        ("UEP[1].T_LEN", "UEP1_T_LEN"), ("UEP[1].TX_CTRL", "UEP1_TX_CTRL"), ("UEP[1].RX_CTRL", "UEP1_RX_CTRL"),
+        ("UEP[15].T_LEN", "UEP15_T_LEN"), ("UEP[15].TX_CTRL", "UEP15_TX_CTRL"),
+        ("UEP[15].RX_CTRL", "UEP15_RX_CTRL"),
+    ]),
 }
 
 # Header macro -> (SVD register, SVD field). The macro is a single bit or a mask.
@@ -61,6 +77,12 @@ FIELDS = {
     "RCC_USART3EN": ("APB1PCENR", "USART3EN"),
     "RCC_UART4EN": ("APB1PCENR", "UART4EN"),
     "RCC_UART5EN": ("APB1PCENR", "UART5EN"),
+    "RCC_USBHSEN": ("AHBPCENR", "USBHS_EN"),
+    "RCC_CFGR2_USBHSDIV_MASK": ("CFGR2", "USBHSDIV"),
+    "RCC_CFGR2_USBHSPLLSRC": ("CFGR2", "USBHSPLLSRC"),
+    "RCC_CFGR2_USBHSCLK_MASK": ("CFGR2", "USBHSCLK"),
+    "RCC_CFGR2_USBHSPLL": ("CFGR2", "USBHSPLL"),
+    "RCC_CFGR2_USBFSSRC": ("CFGR2", "USBFSSRC"),
 }
 
 # Same, for the bits of the USART registers. USART1 stands for all USART blocks.
@@ -76,12 +98,51 @@ USART_FIELDS = {
     "USART_CTLR3_DMAR": ("CTLR3", "DMAR"), "USART_CTLR3_DMAT": ("CTLR3", "DMAT"),
 }
 
+# Same, for the USBHS registers. The SVD names INT_EN bits 5 to 7 wrongly
+# (RB_U_1WIRE_MODE, RB_UIE_DEV_NAK at bit 6). The header follows the RM
+# (SETUP_ACT, ISO_ACT, DEV_NAK), so these bits are not checked.
+USBHS_FIELDS = {
+    "USBHS_UC_DMA_EN": ("USB_CTRL", "RB_UC_DMA_EN"), "USBHS_UC_CLR_ALL": ("USB_CTRL", "RB_UC_CLR_ALL"),
+    "USBHS_UC_RST_SIE": ("USB_CTRL", "RB_UC_RST_SIE"), "USBHS_UC_INT_BUSY": ("USB_CTRL", "RB_UC_INT_BUSY"),
+    "USBHS_UC_DEV_PU_EN": ("USB_CTRL", "RB_UC_DEV_PU_EN"),
+    "USBHS_UC_SPEED_MASK": ("USB_CTRL", "RB_UC_SPEED_TYPE"),
+    "USBHS_UC_HOST_MODE": ("USB_CTRL", "RB_UC_HOST_MODE"),
+    "USBHS_UH_PHY_SUSPENDM": ("UHOST_CTRL", "RB_UH_PHY_SUSPENDM"),
+    "USBHS_UIE_BUS_RST": ("USB_INT_EN", "RB_UIE_BUS_RST__RB_UIE_DETECT"),
+    "USBHS_UIE_TRANSFER": ("USB_INT_EN", "RB_UIE_TRANSFER"),
+    "USBHS_UIE_SUSPEND": ("USB_INT_EN", "RB_UIE_SUSPEND"),
+    "USBHS_UIE_SOF_ACT": ("USB_INT_EN", "RB_UIE_HST_SOF"),
+    "USBHS_UIE_FIFO_OV": ("USB_INT_EN", "RB_UIE_FIFO_OV"),
+    "USBHS_DEV_AD_MASK": ("USB_DEV_AD", "MASK_USB_ADDR"),
+    "USBHS_SPEED_TYPE_MASK": ("USB_SPEED_TYPE", "USB_SPEED_TYPE"),
+    "USBHS_UMS_SUSPEND": ("USB_MIS_ST", "RB_UMS_SUSPEND"),
+    "USBHS_UMS_BUS_RESET": ("USB_MIS_ST", "RB_UMS_BUS_RESET"),
+    "USBHS_UMS_SIE_FREE": ("USB_MIS_ST", "RB_UMS_SIE_FREE"),
+    "USBHS_UIF_BUS_RST": ("USB_INT_FG", "RB_UIF_BUS_RST__RB_UIF_DETECT"),
+    "USBHS_UIF_TRANSFER": ("USB_INT_FG", "RB_UIF_TRANSFER"),
+    "USBHS_UIF_SUSPEND": ("USB_INT_FG", "RB_UIF_SUSPEND"),
+    "USBHS_UIF_HST_SOF": ("USB_INT_FG", "RB_UIF_HST_SOF"),
+    "USBHS_UIF_FIFO_OV": ("USB_INT_FG", "RB_UIF_FIFO_OV"),
+    "USBHS_UIF_SETUP_ACT": ("USB_INT_FG", "RB_UIF_SETUP_ACT"),
+    "USBHS_UIF_ISO_ACT": ("USB_INT_FG", "RB_UIF_ISO_ACT"),
+    "USBHS_UIS_ENDP_MASK": ("USB_INT_ST", "MASK_UIS_H_RES__MASK_UIS_ENDP"),
+    "USBHS_UIS_TOKEN_MASK": ("USB_INT_ST", "MASK_UIS_TOKEN"),
+    "USBHS_UIS_TOG_OK": ("USB_INT_ST", "RB_UIS_TOG_OK"),
+    "USBHS_UIS_IS_NAK": ("USB_INT_ST", "RB_UIS_IS_NAK"),
+    "USBHS_UEP_T_RES_MASK": ("UEP1_TX_CTRL", "MASK_UEP_T_RES"),
+    "USBHS_UEP_T_TOG_MASK": ("UEP1_TX_CTRL", "MASK_UEP_T_TOG"),
+    "USBHS_UEP_T_TOG_AUTO": ("UEP1_TX_CTRL", "RB_UEP_T_TOG_AUTO"),
+    "USBHS_UEP_R_RES_MASK": ("UEP1_RX_CTRL", "MASK_UEP_R_RES"),
+    "USBHS_UEP_R_TOG_MASK": ("UEP1_RX_CTRL", "MASK_UEP_R_TOG"),
+    "USBHS_UEP_R_TOG_AUTO": ("UEP1_RX_CTRL", "RB_UEP_R_TOG_AUTO"),
+}
+
 # Base addresses in the header -> SVD peripheral.
 BASES = {"RCC_BASE": "RCC", "GPIOA_BASE": "GPIOA", "GPIOB_BASE": "GPIOB",
          "GPIOC_BASE": "GPIOC", "GPIOD_BASE": "GPIOD", "GPIOE_BASE": "GPIOE",
          "USART1_BASE": "USART1", "USART2_BASE": "USART2", "USART3_BASE": "USART3",
          "UART4_BASE": "UART4", "UART5_BASE": "UART5", "UART6_BASE": "UART6",
-         "UART7_BASE": "UART7", "UART8_BASE": "UART8"}
+         "UART7_BASE": "UART7", "UART8_BASE": "UART8", "USBHS_BASE": "USBHS"}
 
 
 def load_svd():
@@ -105,6 +166,10 @@ def field_position(periph, reg_name, field_name):
             continue
         for f in reg.iter("field"):
             if f.findtext("name") == field_name:
+                bit_range = f.findtext("bitRange")
+                if bit_range:  # "[msb:lsb]", used by the USBHS block
+                    msb, lsb = (int(v, 0) for v in bit_range.strip("[]").split(":"))
+                    return lsb, msb - lsb + 1
                 lsb = int(f.findtext("bitOffset") or f.findtext("lsb"), 0)
                 width = int(f.findtext("bitWidth"), 0)
                 return lsb, width
@@ -120,13 +185,15 @@ def build_asserts(periphs):
     lines.append("")
     for svd_name, (struct, members) in STRUCTS.items():
         periph = periphs[svd_name]
-        for member in members:
-            off = register_offset(periph, member)
+        for entry in members:
+            member, reg = entry if isinstance(entry, tuple) else (entry, entry)
+            off = register_offset(periph, reg)
             lines.append(f'_Static_assert(offsetof({struct}, {member}) == 0x{off:02X}, '
                          f'"{struct}.{member} differs from SVD");')
         lines.append("")
     checks = [(m, "RCC", rf) for m, rf in FIELDS.items()]
     checks += [(m, "USART1", rf) for m, rf in USART_FIELDS.items()]
+    checks += [(m, "USBHS", rf) for m, rf in USBHS_FIELDS.items()]
     for macro, svd_name, (reg, field) in checks:
         lsb, width = field_position(periphs[svd_name], reg, field)
         mask = ((1 << width) - 1) << lsb

@@ -31,11 +31,12 @@ library are in [ch32v00x-art](https://gitlab.vandertogt.org/riscv/ch32v00x-art).
 | `CH32V00X` | `CH32V002` | CH32V002 | Builds. Hardware test not recorded. |
 | `CH32V00X` | `CH32V006` | CH32V006 | Builds. Hardware test not recorded. |
 | `CH32V20X` | `CH32V20x_D8W` | CH32V208 | Builds. Hardware test not recorded. No ADC driver. |
-| `CH32V30X` | `CH32V30x_D8C` | CH32V307 | Start-up, clock, GPIO and USART build. Hardware test not recorded. Other drivers not ported yet. |
+| `CH32V30X` | `CH32V30x_D8C` | CH32V307 | Start-up, clock, GPIO, USART and USB device build. Hardware test not recorded. Other drivers not ported yet. |
 
 On CH32V30X, the start-up, the clock, SysTick, the delays, `Interrupt` and
 `GpioPin` build. `GpioPin` sets pins 0 to 7 in `CFGLR` and pins 8 to 15 in `CFGHR`.
 The `Usart` driver builds for USART1 to USART3 and UART4 to UART8. A loopback test on hardware is not done yet.
+The USB device driver `hw::UsbDevice` builds for the USBHS controller. A test on a host is not done yet.
 The DMA, timer, EXTI, I2C and flash drivers are not ported yet. The family list is
 in [Chip families](docs/families.md).
 
@@ -46,7 +47,7 @@ in [Chip families](docs/families.md).
 | Start-up | Reset handler, weak exception handlers, vector table per family |
 | System timer and delays | `initSysTick()` and `getSysTick()` (your project sets the tick rate), `delaymS()` and `delayuS()` |
 | GPIO and EXTI | `GpioPin`, `Exti` |
-| Communication | `Usart`, `I2c` |
+| Communication | `Usart`, `I2c`, `hw::UsbDevice` (CH32V30X only, USB device on USBHS) |
 | Analog and timing | `Adc` (CH32V00X only), `Timer`, `Dma` |
 | Other | `Flash`, `Interrupt` (connects C++ member functions as interrupt handlers) |
 
@@ -75,7 +76,7 @@ toolchain file `cmake/gcc_riscv.cmake`. For all options, see
 | `ldscripts/` | Linker scripts, one memory script per chip. |
 | `cmake/` | The RISC-V toolchain file, the package configuration and helper modules for the examples build. |
 | `svd/` | SVD register descriptions, for reference and debug tools. |
-| `tests/` | Checks of the library. `check-svd-offsets.py` compares the CH32V30x device header with the SVD. |
+| `tests/` | Checks of the library. `check-svd-offsets.py` compares the CH32V30x device header with the SVD. `ch32v30x-usb-loopback/` is a hardware test of the USB device driver. |
 | `etc/openocd.cfg` | OpenOCD configuration for the WCH-LinkE debug adapter. It needs the WCH fork of OpenOCD. |
 
 ## Documentation
@@ -85,6 +86,7 @@ toolchain file `cmake/gcc_riscv.cmake`. For all options, see
 | [Building and using ch32v00x-system](docs/building.md) | Requirements, CMake variables, C++ standard, `hw::span`, compiler flags, installed package |
 | [Chip families](docs/families.md) | `CH32_FAMILY`, family directories, device-specific code, adding a family |
 | [ADC calibration on CH32V002 and CH32V006](docs/adc.md) | Calibration of the ADC on these chips |
+| [USB device driver](docs/usb.md) | `hw::UsbDevice` on the USBHS controller of CH32V307: layers, clock, endpoint behavior, known limits |
 
 ## Contributing
 
