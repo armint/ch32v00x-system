@@ -24,7 +24,7 @@ namespace hw {
  * Example: using Tck = hw::FastPin<GPIOA_BASE, 5>;
  *
  * @tparam PortBase the GPIO port base address, e.g. GPIOA_BASE.
- * @tparam Pin the pin number (0-15).
+ * @tparam Pin the pin number: 0-15, or 0-7 on CH32V00X.
  */
 template <uintptr_t PortBase, uint8_t Pin>
 struct FastPin {
