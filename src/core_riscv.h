@@ -98,9 +98,9 @@ typedef struct {
    __IO uint32_t CTLR;
    __IO uint32_t SR;
    __IO uint32_t CNT;
-   uint32_t RESERVED0;
+   __IO uint32_t CNTH; /* CH32V20X/CH32V30X: high word of the 64-bit counter. Reserved on CH32V00X. */
    __IO uint32_t CMP;
-   uint32_t RESERVED1;
+   __IO uint32_t CMPH; /* CH32V20X/CH32V30X: high word of the 64-bit compare value. Reserved on CH32V00X. */
 } SysTick_Type;
 
 
@@ -380,6 +380,10 @@ __attribute__((always_inline)) RV_STATIC_INLINE void NVIC_SystemReset(void) {
 
 
 /* Core_Exported_Functions */
+// Starts the SysTick interrupt every ticks core clocks, as the CMSIS
+// function of the same name does. Returns 0, or 1 for ticks == 0. In
+// Timekeeping.cpp.
+extern uint32_t SysTick_Config(uint32_t ticks);
 extern uint32_t __get_MSTATUS(void);
 extern void __set_MSTATUS(uint32_t value);
 extern uint32_t __get_MISA(void);

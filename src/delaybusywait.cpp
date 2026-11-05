@@ -1,7 +1,6 @@
 #include <wch_device.h>
 
-#include "delay.h"
-#include <peripherals/systick.h>
+#include "delaybusywait.h"
 
 // This number is processor specific. For the QingKe V2 core (CH32V00x) it is 6
 // cycles per loop
@@ -10,13 +9,13 @@ constexpr uint32_t CyclesPerLoop = 6;
 constexpr uint32_t OneTimeCycles = 630;
 
 
-void delaymS(uint32_t msec) {
-   auto end = getSysTick() + msec;
-   while(getSysTick() < end)
+void delaymS(duration_t msec) {
+   auto end = getUptimeTicks() + msec;
+   while(getUptimeTicks() < end)
       ;
 }
 
-void delayuS(uint32_t usec) {
+void delayuS(duration_t usec) {
    uint32_t loops = SystemCoreClock / (CyclesPerLoop * 1000);
    loops *= usec;
    loops = loops / 1000;

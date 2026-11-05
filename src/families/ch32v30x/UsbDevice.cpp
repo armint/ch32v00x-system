@@ -1,7 +1,7 @@
 #include "UsbDevice.h"
 
 #include "utils/Interrupt.h"
-#include "utils/delay.h"
+#include "delaybusywait.h"
 
 namespace hw {
 

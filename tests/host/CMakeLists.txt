@@ -12,7 +12,8 @@ set(_src ${CMAKE_CURRENT_SOURCE_DIR}/../../src)
 enable_testing()
 
 # GpioPin once per family. The stubs-<family> directory gives <wch_device.h>
-# with the GPIO register layout of that family.
+# with the GPIO register layout of that family. stubs-gpio gives a critical
+# section that does nothing.
 foreach(_family v00x v20x v30x)
     if(_family STREQUAL "v00x")
         set(_pins 8)
@@ -24,6 +25,7 @@ foreach(_family v00x v20x v30x)
             ${_src}/peripherals/GpioPin.cpp)
     target_include_directories(test-gpio-${_family} PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}/stubs-${_family}
+            ${CMAKE_CURRENT_SOURCE_DIR}/stubs-gpio
             ${CMAKE_CURRENT_SOURCE_DIR}
             ${_src})
     target_compile_definitions(test-gpio-${_family} PRIVATE GPIO_PINS_PER_PORT=${_pins})

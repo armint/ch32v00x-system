@@ -62,7 +62,7 @@ void __attribute__((noreturn)) _start(void);
  * @par Returns
  *  Nothing.
  */
-void startup_initialize_hardware_early(void);
+void os_startup_initialize_hardware_early(void);
 
 /**
  * @brief Initialise hardware.
@@ -71,7 +71,7 @@ void startup_initialize_hardware_early(void);
  * @par Returns
  *  Nothing.
  */
-void startup_initialize_hardware(void);
+void os_startup_initialize_hardware(void);
 
 #if defined(__cplusplus)
 }

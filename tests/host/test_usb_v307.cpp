@@ -23,7 +23,7 @@
 #include "check.h"
 #include "families/ch32v30x/UsbDevice.h"
 #include "utils/Interrupt.h"
-#include "utils/delay.h"
+#include "delaybusywait.h"
 
 #include <array>
 #include <cstring>

@@ -153,7 +153,7 @@ extern "C" [[gnu::section(".after_vectors"), gnu::noreturn, gnu::weak, gnu::used
    // Initialise hardware right after reset, to switch clock to higher
    // frequency and have the rest of the initialisations run faster.
 
-   startup_initialize_hardware_early();
+   os_startup_initialize_hardware_early();
 
    // Copy the DATA segment from Flash to RAM (inlined).
    initialize_data(&_sidata, &_sdata, &_edata);
@@ -163,7 +163,7 @@ extern "C" [[gnu::section(".after_vectors"), gnu::noreturn, gnu::weak, gnu::used
 
    // Hook to continue the initialisations. Usually compute and store the
    // clock frequency in the global CMSIS variable, cleared above.
-   startup_initialize_hardware();
+   os_startup_initialize_hardware();
 
    // Call the standard library initialisation (mandatory for C++ to
    // execute the constructors for the static objects).
