@@ -40,7 +40,7 @@ The baud rate uses the APB prescaler: USART1 follows PPRE2, the other USARTs fol
 The USB device driver `hw::UsbDevice` builds for the USBHS controller. A test on a host is not done yet.
 The `Adc` driver builds for ADC1 and ADC2.
 The `Dma` driver builds for DMA1 and the `Timer` driver for TIM1 to TIM10.
-On the YD-CH32V307VCT6 board, the `adc-dma` and `timer` examples of ch32v00x-examples work.
+On the YD-CH32V307VCT6 board, the `adc-dma` and `timer` examples of [ch32v00x-examples](https://gitlab.vandertogt.org/riscv/ch32v00x-examples) work.
 `adc-dma` uses ADC1 with DMA1 channel 1. `timer` uses TIM2 channel 1 on PA15 and TIM3 channel 1 on PB4, through the AFIO remaps.
 The I2C and flash drivers are not ported yet. The family list is
 in [Chip families](docs/families.md).
