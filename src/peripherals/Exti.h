@@ -2,6 +2,13 @@
 #pragma once
 #include <wch_device.h>
 
+// CH32V30X has the API of Exti in system-stm32 (TriggerEdge, Port, ...). Its
+// family directory holds Exti_V30x.h. The other families have the short
+// API below.
+#if __has_include("Exti_V30x.h")
+#include "Exti_V30x.h"
+#else
+
 namespace Exti {
 inline void enableInterrupt(unsigned int line) {
    EXTI->INTENR |= (1 << line);
@@ -28,3 +35,4 @@ inline bool isInterruptTriggered(unsigned int line) {
    return EXTI->INTFR & (1 << line);
 }
 }; // namespace Exti
+#endif
