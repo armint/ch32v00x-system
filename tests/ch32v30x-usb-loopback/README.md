@@ -46,9 +46,29 @@ The build writes `usb-loopback.elf` and `usb-loopback.hex`.
 4. Run `python3 tests/ch32v30x-usb-loopback/loopback.py`.
 
 The script shows the speed and the bulk packet size. A high-speed port
-gives 512 bytes, a full-speed port gives 64 bytes. The script then sends
-200 packets of different sizes. It shows `PASS` when each packet comes
-back unchanged.
+gives 512 bytes, a full-speed port gives 64 bytes. The script does these
+checks in this sequence:
+
+1. It sends a vendor request. The device must answer with STALL.
+2. It reads the device descriptor. This read must succeed. It shows that
+   EP0 accepts a SETUP packet after a STALL.
+3. It sends 200 packets of different sizes. Each packet must come back
+   unchanged.
+4. It sends CLEAR_FEATURE(ENDPOINT_HALT) to both bulk endpoints. This sets
+   the data toggle to DATA0 on the device and on the host.
+5. It sends 20 packets again. Each packet must come back unchanged.
+
+The script shows `PASS` when all checks succeed.
+
+## Open points
+
+The test does not check these items. The reasons are in
+[USB device driver](../../docs/usb.md), section "Known limits".
+
+- A SETUP packet that arrives while a bulk transfer interrupt waits can
+  overwrite the global `INT_ST` and `RX_LEN` registers. The bulk event is
+  then lost. The time window is too small for this test. If a bulk IN
+  transfer stops with no `InComplete` event, look at this limit first.
 
 Do the test on a high-speed port. Then do it again behind a full-speed
 hub, if one is available.
