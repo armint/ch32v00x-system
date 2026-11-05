@@ -58,6 +58,12 @@ process it in the main loop.
   buffer until the next `armOut()`.
 - An IN endpoint answers NAK until `startIn()`. After the host
   acknowledges the packet, the endpoint answers NAK again.
+- `openEndpoint()` on a direction that is open with the same attributes
+  (the open of SET_INTERFACE) sets DATA0 and NAK, and drops a packet that
+  waits. EP0 is not touched.
+- `setNak()` returns true when the hardware has completed a transfer of that
+  direction that the handler has not reported yet. The controller layer uses
+  it to decide if a cancelled IN packet was taken.
 - After a SETUP packet, both directions of EP0 answer NAK.
 - The hardware sets the data toggle of endpoints 1 to 15. EP0 has no
   automatic toggle, thus the driver sets it for EP0.
@@ -79,10 +85,13 @@ buffer, and `armOut()` reports it.
 - The data toggle bit `RX_TOG[0]` selects the buffer, and the hardware flips
   it after each packet. The hardware does not NAK when both buffers are full,
   so the interrupt handler sets NAK then, and `armOut()` sets ACK again.
-- `setNak()` on a double-buffered endpoint that answers ACK is not
-  race-free. A packet that completes during the read-modify-write of
-  `RX_CTRL` can lose its toggle flip. Use it when no packet can arrive.
-- Clearing STALL drops both buffers and selects buffer 0 again.
+- `setNak()` and `setStall()` do a read-modify-write of the control byte
+  of the endpoint. A packet that the hardware completes in between can lose
+  its toggle flip. The driver keeps the toggle of each endpoint 1 to 15 in
+  software and writes it back in the interrupt handler, so the loss does not
+  stay. The software copy is also the buffer that receives the next packet.
+- Clearing STALL, and opening an open endpoint again (SET_INTERFACE), drop
+  both buffers and select buffer 0 again.
 - The bit position of the endpoint in `UEP_BUF_MOD` (bit n for endpoint n)
   follows the layout of `UEP_CONFIG`. The manual does not show the bit
   numbers. The host test checks the driver logic with a model of the

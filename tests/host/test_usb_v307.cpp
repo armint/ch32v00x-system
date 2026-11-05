@@ -305,12 +305,16 @@ void testOpenEndpointRejects() {
 
    CHECK(usb.openEndpoint(0x83, EndpointType::Bulk, 64));
    const uint32_t dma = txDma(3);
-   ep(3).TX_CTRL = USBHS_UEP_T_RES_ACK; // a packet waits: reopen must not reset it
+   ep(3).TX_CTRL = USBHS_UEP_T_RES_ACK | USBHS_UEP_T_TOG_DATA1; // a packet waits, toggle DATA1
+   ep(3).T_LEN = 5;
+   CHECK(usb.openEndpoint(0x83, EndpointType::Bulk, 64)); // same size: keeps the buffer
+   // A reopen is SET_INTERFACE: DATA0, NAK, and the waiting packet is gone (as in the system-stm32 driver).
+   CHECK(ep(3).TX_CTRL == TxOpen);
+   CHECK(ep(3).T_LEN == 0);
+   CHECK(txDma(3) == dma);
    before = snapshot();
-   CHECK(usb.openEndpoint(0x83, EndpointType::Bulk, 64));  // same size: keeps the buffer
    CHECK(!usb.openEndpoint(0x83, EndpointType::Bulk, 32)); // other size
    CHECK(snapshot() == before);
-   CHECK(txDma(3) == dma);
 }
 
 void testStartIn() {
@@ -524,6 +528,121 @@ void testDoubleBufferedStallAndNak() {
    CHECK(rxResponse(1) == USBHS_UEP_R_RES_ACK);
 }
 
+// An IN packet that the host acknowledged: the hardware flips T_TOG[0] and the handler runs.
+void completeIn(UsbDevice &usb, uint8_t n, bool hardwareFlips = true) {
+   if(hardwareFlips) {
+      ep(n).TX_CTRL ^= USBHS_UEP_T_TOG_DATA1;
+   }
+   hostUsbhs.INT_ST = static_cast<uint8_t>(USBHS_UIS_TOKEN_IN | n);
+   hostUsbhs.INT_FG = USBHS_UIF_TRANSFER;
+   usb.handleInterrupt();
+}
+
+void testReopenResetsDirections() {
+   UsbDevice usb;
+   resetFakes();
+   eventCount = 0;
+   usb.begin(&recordEvent, nullptr);
+   CHECK(usb.openEndpoint(0x01, EndpointType::Bulk, 64, true));
+   CHECK(usb.openEndpoint(0x02, EndpointType::Bulk, 64));
+   CHECK(usb.armOut(0x01));
+   receivePacket(usb, 1, 7);  // reported
+   receivePacket(usb, 1, 8);  // pending in buffer 1
+   CHECK(usb.armOut(0x02));
+   receivePacket(usb, 2, 3); // the toggle is DATA1 now
+   CHECK((ep(2).RX_CTRL & USBHS_UEP_R_TOG_DATA1) != 0);
+   const size_t events = eventCount;
+
+   // SET_INTERFACE: the controller layer closes and opens the endpoints again.
+   CHECK(usb.openEndpoint(0x01, EndpointType::Bulk, 64, true));
+   CHECK(usb.openEndpoint(0x02, EndpointType::Bulk, 64));
+   CHECK(ep(1).RX_CTRL == RxOpen);
+   CHECK(ep(2).RX_CTRL == RxOpen); // DATA0 again
+   // No packet from before: armOut() reports nothing, and readOut() has nothing.
+   CHECK(usb.armOut(0x01));
+   CHECK(eventCount == events);
+   std::array<uint8_t, 64> data{};
+   CHECK(usb.readOut(0x01, data) == 0);
+   // The next packet goes to buffer 0 again.
+   receivePacket(usb, 1, 9);
+   CHECK(eventCount == events + 1 && events + 1 > 0 && ::events[eventCount - 1].second == 9);
+}
+
+// The handler takes the data toggle from the software copy and writes it to the hardware, so a flip that
+// a read-modify-write of the main loop undid does not stay.
+void testLostToggleFlipIsRepaired() {
+   UsbDevice usb;
+   resetFakes();
+   eventCount = 0;
+   usb.begin(&recordEvent, nullptr);
+   CHECK(usb.openEndpoint(0x81, EndpointType::Bulk, 64));
+   CHECK(usb.openEndpoint(0x02, EndpointType::Bulk, 64, true));
+
+   // IN: the packet is taken (DATA0 -> DATA1), but setNak() wrote DATA0 back before the handler ran.
+   const std::array<uint8_t, 2> packet{ 1, 2 };
+   CHECK(usb.startIn(0x81, packet));
+   completeIn(usb, 1, false); // the flip is lost: T_TOG is still DATA0
+   CHECK(ep(1).TX_CTRL == (USBHS_UEP_T_TOG_AUTO | USBHS_UEP_T_TOG_DATA1 | USBHS_UEP_T_RES_NAK));
+   // The next packet is DATA0 again after the next completion.
+   CHECK(usb.startIn(0x81, packet));
+   completeIn(usb, 1, true);
+   CHECK((ep(1).TX_CTRL & USBHS_UEP_T_TOG_DATA1) == 0);
+
+   // Double-buffered OUT: a lost flip does not send the next packet into the buffer of the last one.
+   CHECK(usb.armOut(0x02));
+   hostUsbhs.RX_LEN = 4;
+   hostUsbhs.INT_ST = static_cast<uint8_t>(USBHS_UIS_TOKEN_OUT | USBHS_UIS_TOG_OK | 2);
+   hostUsbhs.INT_FG = USBHS_UIF_TRANSFER;
+   usb.handleInterrupt(); // the hardware flip is lost: RX_TOG[0] is still 0
+   CHECK((ep(2).RX_CTRL & USBHS_UEP_R_TOG_DATA1) != 0); // the handler wrote DATA1 = buffer 1 next
+   CHECK(eventCount == 1);
+}
+
+// A STALL that the main loop set after the packet completed stays.
+void testStallSurvivesHandler() {
+   UsbDevice usb;
+   resetFakes();
+   usb.begin(&onEvent, nullptr);
+   CHECK(usb.openEndpoint(0x81, EndpointType::Bulk, 64));
+   CHECK(usb.openEndpoint(0x02, EndpointType::Bulk, 64));
+   const std::array<uint8_t, 1> packet{ 1 };
+   CHECK(usb.startIn(0x81, packet));
+   usb.setStall(0x81, true);
+   completeIn(usb, 1);
+   CHECK(usb.isStalled(0x81));
+   CHECK(usb.armOut(0x02));
+   usb.setStall(0x02, true);
+   receivePacket(usb, 2, 1);
+   CHECK(usb.isStalled(0x02));
+}
+
+void testSetNakReportsPendingTransfer() {
+   UsbDevice usb;
+   resetFakes();
+   usb.begin(&onEvent, nullptr);
+   CHECK(usb.openEndpoint(0x81, EndpointType::Bulk, 64));
+   CHECK(usb.openEndpoint(0x02, EndpointType::Bulk, 64));
+   CHECK(!usb.setNak(0x81)); // nothing pending
+   CHECK(!usb.setNak(0x03)); // not open
+
+   // The hardware has completed an IN transfer on EP1 and an OUT transfer on EP2, and the interrupt is masked
+   // (INT_FG.TRANSFER is set, the handler has not run).
+   hostUsbhs.INT_ST = static_cast<uint8_t>(USBHS_UIS_TOKEN_IN | 1);
+   hostUsbhs.INT_FG = USBHS_UIF_TRANSFER;
+   CHECK(usb.setNak(0x81));
+   CHECK(!usb.setNak(0x82 & 0x7F)); // wrong direction and endpoint
+   hostUsbhs.INT_ST = static_cast<uint8_t>(USBHS_UIS_TOKEN_OUT | USBHS_UIS_TOG_OK | 2);
+   CHECK(usb.setNak(0x02));
+   CHECK(!usb.setNak(0x81));
+   // An OUT packet with the wrong toggle makes no event.
+   hostUsbhs.INT_ST = static_cast<uint8_t>(USBHS_UIS_TOKEN_OUT | 2);
+   CHECK(!usb.setNak(0x02));
+   // A flag that was handled (INT_FG clear) is not pending.
+   hostUsbhs.INT_ST = static_cast<uint8_t>(USBHS_UIS_TOKEN_IN | 1);
+   hostUsbhs.INT_FG = 0;
+   CHECK(!usb.setNak(0x81));
+}
+
 void testStallAndNak() {
    UsbDevice usb;
    begin(usb);
@@ -641,6 +760,10 @@ int main() {
    testStartIn();
    testArmOutAndReadOut();
    testStallAndNak();
+   testReopenResetsDirections();
+   testLostToggleFlipIsRepaired();
+   testStallSurvivesHandler();
+   testSetNakReportsPendingTransfer();
    testDoubleBufferedOpen();
    testDoubleBufferedReceive();
    testDoubleBufferedStallAndNak();

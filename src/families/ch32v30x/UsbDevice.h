@@ -66,9 +66,10 @@ namespace hw {
 // endpoint number then has no IN direction (the hardware uses the IN buffer
 // address register as the second OUT buffer). The hardware does not NAK when
 // both buffers are full, so the interrupt handler sets NAK then.
-// setNak() on a double-buffered endpoint that answers ACK is not race-free:
-// a packet that completes during the read-modify-write of RX_CTRL can lose
-// its toggle flip (docs/usb.md).
+// setNak() and setStall() on an endpoint that answers ACK do a read-modify-write
+// of the control byte, and a packet that completes in between can lose its
+// toggle flip. The driver keeps the toggle in software and writes it back in
+// the handler, so the loss does not stay (Direction::toggle).
 //
 // Limits: no isochronous endpoints, no double-buffered IN endpoints, no
 // remote wake-up, no test modes. INT_ST (token and endpoint of the last
@@ -194,8 +195,14 @@ class UsbDevice {
    /**
     * @brief Sets NAK on one direction of an endpoint. This drops a pending
     * startIn() or armOut().
+    * @return true if the USB hardware has completed a transfer of this
+    * direction of the endpoint (an IN packet that the host acknowledged, or a
+    * received OUT packet) and the interrupt handler has not reported it yet.
+    * The event follows, also when the interrupt is masked now. The USB
+    * controller layer uses this to decide if a cancelled IN packet was taken.
+    * Not in system-stm32 (there setNak() returns nothing).
     */
-   void setNak(uint8_t address);
+   bool setNak(uint8_t address);
 
    /**
     * @brief The interrupt handler. begin() connects it to USBHS_IRQn
@@ -214,8 +221,12 @@ class UsbDevice {
       // Double-buffered OUT only. buffer is buffer 0, buffer1 buffer 1.
       uint8_t *buffer1 = nullptr;
       uint16_t received1 = 0; // size of the packet in buffer 1
+      // Endpoints 1..15: the data toggle bit that the hardware has next, kept in software. The handler
+      // flips it after each packet and writes it to the hardware, so a read-modify-write of the main
+      // loop that undoes the flip of the hardware (setNak(), setStall()) does not stay. For a
+      // double-buffered OUT endpoint it is also the buffer that receives the next packet.
+      uint8_t toggle = 0;
       bool doubleBuffered = false;
-      bool armed = false;
       uint8_t reported = NoBuffer; // the buffer that the software reads (readOut())
       uint8_t pending = NoBuffer;  // a received packet that waits for armOut()
    };
@@ -238,6 +249,8 @@ class UsbDevice {
    void resetEndpoints();
    void report(usb::EventType type, uint8_t endpoint, uint16_t size = 0);
    void reportDoubleBuffered(uint8_t n, uint8_t buffer);
+   void resetDirection(uint8_t address);
+   bool transferPending(uint8_t address) const;
    void resetDoubleBuffer(uint8_t n);
    void handleTransfer(uint8_t status, bool setupPending);
    Direction *direction(uint8_t address);
