@@ -23,8 +23,9 @@ void Adc::setSamplingTime(Channel channel, SamplingCycles cycles) const {
 void Adc::calibrate() {
    enable();
    // The RM asks for at least 2 ADC clock cycles with ADON set before the calibration.
-   // The slowest ADC clock is 144 MHz / 8 / 8, so 2 cycles are at most 128 core cycles.
-   for(int i = 0; i < 64; i++) {
+   // One ADC cycle is PPRE2 (max 16) x ADCPRE (max 8) core cycles, so 2 cycles are at most
+   // 2 x 16 x 8 = 256 core cycles. Each loop pass takes at least 2 core cycles.
+   for(int i = 0; i < 256; i++) {
       __asm volatile("");
    }
    adc.CTLR2 |= ADC_RSTCAL;

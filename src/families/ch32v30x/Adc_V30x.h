@@ -79,7 +79,7 @@ class Adc {
       RCC->APB2PRSTR &= ~bit;
    }
 
-   /// Switch the temperature sensor and Vrefint on. Wait for their start-up time before you convert.
+   /// Switch the temperature sensor and Vrefint on. Call calibrate() first. Wait for the start-up time before you convert.
    inline void enableInternalChannels() const {
       adc.CTLR2 |= ADC_TSVREFE;
    }
@@ -89,6 +89,8 @@ class Adc {
    }
 
    /// Powers the ADC on if needed, then runs the calibration. Blocks until it ends.
+   /// Call it before enableInternalChannels(): with TSVREFE set the input buffer
+   /// stays on, and the calibration offset is then wrong for the external channels.
    void calibrate();
 
    /// Put a channel at a position of the regular sequence. The position counts from 0 to 15.

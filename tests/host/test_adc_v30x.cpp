@@ -62,7 +62,7 @@ int main() {
    CHECK(hostRcc.APB2PCENR == RCC_ADC1EN);
    adc2.enableClock();
    CHECK(hostRcc.APB2PCENR == (RCC_ADC1EN | RCC_ADC2EN));
-   adc2.reset();
+   adc2.reset(); // The fake records no pulse. This checks only that the bit is released.
    CHECK((hostRcc.APB2PRSTR & (RCC_ADC1RST | RCC_ADC2RST)) == 0);
 
    // Power, internal channels, trigger.

@@ -203,13 +203,13 @@ typedef struct {
 #define RCC_CFGR0_PPRE1_MASK (7ul << 8)
 #define RCC_CFGR0_PPRE2_MASK (7ul << 11)
 #define RCC_ADCPRE (3ul << 14)
+#define RCC_CFGR0_PLLSRC (1ul << 16) /* 1: PREDIV1 output feeds the PLL */
+#define RCC_CFGR0_PLLMUL_MASK (0xFul << 18)
+#define RCC_CFGR0_PLLMUL_X18 (0ul << 18) /* CH32V30x_D8C: 0000 is x18 */
 
 /* APB2 peripheral reset bits (RCC_APB2PRSTR) */
 #define RCC_ADC1RST (1ul << 9)
 #define RCC_ADC2RST (1ul << 10)
-#define RCC_CFGR0_PLLSRC (1ul << 16) /* 1: PREDIV1 output feeds the PLL */
-#define RCC_CFGR0_PLLMUL_MASK (0xFul << 18)
-#define RCC_CFGR0_PLLMUL_X18 (0ul << 18) /* CH32V30x_D8C: 0000 is x18 */
 
 /* RCC_CFGR2 fields */
 #define RCC_CFGR2_PREDIV1_MASK (0xFul << 0)
