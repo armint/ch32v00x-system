@@ -25,7 +25,7 @@ The build uses `-Wall -Wextra -Werror`. Each test program returns a non-zero exi
 | `test-gpio-v00x` | `hw::GpioPin` on CH32V00X, pins 0 to 7: the 4-bit field in `CFGLR` that `configure()` writes for each mode, the pull-up and pull-down writes to `BSHR` and `BCR`, the setters (`setMode()`, `setOutputType()`, `setSpeed()`, `setPull()`), and `write()`, `toggle()` and `read()`. |
 | `test-gpio-v20x` | The same checks on CH32V20X, pins 0 to 15. Pins 0 to 7 use `CFGLR`. Pins 8 to 15 use `CFGHR`. |
 | `test-gpio-v30x` | The same checks on CH32V30X, pins 0 to 15. |
-| `test-usart-v30x` | The baud rate of `Usart` on CH32V30X: USART1 uses PPRE2 and the other USARTs use PPRE1. |
+| `test-usart-v30x` | The baud rate of `hw::Usart` on CH32V30X: USART1 uses PPRE2 and the other USARTs use PPRE1. It also checks `getClockFrequency()` and `setFrameFormat()` (the M, PCE and PS bits, the stop bits, the refusal of 7 data bits without parity, and that a USART that is off stays off). |
 | `test-adc-v30x` | The CH32V30X `Adc` driver: the sequence registers, the sample time registers, the prescaler, the clock and reset bits of ADC1 and ADC2, and the trigger. It does not test `calibrate()`. |
 
 Each test starts with a known pattern in the configuration registers.

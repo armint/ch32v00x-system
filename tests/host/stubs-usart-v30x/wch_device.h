@@ -51,6 +51,7 @@ extern USART_TypeDef hostUsart2;
 #define USART_CTLR1_RXNEIE ((uint16_t)0x0020)
 #define USART_CTLR1_TCIE ((uint16_t)0x0040)
 #define USART_CTLR1_TXEIE ((uint16_t)0x0080)
+#define USART_CTLR1_M ((uint16_t)0x1000)
 #define USART_CTLR1_PS ((uint16_t)0x0200)
 #define USART_CTLR1_PCE ((uint16_t)0x0400)
 #define USART_CTLR1_UE ((uint16_t)0x2000)

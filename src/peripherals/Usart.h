@@ -2,21 +2,32 @@
 
 #include <wch_device.h>
 
-enum class UsartStopBits {
-   StopBits_1 = 0,
-   StopBits_0_5 = USART_CTLR2_STOP_0,
-   StopBits_2 = USART_CTLR2_STOP_1,
-   StopBits_1_5 = USART_CTLR2_STOP_0 | USART_CTLR2_STOP_1,
+namespace hw {
 
-};
-
-enum class USARTParity {
-   None = 0,
-   Even = USART_CTLR1_PCE,
-   Odd = (USART_CTLR1_PCE | USART_CTLR1_PS),
-};
+// Same names as hw::Usart in system-stm32 (enums, setFrameFormat(), getClockFrequency(), returnStatusFlag()).
+// Not all of its functions exist here: the half-duplex, CTS/RTS, idle-line and error-interrupt functions are
+// missing, because no code of this project uses them.
 class Usart {
    public:
+   enum class StopBits {
+      StopBits_1 = 0,
+      StopBits_0_5 = USART_CTLR2_STOP_0,
+      StopBits_2 = USART_CTLR2_STOP_1,
+      StopBits_1_5 = USART_CTLR2_STOP_0 | USART_CTLR2_STOP_1,
+   };
+
+   enum class Parity {
+      None = 0,
+      Even = USART_CTLR1_PCE,
+      Odd = (USART_CTLR1_PCE | USART_CTLR1_PS),
+   };
+
+   // Data bits without the parity bit
+   enum class DataBits {
+      Seven = 7,
+      Eight = 8,
+   };
+
    USART_TypeDef &usart;
 
    Usart(USART_TypeDef *uartBase)
@@ -85,11 +96,11 @@ class Usart {
       return (usart.CTLR1 & USART_CTLR1_UE) != 0;
    }
 
-   inline void setParity(USARTParity parity) const {
+   inline void setParity(Parity parity) const {
       usart.CTLR1 = (usart.CTLR1 & ~(USART_CTLR1_PS | USART_CTLR1_PCE)) | static_cast<uint32_t>(parity);
    }
 
-   inline void setStopBits(UsartStopBits bits) const {
+   inline void setStopBits(StopBits bits) const {
       usart.CTLR2 = (usart.CTLR2 & ~USART_CTLR2_STOP) | static_cast<uint32_t>(bits);
    }
 
@@ -129,6 +140,15 @@ class Usart {
       return (usart.CTLR1 & USART_CTLR1_RXNEIE) != 0;
    }
 
+   // The clock of the bus of this USART: APB2 for USART1 and APB1 for the others on CH32V30X, SystemCoreClock
+   // on the other families. The baud rate is derived from it.
+   uint32_t getClockFrequency() const;
+
+   // Data bits without the parity bit, parity and stop bits. Seven data bits need a parity bit: the hardware
+   // has 8 or 9 bits in a word. Returns false then, and changes nothing. The USART is off while the frame
+   // changes, and on again afterward if it was on.
+   [[nodiscard]] bool setFrameFormat(DataBits dataBits, Parity parity, StopBits stopBits) const;
+
    void setBaudRate(uint32_t baudRate) const;
 
    uint32_t getBaudRate() const;
@@ -149,6 +169,11 @@ class Usart {
       return usart.STATR;
    }
 
+   // The whole status register, as returnStatusFlag() of system-stm32.
+   inline uint32_t returnStatusFlag() const {
+      return usart.STATR;
+   }
+
    inline void clearStatusFlag(uint32_t flag) const {
       // On CH32V003, some bits are cleared by writing 0, some by software sequence.
       // TC bit can be cleared by writing 0.
@@ -160,7 +185,7 @@ class Usart {
       usart.CTLR1 |= USART_CTLR1_SBK;
    }
 
-   void configure(uint32_t baudRate = 115200, USARTParity parity = USARTParity::None, UsartStopBits stopBits = UsartStopBits::StopBits_1) const {
+   void configure(uint32_t baudRate = 115200, Parity parity = Parity::None, StopBits stopBits = StopBits::StopBits_1) const {
       setBaudRate(baudRate);
       setStopBits(stopBits);
       setParity(parity);
@@ -180,3 +205,5 @@ class Usart {
       return divider;
    }
 };
+
+} // namespace hw

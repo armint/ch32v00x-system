@@ -35,7 +35,7 @@ library are in [ch32v00x-art](https://gitlab.vandertogt.org/riscv/ch32v00x-art).
 
 On CH32V30X, the start-up, the clock, SysTick, the delays, `Interrupt` and
 `GpioPin` build. `GpioPin` sets pins 0 to 7 in `CFGLR` and pins 8 to 15 in `CFGHR`.
-The `Usart` driver builds for USART1 to USART3 and UART4 to UART8. A loopback test on hardware is not done yet.
+The `hw::Usart` driver builds for USART1 to USART3 and UART4 to UART8. A loopback test on hardware is not done yet.
 The baud rate uses the APB prescaler: USART1 follows PPRE2, the other USARTs follow PPRE1. Call `setBaudRate()` again after a prescaler change.
 The USB device driver `hw::UsbDevice` builds for the USBHS controller. A test on a host is not done yet.
 The `Adc` driver builds for ADC1 and ADC2.
@@ -52,7 +52,7 @@ in [Chip families](docs/families.md).
 | Start-up | Reset handler, weak exception handlers, vector table per family, the weak hooks `os_startup_initialize_hardware_early()` (calls `SystemInit()`) and `os_startup_initialize_hardware()`, and the device header `cmsis_device.h` |
 | System timer and delays | `SysTick_Config()` and `getUptimeTicks()` in `utils/Timekeeping.h` (your project sets the tick rate), `delaymS()` and `delayuS()` in `delaybusywait.h`. On CH32V20X and CH32V30X, `SysTick->CNT` is also a free-running 32-bit core-clock cycle counter (see `utils/Timekeeping.h`) |
 | GPIO and EXTI | `hw::GpioPin` and `hw::FastPin` (the API of `system-stm32`), `Exti`, and on CH32V30X also `hw::Afio` and `GpioInterrupt`. See [GPIO](docs/gpio.md). |
-| Communication | `Usart`, `I2c`, `hw::UsbDevice` (CH32V30X only, USB device on USBHS) |
+| Communication | `hw::Usart`, `I2c`, `hw::UsbDevice` (CH32V30X only, USB device on USBHS) |
 | Chip ID | `hw::Uid` in `peripherals/Uid.h`: the 96-bit unique ID (CH32V30X; zeros on CH32V00X) |
 | Analog and timing | `Adc` (CH32V00X and CH32V30X), `Timer`, `Dma` |
 | Other | `Flash`, `Interrupt` (connects C++ member functions as interrupt handlers) |
