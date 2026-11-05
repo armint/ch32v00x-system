@@ -76,6 +76,7 @@ toolchain file `cmake/gcc_riscv.cmake`. For all options, see
 | `ldscripts/` | Linker scripts, one memory script per chip. |
 | `cmake/` | The RISC-V toolchain file, the package configuration and helper modules for the examples build. |
 | `svd/` | SVD register descriptions, for reference and debug tools. |
+| `tests/host/` | Host tests with fake registers. They run with `ctest` and need no board. See [Testing](docs/testing.md). |
 | `tests/` | Checks of the library. `check-svd-offsets.py` compares the CH32V30x device header with the SVD. `ch32v30x-usb-loopback/` is a hardware test of the USB device driver. |
 | `etc/openocd.cfg` | OpenOCD configuration for the WCH-LinkE debug adapter. It needs the WCH fork of OpenOCD. |
 
@@ -86,6 +87,7 @@ toolchain file `cmake/gcc_riscv.cmake`. For all options, see
 | [Building and using ch32v00x-system](docs/building.md) | Requirements, CMake variables, C++ standard, `hw::span`, compiler flags, installed package |
 | [Chip families](docs/families.md) | `CH32_FAMILY`, family directories, device-specific code, adding a family |
 | [ADC calibration on CH32V002 and CH32V006](docs/adc.md) | Calibration of the ADC on these chips |
+| [Testing](docs/testing.md) | Host tests: how to run them, what they check and what they do not check |
 | [USB device driver](docs/usb.md) | `hw::UsbDevice` on the USBHS controller of CH32V307: layers, clock, endpoint behavior, known limits |
 
 ## Contributing
