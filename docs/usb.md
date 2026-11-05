@@ -28,8 +28,9 @@ These items are different from the system-stm32 driver:
   bus reset. The descriptors must agree with it. At high speed, a bulk
   endpoint must have 512-byte packets.
 - The D+ pull-up is internal. The driver has no pull-up callback.
-- `openEndpoint()` refuses double-buffered endpoints and isochronous
-  endpoints.
+- `openEndpoint()` refuses isochronous endpoints and double-buffered IN
+  endpoints. Double-buffered bulk OUT endpoints are supported (see
+  [Double-buffered OUT](#double-buffered-out)).
 
 ## Hardware use
 
@@ -62,6 +63,31 @@ process it in the main loop.
   automatic toggle, thus the driver sets it for EP0.
 - An OUT packet with the wrong data toggle is a repeated packet. The
   driver ignores it, and the endpoint stays armed.
+
+## Double-buffered OUT
+
+`openEndpoint(address, Bulk, size, true)` opens a bulk OUT endpoint with two
+buffers (RM 22.2.2.3, table 21-3). The hardware receives the next packet into
+the second buffer while the software reads the first. The interface is the
+same as in system-stm32: one Out event for each `armOut()`, and `readOut()`
+reads that packet. A packet that arrives before `armOut()` waits in its
+buffer, and `armOut()` reports it.
+
+- The endpoint takes two buffers from the pool. Buffer 0 is `UEPn_RX_DMA`,
+  and buffer 1 is `UEPn_TX_DMA`. Thus the IN direction of that endpoint
+  number cannot open.
+- The data toggle bit `RX_TOG[0]` selects the buffer, and the hardware flips
+  it after each packet. The hardware does not NAK when both buffers are full,
+  so the interrupt handler sets NAK then, and `armOut()` sets ACK again.
+- `setNak()` on a double-buffered endpoint that answers ACK is not
+  race-free. A packet that completes during the read-modify-write of
+  `RX_CTRL` can lose its toggle flip. Use it when no packet can arrive.
+- Clearing STALL drops both buffers and selects buffer 0 again.
+- The bit position of the endpoint in `UEP_BUF_MOD` (bit n for endpoint n)
+  follows the layout of `UEP_CONFIG`. The manual does not show the bit
+  numbers. The host test checks the driver logic with a model of the
+  hardware. The hardware test must confirm the bit position and the buffer
+  order.
 
 ## Hardware test
 

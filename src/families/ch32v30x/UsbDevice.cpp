@@ -132,24 +132,36 @@ bool UsbDevice::openEndpoint(uint8_t address, EndpointType type, uint16_t maxPac
    Interrupt::BlockingSection block(UsbIrq);
    uint8_t n = usb::endpointNumber(address);
    Direction *dir = direction(address);
-   if(dir == nullptr || doubleBuffered || type == EndpointType::Isochronous || (type == EndpointType::Control) != (n == 0) ||
+   if(dir == nullptr || type == EndpointType::Isochronous || (type == EndpointType::Control) != (n == 0) ||
       maxPacketSize == 0 || maxPacketSize > maxPacketSizeOf(type)) {
+      return false;
+   }
+   const Direction &other = usb::isInEndpoint(address) ? _endpoints[n].out : _endpoints[n].in;
+   // The IN buffer register is the second OUT buffer of a double-buffered endpoint.
+   if(doubleBuffered && (usb::isInEndpoint(address) || type != EndpointType::Bulk || other.open)) {
+      return false;
+   }
+   if(other.open && other.doubleBuffered) {
       return false;
    }
    if(dir->open) {
       // Reopening with the same size keeps the buffer. A new size would
       // leak the old buffer until closeAllEndpoints().
-      return dir->maxPacketSize == maxPacketSize;
+      return dir->maxPacketSize == maxPacketSize && dir->doubleBuffered == doubleBuffered;
    }
    // EP0 is open from resetEndpoints() on, so n is 1..15 here.
    uint16_t bytes = static_cast<uint16_t>((maxPacketSize + 3u) & ~3u); // DMA addresses are 4-byte aligned
-   if(bytes > PacketMemorySize - _poolNext) {
+   const uint16_t total = doubleBuffered ? static_cast<uint16_t>(2u * bytes) : bytes;
+   if(total > PacketMemorySize - _poolNext) {
       return false;
    }
    dir->buffer = &_pool[_poolNext];
-   _poolNext = static_cast<uint16_t>(_poolNext + bytes);
+   dir->buffer1 = doubleBuffered ? &_pool[_poolNext + bytes] : nullptr;
+   _poolNext = static_cast<uint16_t>(_poolNext + total);
    dir->maxPacketSize = maxPacketSize;
    dir->received = 0;
+   dir->received1 = 0;
+   dir->doubleBuffered = doubleBuffered;
    dir->open = true;
 
    if(usb::isInEndpoint(address)) {
@@ -161,6 +173,15 @@ bool UsbDevice::openEndpoint(uint8_t address, EndpointType type, uint16_t maxPac
       USBHS->UEP_RX_DMA[n - 1] = dmaAddress(dir->buffer);
       USBHS->UEP_MAX_LEN[n].MAX_LEN = maxPacketSize;
       ctrl(n).RX_CTRL = USBHS_UEP_R_TOG_AUTO | USBHS_UEP_R_RES_NAK;
+      if(doubleBuffered) {
+         // Buffer 0 is UEPn_RX_DMA, buffer 1 is UEPn_TX_DMA (table 21-3). The
+         // toggle bit RX_TOG[0] selects the buffer and flips after each packet.
+         USBHS->UEP_TX_DMA[n - 1] = dmaAddress(dir->buffer1);
+         USBHS->UEP_BUF_MOD |= USBHS_UEP_BUF_MOD(n);
+         dir->reported = NoBuffer;
+         dir->pending = NoBuffer;
+         dir->armed = false;
+      }
       USBHS->UEP_CONFIG |= USBHS_UEP_R_EN(n);
    }
    return true;
@@ -169,6 +190,7 @@ bool UsbDevice::openEndpoint(uint8_t address, EndpointType type, uint16_t maxPac
 void UsbDevice::closeAllEndpoints() {
    Interrupt::BlockingSection block(UsbIrq);
    USBHS->UEP_CONFIG = 0;
+   USBHS->UEP_BUF_MOD = 0;
    for(uint8_t n = 1; n < EndpointCount; ++n) {
       ctrl(n).TX_CTRL = USBHS_UEP_T_RES_NAK;
       ctrl(n).RX_CTRL = USBHS_UEP_R_RES_NAK;
@@ -224,7 +246,27 @@ bool UsbDevice::armOut(uint8_t address) {
    if(usb::isInEndpoint(address) || dir == nullptr || !dir->open) {
       return false;
    }
-   setRxResponse(usb::endpointNumber(address), USBHS_UEP_R_RES_ACK);
+   const uint8_t n = usb::endpointNumber(address);
+   if(dir->doubleBuffered) {
+      Direction &out = _endpoints[n].out;
+      out.reported = NoBuffer;
+      if(out.pending != NoBuffer) {
+         const uint8_t buffer = out.pending;
+         out.pending = NoBuffer;
+         reportDoubleBuffered(n, buffer);
+      }
+      out.armed = true;
+      // The endpoint stays ACK after a packet while the buffer that the
+      // hardware fills next is free (the handler sets NAK when it is not).
+      // Write only when the endpoint is NAK: then no packet is in flight,
+      // and the read-modify-write cannot lose a toggle flip.
+      const uint8_t hardwareBuffer = (ctrl(n).RX_CTRL & USBHS_UEP_R_TOG_DATA1) != 0 ? 1 : 0;
+      if((ctrl(n).RX_CTRL & USBHS_UEP_R_RES_MASK) != USBHS_UEP_R_RES_ACK && out.reported != hardwareBuffer) {
+         setRxResponse(n, USBHS_UEP_R_RES_ACK);
+      }
+      return true;
+   }
+   setRxResponse(n, USBHS_UEP_R_RES_ACK);
    return true;
 }
 
@@ -236,6 +278,15 @@ uint16_t UsbDevice::readOut(uint8_t address, hw::span<uint8_t> buffer) const {
    }
    const uint8_t *from = usb::endpointNumber(address) == 0 ? _ep0Out : dir->buffer;
    uint16_t size = dir->received;
+   if(dir->doubleBuffered) {
+      if(dir->reported == NoBuffer) {
+         return 0;
+      }
+      if(dir->reported == 1) {
+         from = dir->buffer1;
+         size = dir->received1;
+      }
+   }
    if(size > buffer.size()) {
       size = static_cast<uint16_t>(buffer.size());
    }
@@ -264,6 +315,9 @@ void UsbDevice::setStall(uint8_t address, bool stall) {
          setRxResponse(n, USBHS_UEP_R_RES_STALL);
       } else {
          ctrl(n).RX_CTRL = static_cast<uint8_t>((ctrl(n).RX_CTRL & USBHS_UEP_R_TOG_AUTO) | USBHS_UEP_R_RES_NAK);
+         if(dir->doubleBuffered) {
+            resetDoubleBuffer(n); // DATA0 selects buffer 0 again
+         }
       }
    }
 }
@@ -290,7 +344,21 @@ void UsbDevice::setNak(uint8_t address) {
       setTxResponse(n, USBHS_UEP_T_RES_NAK);
    } else {
       setRxResponse(n, USBHS_UEP_R_RES_NAK);
+      _endpoints[n].out.armed = false;
    }
+}
+
+void UsbDevice::resetDoubleBuffer(uint8_t n) {
+   Direction &out = _endpoints[n].out;
+   out.armed = false;
+   out.reported = NoBuffer;
+   out.pending = NoBuffer;
+}
+
+void UsbDevice::reportDoubleBuffered(uint8_t n, uint8_t buffer) {
+   Direction &out = _endpoints[n].out;
+   out.reported = buffer;
+   report(EventType::Out, n, buffer == 0 ? out.received : out.received1);
 }
 
 void UsbDevice::report(EventType type, uint8_t endpoint, uint16_t size) {
@@ -319,6 +387,24 @@ void UsbDevice::handleTransfer(uint8_t status, bool setupPending) {
       uint16_t size = USBHS->RX_LEN;
       if((status & USBHS_UIS_TOG_OK) == 0) {
          break; // repeated packet: the host lost the ACK. Stay armed.
+      }
+      if(n != 0 && n < _endpointCount && _endpoints[n].out.doubleBuffered) {
+         Direction &out = _endpoints[n].out;
+         // The hardware flipped RX_TOG[0] at the end of the packet, so the
+         // packet is in the buffer that the toggle does not select.
+         const uint8_t buffer = (ctrl(n).RX_CTRL & USBHS_UEP_R_TOG_DATA1) != 0 ? 0 : 1;
+         (buffer == 0 ? out.received : out.received1) = size;
+         if(out.reported == NoBuffer) {
+            // The software has no packet: report this one. The hardware
+            // fills the other buffer next, so the endpoint stays ACK.
+            reportDoubleBuffered(n, buffer);
+         } else {
+            // The software reads the other buffer, which the hardware
+            // would fill next: NAK until armOut() reports this packet.
+            out.pending = buffer;
+            setRxResponse(n, USBHS_UEP_R_RES_NAK);
+         }
+         break;
       }
       setRxResponse(n, USBHS_UEP_R_RES_NAK);
       if(n == 0) {

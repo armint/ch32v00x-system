@@ -614,6 +614,7 @@ typedef struct {
 /* USBHS_UEP_CONFIG bits, n = 1..15. EP0 is always on. */
 #define USBHS_UEP_T_EN(n) (1ul << (n))
 #define USBHS_UEP_R_EN(n) (1ul << ((n) + 16))
+#define USBHS_UEP_BUF_MOD(n) (1ul << (n)) /* Double buffer, endpoints 1-15 */
 
 /* USBHS_UEPn_TX_CTRL fields */
 #define USBHS_UEP_T_RES_MASK ((uint8_t)0x03)
