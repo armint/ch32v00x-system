@@ -11,7 +11,7 @@ Set `CH32_FAMILY` at configure time. The value is one of:
 - `CH32V00X`: CH32V002, CH32V003 and CH32V006. This is the default.
 - `CH32V20X`: CH32V208.
 - `CH32V30X`: CH32V307. Only the start-up, clock, SysTick, delay, interrupt,
-  GPIO, USART, ADC, DMA, timer and USB device code is ported. See the exclusion list below.
+  GPIO (with AFIO and EXTI), USART, ADC, DMA, timer and USB device code is ported. See the exclusion list below.
   The USB device driver is in [USB device driver](usb.md).
 
 CMake stops with an error for any other value. It also stops when the
@@ -35,7 +35,7 @@ that names the value to set.
 CMake compiles the shared sources and the sources of the selected family
 only. The other family directories are not compiled.
 
-The CH32V30X family does not support the shared `Exti`, `Flash` and `I2C`
+The CH32V30X family does not support the shared `Flash` and `I2C`
 drivers yet. `CMakeLists.txt` excludes these files for that
 family. Their headers are still installed, but they do not compile for CH32V30X.
 

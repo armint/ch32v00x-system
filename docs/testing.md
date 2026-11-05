@@ -6,7 +6,7 @@ Host tests run on the build machine. They do not need a board or the RISC-V tool
 They compile library sources with the native compiler (C++23).
 A stub `wch_device.h` replaces the device header.
 The stub gives the registers of one family as plain variables in memory.
-The GPIO tests use `stubs-<family>/`. The USB test uses `stubs-usb-v307/`. The Usart test uses `stubs-usart-v30x/`. The ADC test uses `stubs-adc-v30x/`.
+The GPIO tests use `stubs-<family>/`. The USB test uses `stubs-usb-v307/`. The Usart test uses `stubs-usart-v30x/`. The ADC test uses `stubs-adc-v30x/`. The AFIO and EXTI test uses `stubs-exti-v30x/`.
 
 Run the tests:
 
@@ -32,6 +32,23 @@ Each test starts with a known pattern in the configuration registers.
 It checks the field of the selected pin.
 It also checks that the fields of all other pins stay the same.
 On CH32V00X, it checks that the reserved word after `CFGLR` stays the same.
+
+`test-exti-afio-v30x` tests `hw::Afio`, `Exti` and `GpioInterrupt` of CH32V30X
+(see [GPIO, AFIO and EXTI](gpio.md)). It checks these items:
+
+- The `AFIO_PCFR1` writes of the remap functions and of `setSwjConfig()`.
+  Other fields stay the same.
+- The `AFIO_EXTICRx` register and the 4-bit field of each line.
+  A line of 16 or more writes nothing.
+- The `RTENR` and `FTENR` bits of each trigger edge, the `INTENR` and `EVENR` bits, and the `INTFR` write that clears one flag.
+- `GpioInterrupt`: the routing, the edge and the enable bits of a connected pin.
+  A second port on the same line number is refused.
+  The dispatch code calls the handler of the pending line only, and not the handler of a masked line.
+  The dispatch code does not clear the flag of a masked line. `GpioInterrupt` does not clear a PFIC pending bit.
+  A shared interrupt stays on until the last line disconnects.
+
+The test does not model the write-1-to-clear behavior of `INTFR`: it checks the value that the code writes.
+The test also does not check the PFIC priority or the vector entry.
 
 `test-usb-v307` tests the USBHS device driver of CH32V307
 (`src/families/ch32v30x/UsbDevice.cpp`, see [USB device driver](usb.md)).
@@ -84,7 +101,7 @@ It does not run in CI.
 
 | Image | Family | Content |
 |---|---|---|
-| `tests/ch32v30x/` | CH32V30X | `main()` sets up PB4 as output (blue LED) and toggles it in a loop. |
+| `tests/ch32v30x/` | CH32V30X | `main()` sets up PB4 as output (blue LED) and toggles it in a loop. It also connects a pin interrupt and sets the debug port, so that CI compiles these. |
 
 Build the image:
 

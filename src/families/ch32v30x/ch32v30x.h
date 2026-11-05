@@ -128,6 +128,8 @@ typedef enum IRQn {
 #define SysTicK_IRQn SysTick_IRQn
 
 /* Base addresses */
+#define AFIO_BASE 0x40010000UL
+#define EXTI_BASE 0x40010400UL
 #define RCC_BASE 0x40021000UL
 #define GPIOA_BASE 0x40010800UL
 #define GPIOB_BASE 0x40010C00UL
@@ -301,6 +303,37 @@ typedef struct {
 
 /* ADC_RSQR1 */
 #define ADC_L (0xFul << 20)
+
+typedef struct {
+   volatile uint32_t ECR;       /* 0x00 Event output control */
+   volatile uint32_t PCFR1;     /* 0x04 Remap 1 */
+   volatile uint32_t EXTICR[4]; /* 0x08 EXTI line to port select, 4 bits per line */
+   uint32_t RESERVED0;          /* 0x18 */
+   volatile uint32_t PCFR2;     /* 0x1C Remap 2 */
+} AFIO_TypeDef;
+
+#define AFIO ((AFIO_TypeDef *)AFIO_BASE)
+
+/* AFIO_PCFR1 fields */
+#define AFIO_PCFR1_SPI1_RM (1ul << 0)
+#define AFIO_PCFR1_I2C1_RM (1ul << 1)
+#define AFIO_PCFR1_USART1_RM (1ul << 2) /* RM: low bit; PCFR2.USART1_RM1 is the high bit */
+#define AFIO_PCFR1_USART2_RM (1ul << 3)
+#define AFIO_PCFR1_USART3_RM_MASK (3ul << 4)
+#define AFIO_PCFR1_SW_CFG_MASK (7ul << 24)
+#define AFIO_PCFR1_SW_CFG_DISABLE (4ul << 24) /* 0xx: SWD on PA13 and PA14, 100: both GPIO */
+#define AFIO_PCFR1_SPI3_RM (1ul << 28)
+
+typedef struct {
+   volatile uint32_t INTENR; /* 0x00 Interrupt enable */
+   volatile uint32_t EVENR;  /* 0x04 Event enable */
+   volatile uint32_t RTENR;  /* 0x08 Rising edge trigger enable */
+   volatile uint32_t FTENR;  /* 0x0C Falling edge trigger enable */
+   volatile uint32_t SWIEVR; /* 0x10 Software interrupt event */
+   volatile uint32_t INTFR;  /* 0x14 Interrupt flag, write 1 to clear */
+} EXTI_TypeDef;
+
+#define EXTI ((EXTI_TypeDef *)EXTI_BASE)
 
 /* Same layout as the USART of CH32V20x. The SVD also has CTLR4 at 0x1C. */
 typedef struct {
