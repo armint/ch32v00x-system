@@ -96,3 +96,11 @@ All changes go to the `main` branch through merge requests. This includes
 bug fixes. Every merge request needs a review by someone other than its
 author. The project has no releases yet. Only the tag `v0.0.0` exists.
 Use a commit of `main` in your submodule.
+
+## License
+
+ch32v00x-system uses the MIT license. See [LICENSE](LICENSE).
+Third-party files keep the license in their file headers. Examples are the WCH
+device files (for example `src/core_riscv.h` and the CH32V00x and CH32V20x
+headers in `src/families/`), the start-up code from µOS++ (for example
+`src/bare-metal/startup.cpp`) and the files in `svd/`.
