@@ -71,4 +71,33 @@ inline void remapUsart3(Usart3Remap remap) {
    setRemap(AFIO_PCFR1_USART3_RM_MASK, static_cast<uint32_t>(remap));
 }
 
+enum class Tim2Remap : uint32_t {
+   // ETR/CH1/CH2/CH3/CH4 on PA0/PA0/PA1/PA2/PA3
+   None = 0,
+   // ETR/CH1/CH2/CH3/CH4 on PA15/PA15/PB3/PA2/PA3
+   Partial1 = 1ul << 8,
+   // ETR/CH1/CH2/CH3/CH4 on PA0/PA0/PA1/PB10/PB11
+   Partial2 = 2ul << 8,
+   // ETR/CH1/CH2/CH3/CH4 on PA15/PA15/PB3/PB10/PB11
+   Full = 3ul << 8,
+};
+
+inline void remapTim2(Tim2Remap remap) {
+   setRemap(AFIO_PCFR1_TIM2_RM_MASK, static_cast<uint32_t>(remap));
+}
+
+// The value 01 is reserved. The remap does not move TIM3_ETR (PD2).
+enum class Tim3Remap : uint32_t {
+   // CH1/CH2/CH3/CH4 on PA6/PA7/PB0/PB1
+   None = 0,
+   // CH1/CH2/CH3/CH4 on PB4/PB5/PB0/PB1
+   Partial = 2ul << 10,
+   // CH1/CH2/CH3/CH4 on PC6/PC7/PC8/PC9
+   Full = 3ul << 10,
+};
+
+inline void remapTim3(Tim3Remap remap) {
+   setRemap(AFIO_PCFR1_TIM3_RM_MASK, static_cast<uint32_t>(remap));
+}
+
 } // namespace hw::Afio

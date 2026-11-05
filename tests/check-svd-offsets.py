@@ -28,6 +28,11 @@ STRUCTS = {
     "RCC": ("RCC_TypeDef", ["CTLR", "CFGR0", "INTR", "APB2PRSTR", "APB1PRSTR", "AHBPCENR",
                             "APB2PCENR", "APB1PCENR", "BDCTLR", "RSTSCKR", "AHBRSTR", "CFGR2"]),
     "GPIOA": ("GPIO_TypeDef", ["CFGLR", "CFGHR", "INDR", "OUTDR", "BSHR", "BCR", "LCKR"]),
+    "TIM1": ("TIM_TypeDef", ["CTLR1", "CTLR2", "SMCFGR", "DMAINTENR", "INTFR", "SWEVGR",
+                             ("CHCTLR1", "CHCTLR1_Output"), ("CHCTLR2", "CHCTLR2_Output"), "CCER", "CNT",
+                             "PSC", "ATRLR", "RPTCR", "CH1CVR", "CH2CVR", "CH3CVR", "CH4CVR", "BDTR",
+                             "DMACFGR", "DMAADR"]),
+    "DMA1": ("DMA_TypeDef", ["INTFR", "INTFCR"]),
     "AFIO": ("AFIO_TypeDef", ["ECR", "PCFR1", ("EXTICR[0]", "EXTICR1"), ("EXTICR[1]", "EXTICR2"),
                               ("EXTICR[2]", "EXTICR3"), ("EXTICR[3]", "EXTICR4"), "PCFR2"]),
     "EXTI": ("EXTI_TypeDef", ["INTENR", "EVENR", "RTENR", "FTENR", "SWIEVR", "INTFR"]),
@@ -81,11 +86,50 @@ FIELDS = {
     "RCC_UART4EN": ("APB1PCENR", "UART4EN"),
     "RCC_UART5EN": ("APB1PCENR", "UART5EN"),
     "RCC_USBHSEN": ("AHBPCENR", "USBHS_EN"),
+    "RCC_DMA1EN": ("AHBPCENR", "DMA1EN"),
+    "RCC_TIM1EN": ("APB2PCENR", "TIM1EN"),
+    "RCC_TIM8EN": ("APB2PCENR", "TIM8EN"),
+    "RCC_TIM9EN": ("APB2PCENR", "TIM9_EN"),
+    "RCC_TIM10EN": ("APB2PCENR", "TIM10_EN"),
+    "RCC_TIM2EN": ("APB1PCENR", "TIM2EN"),
+    "RCC_TIM3EN": ("APB1PCENR", "TIM3EN"),
+    "RCC_TIM4EN": ("APB1PCENR", "TIM4EN"),
+    "RCC_TIM5EN": ("APB1PCENR", "TIM5EN"),
+    "RCC_TIM6EN": ("APB1PCENR", "TIM6EN"),
+    "RCC_TIM7EN": ("APB1PCENR", "TIM7EN"),
     "RCC_CFGR2_USBHSDIV_MASK": ("CFGR2", "USBHSDIV"),
     "RCC_CFGR2_USBHSPLLSRC": ("CFGR2", "USBHSPLLSRC"),
     "RCC_CFGR2_USBHSCLK_MASK": ("CFGR2", "USBHSCLK"),
     "RCC_CFGR2_USBHSPLL": ("CFGR2", "USBHSPLL"),
     "RCC_CFGR2_USBFSSRC": ("CFGR2", "USBFSSRC"),
+}
+
+# Same, for the timer bits. TIM1 has all registers of the other timers. A
+# third tuple item selects one bit of a wider field (0 is its lowest bit).
+TIM_FIELDS = {
+    "TIM_CEN": ("CTLR1", "CEN"), "TIM_DIR": ("CTLR1", "DIR"), "TIM_ARPE": ("CTLR1", "ARPE"),
+    "TIM_MMS": ("CTLR2", "MMS"),
+    "TIM_UIE": ("DMAINTENR", "UIE"), "TIM_CC1IE": ("DMAINTENR", "CC1IE"), "TIM_TIE": ("DMAINTENR", "TIE"),
+    "TIM_UIF": ("INTFR", "UIF"), "TIM_CC1IF": ("INTFR", "CC1IF"),
+    "TIM_UG": ("SWEVGR", "UG"),
+    "TIM_OC1PE": ("CHCTLR1_Output", "OC1PE"), "TIM_OC1M": ("CHCTLR1_Output", "OC1M"),
+    "TIM_OC1M_0": ("CHCTLR1_Output", "OC1M", 0), "TIM_OC1M_1": ("CHCTLR1_Output", "OC1M", 1),
+    "TIM_OC1M_2": ("CHCTLR1_Output", "OC1M", 2),
+    "TIM_CC1E": ("CCER", "CC1E"), "TIM_CC1P": ("CCER", "CC1P"),
+    "TIM_AOE": ("BDTR", "AOE"), "TIM_MOE": ("BDTR", "MOE"),
+}
+
+# Same, for the DMA bits. DMA1 channel 1 stands for all channels.
+DMA_FIELDS = {
+    "DMA_GIF1": ("INTFR", "GIF1"), "DMA_TCIF1": ("INTFR", "TCIF1"),
+    "DMA_CHTIF1": ("INTFCR", "CHTIF1"), "DMA_CTEIF1": ("INTFCR", "CTEIF1"),
+    "DMA_CFGR1_EN": ("CFGR1", "EN"), "DMA_CFGR1_TCIE": ("CFGR1", "TCIE"),
+    "DMA_CFGR1_HTIE": ("CFGR1", "HTIE"), "DMA_CFGR1_TEIE": ("CFGR1", "TEIE"),
+    "DMA_CFGR1_DIR": ("CFGR1", "DIR"), "DMA_CFGR1_CIRC": ("CFGR1", "CIRC"),
+    "DMA_CFGR1_PINC": ("CFGR1", "PINC"), "DMA_CFGR1_MINC": ("CFGR1", "MINC"),
+    "DMA_CFGR1_PSIZE": ("CFGR1", "PSIZE"), "DMA_CFGR1_MSIZE": ("CFGR1", "MSIZE"),
+    "DMA_CFGR1_PL": ("CFGR1", "PL"), "DMA_CFGR1_PL_0": ("CFGR1", "PL", 0),
+    "DMA_CFGR1_PL_1": ("CFGR1", "PL", 1), "DMA_CFGR1_MEM2MEM": ("CFGR1", "MEM2MEM"),
 }
 
 # Same, for the bits of the AFIO_PCFR1 register. The SW_CFG value of the
@@ -95,6 +139,7 @@ AFIO_FIELDS = {
     "AFIO_PCFR1_USART1_RM": ("PCFR1", "USART1_RM"), "AFIO_PCFR1_USART2_RM": ("PCFR1", "USART2_RM"),
     "AFIO_PCFR1_USART3_RM_MASK": ("PCFR1", "USART3_RM"), "AFIO_PCFR1_SW_CFG_MASK": ("PCFR1", "SW_CFG"),
     "AFIO_PCFR1_SPI3_RM": ("PCFR1", "SPI3_RM"),
+    "AFIO_PCFR1_TIM2_RM_MASK": ("PCFR1", "TIM2_RM"), "AFIO_PCFR1_TIM3_RM_MASK": ("PCFR1", "TIM3_RM"),
 }
 
 # Same, for the bits of the USART registers. USART1 stands for all USART blocks.
@@ -154,7 +199,16 @@ BASES = {"RCC_BASE": "RCC", "AFIO_BASE": "AFIO", "EXTI_BASE": "EXTI", "GPIOA_BAS
          "GPIOC_BASE": "GPIOC", "GPIOD_BASE": "GPIOD", "GPIOE_BASE": "GPIOE",
          "USART1_BASE": "USART1", "USART2_BASE": "USART2", "USART3_BASE": "USART3",
          "UART4_BASE": "UART4", "UART5_BASE": "UART5", "UART6_BASE": "UART6",
-         "UART7_BASE": "UART7", "UART8_BASE": "UART8", "USBHS_BASE": "USBHS"}
+         "UART7_BASE": "UART7", "UART8_BASE": "UART8", "USBHS_BASE": "USBHS",
+         "TIM1_BASE": "TIM1", "TIM2_BASE": "TIM2", "TIM3_BASE": "TIM3", "TIM4_BASE": "TIM4",
+         "TIM5_BASE": "TIM5", "TIM6_BASE": "TIM6", "TIM7_BASE": "TIM7", "TIM8_BASE": "TIM8",
+         "TIM9_BASE": "TIM9", "TIM10_BASE": "TIM10", "DMA1_BASE": "DMA1"}
+
+# The SVD lists the DMA channel registers flat (CFGR1, CNTR1, ... CFGR7).
+# DMA1_Channel<n>_BASE must point at CFGR<n>, and DMA_Channel_TypeDef must
+# match the offsets of channel 1.
+DMA_CHANNELS = 7
+DMA_CHANNEL_MEMBERS = [("CNTR", "CNTR1"), ("PADDR", "PADDR1"), ("MADDR", "MADDR1")]
 
 
 def load_svd():
@@ -203,13 +257,30 @@ def build_asserts(periphs):
             lines.append(f'_Static_assert(offsetof({struct}, {member}) == 0x{off:02X}, '
                          f'"{struct}.{member} differs from SVD");')
         lines.append("")
+    dma1 = periphs["DMA1"]
+    dma1_base = int(dma1.findtext("baseAddress"), 0)
+    for n in range(1, DMA_CHANNELS + 1):
+        addr = dma1_base + register_offset(dma1, f"CFGR{n}")
+        lines.append(f'_Static_assert(DMA1_Channel{n}_BASE == 0x{addr:08X}UL, '
+                     f'"DMA1_Channel{n}_BASE differs from SVD");')
+    cfgr1 = register_offset(dma1, "CFGR1")
+    for member, reg in DMA_CHANNEL_MEMBERS:
+        off = register_offset(dma1, reg) - cfgr1
+        lines.append(f'_Static_assert(offsetof(DMA_Channel_TypeDef, {member}) == 0x{off:02X}, '
+                     f'"DMA_Channel_TypeDef.{member} differs from SVD");')
+    lines.append("")
     checks = [(m, "RCC", rf) for m, rf in FIELDS.items()]
+    checks += [(m, "TIM1", rf) for m, rf in TIM_FIELDS.items()]
+    checks += [(m, "DMA1", rf) for m, rf in DMA_FIELDS.items()]
     checks += [(m, "AFIO", rf) for m, rf in AFIO_FIELDS.items()]
     checks += [(m, "USART1", rf) for m, rf in USART_FIELDS.items()]
     checks += [(m, "USBHS", rf) for m, rf in USBHS_FIELDS.items()]
-    for macro, svd_name, (reg, field) in checks:
+    for macro, svd_name, (reg, field, *bit) in checks:
         lsb, width = field_position(periphs[svd_name], reg, field)
         mask = ((1 << width) - 1) << lsb
+        if bit:  # one bit of the field
+            assert bit[0] < width, f"{macro}: bit {bit[0]} outside {reg}.{field}"
+            mask = 1 << (lsb + bit[0])
         lines.append(f'_Static_assert(({macro}) == 0x{mask:08X}UL, "{macro} differs from SVD {reg}.{field}");')
     return "\n".join(lines) + "\n"
 

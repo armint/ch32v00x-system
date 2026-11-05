@@ -82,6 +82,17 @@ void testAfio() {
    CHECK(hostAfio.PCFR1 == (0xFu | (1u << 4)));
    hw::Afio::remapUsart3(hw::Afio::Usart3Remap::None);
    CHECK(hostAfio.PCFR1 == 0xFu);
+   hw::Afio::remapTim2(hw::Afio::Tim2Remap::Full);
+   hw::Afio::remapTim3(hw::Afio::Tim3Remap::Partial);
+   CHECK(hostAfio.PCFR1 == (0xFu | (3u << 8) | (2u << 10)));
+   hw::Afio::remapTim2(hw::Afio::Tim2Remap::Partial1);
+   CHECK(hostAfio.PCFR1 == (0xFu | (1u << 8) | (2u << 10)));
+   hw::Afio::remapTim2(hw::Afio::Tim2Remap::Partial2);
+   hw::Afio::remapTim3(hw::Afio::Tim3Remap::Full);
+   CHECK(hostAfio.PCFR1 == (0xFu | (2u << 8) | (3u << 10)));
+   hw::Afio::remapTim2(hw::Afio::Tim2Remap::None);
+   hw::Afio::remapTim3(hw::Afio::Tim3Remap::None);
+   CHECK(hostAfio.PCFR1 == 0xFu);
    CHECK(hostAfio.PCFR2 == 0);
 }
 

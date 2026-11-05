@@ -62,8 +62,7 @@ list(APPEND PROJECT_SOURCES ${ACTIVE_FAMILY_SOURCES})
 # Shared drivers that are not ported to CH32V30x yet. Remove an entry when its
 # port exists in src/families/ch32v30x/.
 if (CH32_FAMILY STREQUAL "CH32V30X")
-    foreach (unported peripherals/Dma.cpp peripherals/Flash.cpp
-                      peripherals/I2C.cpp peripherals/Timer.cpp)
+    foreach (unported peripherals/Flash.cpp peripherals/I2C.cpp)
         list(REMOVE_ITEM PROJECT_SOURCES "${PROJECT_SOURCE_DIR}/src/${unported}")
     endforeach ()
 endif ()

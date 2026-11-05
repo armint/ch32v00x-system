@@ -74,6 +74,8 @@ extern AFIO_TypeDef hostAfio;
 #define AFIO_PCFR1_USART1_RM (1ul << 2)
 #define AFIO_PCFR1_USART2_RM (1ul << 3)
 #define AFIO_PCFR1_USART3_RM_MASK (3ul << 4)
+#define AFIO_PCFR1_TIM2_RM_MASK (3ul << 8)
+#define AFIO_PCFR1_TIM3_RM_MASK (3ul << 10)
 #define AFIO_PCFR1_SW_CFG_MASK (7ul << 24)
 #define AFIO_PCFR1_SW_CFG_DISABLE (4ul << 24)
 #define AFIO_PCFR1_SPI3_RM (1ul << 28)

@@ -147,6 +147,17 @@ typedef enum IRQn {
 #define USBHS_BASE 0x40023400UL
 #define ADC1_BASE 0x40012400UL
 #define ADC2_BASE 0x40012800UL
+#define TIM1_BASE 0x40012C00UL
+#define TIM2_BASE 0x40000000UL
+#define TIM3_BASE 0x40000400UL
+#define TIM4_BASE 0x40000800UL
+#define TIM5_BASE 0x40000C00UL
+#define TIM6_BASE 0x40001000UL
+#define TIM7_BASE 0x40001400UL
+#define TIM8_BASE 0x40013400UL
+#define TIM9_BASE 0x40014C00UL
+#define TIM10_BASE 0x40015000UL
+#define DMA1_BASE 0x40020000UL
 
 typedef struct {
    volatile uint32_t CTLR;     /* 0x00 Clock control */
@@ -175,6 +186,7 @@ typedef struct {
 
 /* AHB peripheral clock enable bits (RCC_AHBPCENR) */
 #define RCC_USBHSEN (1ul << 11)
+#define RCC_DMA1EN (1ul << 0)
 
 /* APB2 peripheral clock enable bits (RCC_APB2PCENR) */
 #define RCC_AFIOEN (1ul << 0)
@@ -186,8 +198,18 @@ typedef struct {
 #define RCC_ADC1EN (1ul << 9)
 #define RCC_ADC2EN (1ul << 10)
 #define RCC_USART1EN (1ul << 14)
+#define RCC_TIM1EN (1ul << 11)
+#define RCC_TIM8EN (1ul << 13)
+#define RCC_TIM9EN (1ul << 19)
+#define RCC_TIM10EN (1ul << 20)
 
 /* APB1 peripheral clock enable bits (RCC_APB1PCENR) */
+#define RCC_TIM2EN (1ul << 0)
+#define RCC_TIM3EN (1ul << 1)
+#define RCC_TIM4EN (1ul << 2)
+#define RCC_TIM5EN (1ul << 3)
+#define RCC_TIM6EN (1ul << 4)
+#define RCC_TIM7EN (1ul << 5)
 #define RCC_UART6EN (1ul << 6)
 #define RCC_UART7EN (1ul << 7)
 #define RCC_UART8EN (1ul << 8)
@@ -298,6 +320,8 @@ typedef struct {
 #define AFIO_PCFR1_USART1_RM (1ul << 2) /* RM: low bit; PCFR2.USART1_RM1 is the high bit */
 #define AFIO_PCFR1_USART2_RM (1ul << 3)
 #define AFIO_PCFR1_USART3_RM_MASK (3ul << 4)
+#define AFIO_PCFR1_TIM2_RM_MASK (3ul << 8)
+#define AFIO_PCFR1_TIM3_RM_MASK (3ul << 10)
 #define AFIO_PCFR1_SW_CFG_MASK (7ul << 24)
 #define AFIO_PCFR1_SW_CFG_DISABLE (4ul << 24) /* 0xx: SWD on PA13 and PA14, 100: both GPIO */
 #define AFIO_PCFR1_SPI3_RM (1ul << 28)
@@ -364,6 +388,132 @@ typedef struct {
 /* USART_CTLR3 bits */
 #define USART_CTLR3_DMAR ((uint16_t)0x0040)
 #define USART_CTLR3_DMAT ((uint16_t)0x0080)
+
+/* Timers. All timers have this layout. The SVD gives each register 32 bits,
+ * so CH1CVR to CH4CVR are consecutive 32-bit words (Timer indexes them).
+ * TIM1, TIM8, TIM9 and TIM10 are advanced timers (RPTCR, BDTR). TIM6 and TIM7
+ * are basic timers without channels. */
+typedef struct {
+   volatile uint32_t CTLR1;     /* 0x00 Control 1 */
+   volatile uint32_t CTLR2;     /* 0x04 Control 2 */
+   volatile uint32_t SMCFGR;    /* 0x08 Slave mode control */
+   volatile uint32_t DMAINTENR; /* 0x0C DMA and interrupt enable */
+   volatile uint32_t INTFR;     /* 0x10 Interrupt flags, write 0 to clear */
+   volatile uint32_t SWEVGR;    /* 0x14 Software event generation */
+   volatile uint32_t CHCTLR1;   /* 0x18 Compare/capture control, channels 1 and 2 */
+   volatile uint32_t CHCTLR2;   /* 0x1C Compare/capture control, channels 3 and 4 */
+   volatile uint32_t CCER;      /* 0x20 Compare/capture enable */
+   volatile uint32_t CNT;       /* 0x24 Counter */
+   volatile uint32_t PSC;       /* 0x28 Prescaler */
+   volatile uint32_t ATRLR;     /* 0x2C Auto-reload */
+   volatile uint32_t RPTCR;     /* 0x30 Repetition counter */
+   volatile uint32_t CH1CVR;    /* 0x34 Compare/capture value, channel 1 */
+   volatile uint32_t CH2CVR;    /* 0x38 Compare/capture value, channel 2 */
+   volatile uint32_t CH3CVR;    /* 0x3C Compare/capture value, channel 3 */
+   volatile uint32_t CH4CVR;    /* 0x40 Compare/capture value, channel 4 */
+   volatile uint32_t BDTR;      /* 0x44 Break and dead time */
+   volatile uint32_t DMACFGR;   /* 0x48 DMA control */
+   volatile uint32_t DMAADR;    /* 0x4C DMA address for burst mode */
+} TIM_TypeDef;
+
+#define TIM1 ((TIM_TypeDef *)TIM1_BASE)
+#define TIM2 ((TIM_TypeDef *)TIM2_BASE)
+#define TIM3 ((TIM_TypeDef *)TIM3_BASE)
+#define TIM4 ((TIM_TypeDef *)TIM4_BASE)
+#define TIM5 ((TIM_TypeDef *)TIM5_BASE)
+#define TIM6 ((TIM_TypeDef *)TIM6_BASE)
+#define TIM7 ((TIM_TypeDef *)TIM7_BASE)
+#define TIM8 ((TIM_TypeDef *)TIM8_BASE)
+#define TIM9 ((TIM_TypeDef *)TIM9_BASE)
+#define TIM10 ((TIM_TypeDef *)TIM10_BASE)
+
+/* TIM_CTLR1 bits */
+#define TIM_CEN (1ul << 0)
+#define TIM_DIR (1ul << 4)
+#define TIM_ARPE (1ul << 7)
+
+/* TIM_CTLR2 */
+#define TIM_MMS (7ul << 4)
+
+/* TIM_DMAINTENR bits */
+#define TIM_UIE (1ul << 0)
+#define TIM_CC1IE (1ul << 1)
+#define TIM_TIE (1ul << 6)
+
+/* TIM_INTFR bits */
+#define TIM_UIF (1ul << 0)
+#define TIM_CC1IF (1ul << 1)
+
+/* TIM_SWEVGR bits */
+#define TIM_UG (1ul << 0)
+
+/* TIM_CHCTLR1 output compare fields of channel 1. Channel 2 is 8 bits higher. */
+#define TIM_OC1PE (1ul << 3)
+#define TIM_OC1M (7ul << 4)
+#define TIM_OC1M_0 (1ul << 4)
+#define TIM_OC1M_1 (1ul << 5)
+#define TIM_OC1M_2 (1ul << 6)
+
+/* TIM_CCER bits of channel 1. Each next channel is 4 bits higher. */
+#define TIM_CC1E (1ul << 0)
+#define TIM_CC1P (1ul << 1)
+
+/* TIM_BDTR bits (advanced timers only) */
+#define TIM_AOE (1ul << 14)
+#define TIM_MOE (1ul << 15)
+
+/* DMA1 has 7 channels. DMA2 is not in this header: the Dma driver
+ * addresses the channels of DMA1 only. */
+typedef struct {
+   volatile uint32_t CFGR;  /* 0x00 Configuration */
+   volatile uint32_t CNTR;  /* 0x04 Number of data to transfer */
+   volatile uint32_t PADDR; /* 0x08 Peripheral address */
+   volatile uint32_t MADDR; /* 0x0C Memory address */
+} DMA_Channel_TypeDef;
+
+typedef struct {
+   volatile uint32_t INTFR;  /* 0x00 Interrupt flags */
+   volatile uint32_t INTFCR; /* 0x04 Interrupt flag clear, write 1 to clear */
+} DMA_TypeDef;
+
+#define DMA1_Channel1_BASE (DMA1_BASE + 0x08UL)
+#define DMA1_Channel2_BASE (DMA1_BASE + 0x1CUL)
+#define DMA1_Channel3_BASE (DMA1_BASE + 0x30UL)
+#define DMA1_Channel4_BASE (DMA1_BASE + 0x44UL)
+#define DMA1_Channel5_BASE (DMA1_BASE + 0x58UL)
+#define DMA1_Channel6_BASE (DMA1_BASE + 0x6CUL)
+#define DMA1_Channel7_BASE (DMA1_BASE + 0x80UL)
+
+#define DMA1 ((DMA_TypeDef *)DMA1_BASE)
+#define DMA1_Channel1 ((DMA_Channel_TypeDef *)DMA1_Channel1_BASE)
+#define DMA1_Channel2 ((DMA_Channel_TypeDef *)DMA1_Channel2_BASE)
+#define DMA1_Channel3 ((DMA_Channel_TypeDef *)DMA1_Channel3_BASE)
+#define DMA1_Channel4 ((DMA_Channel_TypeDef *)DMA1_Channel4_BASE)
+#define DMA1_Channel5 ((DMA_Channel_TypeDef *)DMA1_Channel5_BASE)
+#define DMA1_Channel6 ((DMA_Channel_TypeDef *)DMA1_Channel6_BASE)
+#define DMA1_Channel7 ((DMA_Channel_TypeDef *)DMA1_Channel7_BASE)
+
+/* DMA_INTFR and DMA_INTFCR bits of channel 1. Each next channel is 4 bits higher. */
+#define DMA_GIF1 (1ul << 0)
+#define DMA_TCIF1 (1ul << 1)
+#define DMA_CHTIF1 (1ul << 2)
+#define DMA_CTEIF1 (1ul << 3)
+
+/* DMA_CFGRx bits. The names follow the other families (CFGR1 for all channels). */
+#define DMA_CFGR1_EN (1ul << 0)
+#define DMA_CFGR1_TCIE (1ul << 1)
+#define DMA_CFGR1_HTIE (1ul << 2)
+#define DMA_CFGR1_TEIE (1ul << 3)
+#define DMA_CFGR1_DIR (1ul << 4)
+#define DMA_CFGR1_CIRC (1ul << 5)
+#define DMA_CFGR1_PINC (1ul << 6)
+#define DMA_CFGR1_MINC (1ul << 7)
+#define DMA_CFGR1_PSIZE (3ul << 8)
+#define DMA_CFGR1_MSIZE (3ul << 10)
+#define DMA_CFGR1_PL (3ul << 12)
+#define DMA_CFGR1_PL_0 (1ul << 12)
+#define DMA_CFGR1_PL_1 (1ul << 13)
+#define DMA_CFGR1_MEM2MEM (1ul << 14)
 
 /* USBHS controller (USB 2.0 high-speed, RM chapter 22). Device-mode names.
  * The host-mode registers share these addresses. */
