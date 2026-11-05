@@ -5,7 +5,8 @@
 Host tests run on the build machine. They do not need a board or the RISC-V toolchain.
 They compile library sources with the native compiler (C++23).
 A stub `wch_device.h` replaces the device header.
-The stub gives the GPIO registers of one family as plain variables in memory.
+The stub gives the registers of one family as plain variables in memory.
+The GPIO tests use `stubs-<family>/`. The USB test uses `stubs-usb-v307/`.
 
 Run the tests:
 
@@ -30,11 +31,41 @@ It checks the field of the selected pin.
 It also checks that the fields of all other pins stay the same.
 On CH32V00X, it checks that the reserved word after `CFGLR` stays the same.
 
+`test-usb-v307` tests the USBHS device driver of CH32V307
+(`src/families/ch32v30x/UsbDevice.cpp`, see [USB device driver](usb.md)).
+It checks these items:
+
+- The `begin()`, `end()`, `connect()` and `disconnect()` writes to the USBHS and RCC registers.
+  These include the PHY PLL divider for `HSE_VALUE` and the SIE reset during the delay.
+- The device address mask of `setAddress()` and the decode of `SPEED_TYPE`.
+- The open rules of `openEndpoint()`. The test opens endpoints at the limits of the endpoint count and the packet size.
+  Only EP0 accepts the control type. A second open with the same packet size succeeds, and a second open with a different size fails.
+- The rejection of isochronous and double-buffered endpoints.
+  A rejected call does not change a register.
+- The buffer pool: each buffer is 4-byte aligned and starts after the previous buffer.
+  A full pool refuses a new endpoint. `closeAllEndpoints()` frees the pool.
+- The register values that `openEndpoint()` writes: the DMA address, `MAX_LEN`, `TX_CTRL`, `RX_CTRL` and `UEP_CONFIG`.
+- The packet copy and the `T_LEN` and `TX_CTRL` values of `startIn()`, and the `RX_CTRL` value of `armOut()`.
+- The `TX_CTRL` and `RX_CTRL` values of `setStall()` and `setNak()`.
+  When STALL stops, the toggle bits are DATA0. On endpoints 1 to 15, the auto-toggle bit stays set.
+
+The driver writes 32-bit DMA addresses.
+On a 64-bit host, the address is the low half of the pointer.
+The test uses the offset of the buffer in the `UsbDevice` object.
+
 ### What the tests do not check
 
 - Real hardware behavior. A fake register does not model reset values, write-protect or side effects.
-- The device header itself. The stub copies the GPIO layout from the family header. A change to the header layout does not change the stub.
+- The device header itself. The stub copies the register layout from the family header. A change to the header layout does not change the stub.
 - The `GpioPin` inline functions `set()`, `clear()` and `toggle()`.
+- The USB interrupt handler. A fake USBHS register holds the last written value.
+  It does not model the write-1-to-clear bits of `INT_FG`.
+  It does not model the response change after a transfer.
+  It does not model the automatic data toggle of endpoints 1 to 15.
+  Thus the test does not check the `Setup`, `Out` and `InComplete` events, or the EP0 toggle after a transfer.
+  It also does not check the data that `readOut()` copies after a received packet.
+- USB interrupt timing: `INT_BUSY`, and the shared `INT_ST` and `RX_LEN` registers (see [USB known limits](usb.md#known-limits)).
+  The USB hardware test in `tests/ch32v30x-usb-loopback/` must check these items.
 
 ### Add a test
 

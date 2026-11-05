@@ -30,3 +30,15 @@ foreach(_family v00x v20x v30x)
     target_compile_options(test-gpio-${_family} PRIVATE -Wall -Wextra -Werror)
     add_test(NAME gpio-${_family} COMMAND test-gpio-${_family})
 endforeach()
+
+# The CH32V307 USBHS device driver. The stubs-usb-v307 directory gives
+# <wch_device.h> with the USBHS and RCC registers as host variables.
+add_executable(test-usb-v307
+        test_usb_v307.cpp
+        ${_src}/families/ch32v30x/UsbDevice.cpp)
+target_include_directories(test-usb-v307 PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/stubs-usb-v307
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${_src})
+target_compile_options(test-usb-v307 PRIVATE -Wall -Wextra -Werror)
+add_test(NAME usb-v307 COMMAND test-usb-v307)
