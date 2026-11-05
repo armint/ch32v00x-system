@@ -25,3 +25,39 @@ The value depends on VDD (supply voltage). The exact relation is not confirmed.
 - `Adc::setCalibrationVoltage()` selects the calibration voltage. Its two
   values are `Half` and `ThreeQuarters`. The meaning of each value is not
   confirmed in this document.
+
+# ADC of the CH32V30X
+
+The CH32V307 has two ADCs, ADC1 and ADC2. Each has 16 external channels
+(channel 0 to 15) and a 12-bit result. ADC1 also has two internal channels:
+the temperature sensor on channel 16 and Vrefint (internal reference
+voltage) on channel 17. The class `Adc` has the same method names as the
+CH32V00X class. The channel and sample time names are different, because
+the pins and the cycle counts are different.
+
+## Differences from CH32V00X
+
+- `Channel` names the pin of each channel, for example `CH8_PB0`.
+  `CH16_Temp` and `CH17_Vref` are the internal channels.
+- `SamplingCycles` gives 1.5, 7.5, 13.5, 28.5, 41.5, 55.5, 71.5 and 239.5 cycles.
+- `ClockDivider` divides PCLK2 by 2, 4, 6 or 8. The ADC clock must not
+  exceed 14 MHz. At 144 MHz, PCLK2 is 72 MHz, so use `div6` or `div8`.
+- There is no `setCalibrationVoltage()` and no injected trigger.
+- `enableClock()` and `reset()` act on the ADC of the object.
+- `enableInternalChannels()` switches channels 16 and 17 on. Wait for the
+  start-up time before you convert.
+
+## Steps
+
+1. Call `enableClock()`, then `Adc::setClockDivider()`.
+2. Call `enableInternalChannels()` if you use channel 16 or 17.
+3. Call `setSamplingTime()` for each channel. Vrefint and the temperature
+   sensor need at least 17.1 us.
+4. Call `enable()`, then `calibrate()`. `calibrate()` blocks until the
+   calibration ends.
+5. Call `configureRegularChannel(0, channel)`. Call
+   `setRegularConversionTrigger(RegularTrigger::SWSTART)`.
+6. Call `start()`. Wait for `isConversionComplete()`. Read `value()`.
+
+The CH32V30X ADC is not tested on hardware yet. Only the register values
+are checked by a host test.

@@ -46,7 +46,7 @@ family header has a name that is unique across the families, for example
 `Adc_V00x.h`. A shared header selects the family header with a preprocessor
 test. For example, `src/peripherals/Adc.h` includes `Adc_V003.h` when
 `CH32V003` is defined, and `Adc_V00x.h` when `CH32V006` or `CH32V002` is
-defined.
+defined. It includes `Adc_V30x.h` when `CH32V30x_D8C` is defined.
 
 The installed package has the same include layout. Its include directory
 holds the shared headers and the headers of the selected family.
