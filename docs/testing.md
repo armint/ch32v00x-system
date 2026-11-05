@@ -41,3 +41,23 @@ On CH32V00X, it checks that the reserved word after `CFGLR` stays the same.
 1. Add the test source to `tests/host/`. Include `check.h` and use the `CHECK` macro.
 2. Add a stub directory `tests/host/stubs-<family>/` if the test needs registers of a new family.
 3. Add the program and an `add_test` entry to `tests/host/CMakeLists.txt`.
+
+## Continuous integration
+
+The file `.gitlab-ci.yml` defines the GitLab pipeline. All jobs run in the
+`build` stage. They use the builder image `firmware-builder`, which has the
+RISC-V toolchain. Each build job looks for `riscv-none-elf-gcc` with
+`command -v`. The job fails if the tool is missing.
+
+| Job | What it does |
+|---|---|
+| `build` | Builds the `ch32v00x-system` library for CH32V00X, CH32V20X and CH32V30X at C++23. The job fails if CMake fetches span-compat. |
+| `build-cpp17` | Builds the same three families at C++17. The job fails if CMake does not use `span_compat::span`. |
+| `host-tests` | Runs the host tests from `tests/host` with the native compiler. |
+
+The build jobs use the device macro, `-march` and `-mabi` values of
+[Compiler flags per chip](building.md#compiler-flags-per-chip). The CH32V00X
+jobs use CH32V003. The CH32V20X jobs use CH32V20x_D8W. The CH32V30X jobs use
+CH32V30x_D8C.
+
+No job builds a test image yet.
