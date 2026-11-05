@@ -36,6 +36,7 @@ library are in [ch32v00x-art](https://gitlab.vandertogt.org/riscv/ch32v00x-art).
 On CH32V30X, the start-up, the clock, SysTick, the delays, `Interrupt` and
 `GpioPin` build. `GpioPin` sets pins 0 to 7 in `CFGLR` and pins 8 to 15 in `CFGHR`.
 The `Usart` driver builds for USART1 to USART3 and UART4 to UART8. A loopback test on hardware is not done yet.
+The baud rate uses the APB prescaler: USART1 follows PPRE2, the other USARTs follow PPRE1. Call `setBaudRate()` again after a prescaler change.
 The USB device driver `hw::UsbDevice` builds for the USBHS controller. A test on a host is not done yet.
 The DMA, timer, EXTI, I2C and flash drivers are not ported yet. The family list is
 in [Chip families](docs/families.md).

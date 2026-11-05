@@ -6,7 +6,7 @@ Host tests run on the build machine. They do not need a board or the RISC-V tool
 They compile library sources with the native compiler (C++23).
 A stub `wch_device.h` replaces the device header.
 The stub gives the registers of one family as plain variables in memory.
-The GPIO tests use `stubs-<family>/`. The USB test uses `stubs-usb-v307/`.
+The GPIO tests use `stubs-<family>/`. The USB test uses `stubs-usb-v307/`. The Usart test uses `stubs-usart-v30x/`.
 
 Run the tests:
 
@@ -25,6 +25,7 @@ The build uses `-Wall -Wextra -Werror`. Each test program returns a non-zero exi
 | `test-gpio-v00x` | `hw::GpioPin` on CH32V00X, pins 0 to 7: the 4-bit field in `CFGLR` that `configure()` writes for each mode, the pull-up and pull-down writes to `BSHR` and `BCR`, the setters (`setMode()`, `setOutputType()`, `setSpeed()`, `setPull()`), and `write()`, `toggle()` and `read()`. |
 | `test-gpio-v20x` | The same checks on CH32V20X, pins 0 to 15. Pins 0 to 7 use `CFGLR`. Pins 8 to 15 use `CFGHR`. |
 | `test-gpio-v30x` | The same checks on CH32V30X, pins 0 to 15. |
+| `test-usart-v30x` | The baud rate of `Usart` on CH32V30X: USART1 uses PPRE2 and the other USARTs use PPRE1. |
 
 Each test starts with a known pattern in the configuration registers.
 It checks the field of the selected pin.
