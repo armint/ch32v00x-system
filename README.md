@@ -31,13 +31,14 @@ library are in [ch32v00x-art](https://gitlab.vandertogt.org/riscv/ch32v00x-art).
 | `CH32V00X` | `CH32V002` | CH32V002 | Builds. Hardware test not recorded. |
 | `CH32V00X` | `CH32V006` | CH32V006 | Builds. Hardware test not recorded. |
 | `CH32V20X` | `CH32V20x_D8W` | CH32V208 | Builds. Hardware test not recorded. No ADC driver. |
-| `CH32V30X` | `CH32V30x_D8C` | CH32V307 | Start-up, clock, GPIO, USART and USB device build. Hardware test not recorded. Other drivers not ported yet. |
+| `CH32V30X` | `CH32V30x_D8C` | CH32V307 | Start-up, clock, GPIO, USART, ADC and USB device build. Hardware test not recorded. Other drivers not ported yet. |
 
 On CH32V30X, the start-up, the clock, SysTick, the delays, `Interrupt` and
 `GpioPin` build. `GpioPin` sets pins 0 to 7 in `CFGLR` and pins 8 to 15 in `CFGHR`.
 The `Usart` driver builds for USART1 to USART3 and UART4 to UART8. A loopback test on hardware is not done yet.
 The baud rate uses the APB prescaler: USART1 follows PPRE2, the other USARTs follow PPRE1. Call `setBaudRate()` again after a prescaler change.
 The USB device driver `hw::UsbDevice` builds for the USBHS controller. A test on a host is not done yet.
+The `Adc` driver builds for ADC1 and ADC2. A test on hardware is not done yet.
 The DMA, timer, EXTI, I2C and flash drivers are not ported yet. The family list is
 in [Chip families](docs/families.md).
 
@@ -49,7 +50,7 @@ in [Chip families](docs/families.md).
 | System timer and delays | `SysTick_Config()` and `getUptimeTicks()` in `utils/Timekeeping.h` (your project sets the tick rate), `delaymS()` and `delayuS()` in `delaybusywait.h` |
 | GPIO and EXTI | `hw::GpioPin` and `hw::FastPin` (the API of `system-stm32`), `Exti` |
 | Communication | `Usart`, `I2c`, `hw::UsbDevice` (CH32V30X only, USB device on USBHS) |
-| Analog and timing | `Adc` (CH32V00X only), `Timer`, `Dma` |
+| Analog and timing | `Adc` (CH32V00X and CH32V30X), `Timer`, `Dma` |
 | Other | `Flash`, `Interrupt` (connects C++ member functions as interrupt handlers) |
 
 ## Quick start
@@ -87,7 +88,7 @@ toolchain file `cmake/gcc_riscv.cmake`. For all options, see
 |---|---|
 | [Building and using ch32v00x-system](docs/building.md) | Requirements, CMake variables, C++ standard, `hw::span`, compiler flags, installed package |
 | [Chip families](docs/families.md) | `CH32_FAMILY`, family directories, device-specific code, adding a family |
-| [ADC calibration on CH32V002 and CH32V006](docs/adc.md) | Calibration of the ADC on these chips |
+| [ADC](docs/adc.md) | Calibration on CH32V002 and CH32V006. The ADC of CH32V30X |
 | [Testing](docs/testing.md) | Host tests: how to run them, what they check and what they do not check |
 | [USB device driver](docs/usb.md) | `hw::UsbDevice` on the USBHS controller of CH32V307: layers, clock, endpoint behavior, known limits |
 

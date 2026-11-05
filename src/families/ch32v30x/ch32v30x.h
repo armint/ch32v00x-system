@@ -143,6 +143,8 @@ typedef enum IRQn {
 #define UART7_BASE 0x40001C00UL
 #define UART8_BASE 0x40002000UL
 #define USBHS_BASE 0x40023400UL
+#define ADC1_BASE 0x40012400UL
+#define ADC2_BASE 0x40012800UL
 
 typedef struct {
    volatile uint32_t CTLR;     /* 0x00 Clock control */
@@ -179,6 +181,8 @@ typedef struct {
 #define RCC_IOPCEN (1ul << 4)
 #define RCC_IOPDEN (1ul << 5)
 #define RCC_IOPEEN (1ul << 6)
+#define RCC_ADC1EN (1ul << 9)
+#define RCC_ADC2EN (1ul << 10)
 #define RCC_USART1EN (1ul << 14)
 
 /* APB1 peripheral clock enable bits (RCC_APB1PCENR) */
@@ -198,9 +202,14 @@ typedef struct {
 #define RCC_CFGR0_HPRE_MASK (0xFul << 4)
 #define RCC_CFGR0_PPRE1_MASK (7ul << 8)
 #define RCC_CFGR0_PPRE2_MASK (7ul << 11)
+#define RCC_ADCPRE (3ul << 14)
 #define RCC_CFGR0_PLLSRC (1ul << 16) /* 1: PREDIV1 output feeds the PLL */
 #define RCC_CFGR0_PLLMUL_MASK (0xFul << 18)
 #define RCC_CFGR0_PLLMUL_X18 (0ul << 18) /* CH32V30x_D8C: 0000 is x18 */
+
+/* APB2 peripheral reset bits (RCC_APB2PRSTR) */
+#define RCC_ADC1RST (1ul << 9)
+#define RCC_ADC2RST (1ul << 10)
 
 /* RCC_CFGR2 fields */
 #define RCC_CFGR2_PREDIV1_MASK (0xFul << 0)
@@ -227,6 +236,49 @@ typedef struct {
 #define GPIOC ((GPIO_TypeDef *)GPIOC_BASE)
 #define GPIOD ((GPIO_TypeDef *)GPIOD_BASE)
 #define GPIOE ((GPIO_TypeDef *)GPIOE_BASE)
+
+/* ADC1 and ADC2 have the same layout. Offsets from the SVD (ADC1 and ADC2 peripherals). */
+typedef struct {
+   volatile uint32_t STATR;    /* 0x00 Status */
+   volatile uint32_t CTLR1;    /* 0x04 Control 1 */
+   volatile uint32_t CTLR2;    /* 0x08 Control 2 */
+   volatile uint32_t SAMPTR1;  /* 0x0C Sample time, channels 10 to 17 */
+   volatile uint32_t SAMPTR2;  /* 0x10 Sample time, channels 0 to 9 */
+   volatile uint32_t IOFR[4];  /* 0x14 Injected channel data offset */
+   volatile uint32_t WDHTR;    /* 0x24 Watchdog high threshold */
+   volatile uint32_t WDLTR;    /* 0x28 Watchdog low threshold */
+   volatile uint32_t RSQR1;    /* 0x2C Regular sequence 1 (length, positions 13 to 16) */
+   volatile uint32_t RSQR2;    /* 0x30 Regular sequence 2 (positions 7 to 12) */
+   volatile uint32_t RSQR3;    /* 0x34 Regular sequence 3 (positions 1 to 6) */
+   volatile uint32_t ISQR;     /* 0x38 Injected sequence */
+   volatile uint32_t IDATAR[4]; /* 0x3C Injected data */
+   volatile uint32_t RDATAR;   /* 0x4C Regular data */
+} ADC_TypeDef;
+
+#define ADC1 ((ADC_TypeDef *)ADC1_BASE)
+#define ADC2 ((ADC_TypeDef *)ADC2_BASE)
+
+/* ADC_STATR bits */
+#define ADC_EOC (1ul << 1)
+
+/* ADC_CTLR1 bits */
+#define ADC_EOCIE (1ul << 5)
+#define ADC_AWDIE (1ul << 6)
+#define ADC_SCAN (1ul << 8)
+
+/* ADC_CTLR2 bits */
+#define ADC_ADON (1ul << 0)
+#define ADC_CONT (1ul << 1)
+#define ADC_CAL (1ul << 2)
+#define ADC_RSTCAL (1ul << 3)
+#define ADC_DMA (1ul << 8)
+#define ADC_EXTSEL (7ul << 17)
+#define ADC_EXTTRIG (1ul << 20)
+#define ADC_SWSTART (1ul << 22)
+#define ADC_TSVREFE (1ul << 23)
+
+/* ADC_RSQR1 */
+#define ADC_L (0xFul << 20)
 
 /* Same layout as the USART of CH32V20x. The SVD also has CTLR4 at 0x1C. */
 typedef struct {
