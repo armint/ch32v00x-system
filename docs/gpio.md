@@ -27,7 +27,8 @@ The CH32 GPIO is the STM32F1 GPIO. Each pin has one 4-bit field in `CFGLR`
 
 `hw::Afio` selects the remapped pin sets in `AFIO_PCFR1`. All functions turn on
 the AFIO clock. The functions are `remapSpi1()`, `remapSpi3()`,
-`remapI2c1()`, `remapUsart1()`, `remapUsart2()` and `remapUsart3()`. Use
+`remapI2c1()`, `remapUsart1()`, `remapUsart2()`, `remapUsart3()`,
+`remapTim2()` and `remapTim3()`. Use
 `setRemap()` for other fields.
 
 `setSwjConfig()` sets the debug port. `SwjConfig::Disabled` turns SWD off and
