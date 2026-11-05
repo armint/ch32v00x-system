@@ -154,7 +154,7 @@ void testGpioInterrupt() {
    fire(EXTI3_IRQn);
    CHECK(callsA == 1);
    hostExti.INTFR = 0; // the hardware clears the flag when the code writes the bit
-   fire(EXTI3_IRQn); // nothing pending: no call
+   fire(EXTI3_IRQn);   // nothing pending: no call
    CHECK(callsA == 1);
 
    // Lines 6 and 8 share the vector of EXTI9_5: only the pending line calls.

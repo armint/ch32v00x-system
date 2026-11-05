@@ -2,10 +2,10 @@
 // the library builds, links and fits in memory. It never runs on hardware in CI.
 // The start-up code calls SystemInit() before main(), as in the USB loopback test.
 #include <Afio.h>
+#include <cmsis_device.h>
 #include <peripherals/FastPin.h>
 #include <peripherals/GpioPin.h>
 #include <utils/GpioInterrupt.h>
-#include <cmsis_device.h>
 
 static void onKey(void *) {
 }
