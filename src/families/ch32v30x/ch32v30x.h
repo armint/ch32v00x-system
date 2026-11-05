@@ -365,6 +365,11 @@ typedef struct {
 #define UART8 ((USART_TypeDef *)UART8_BASE)
 
 /* USART_STATR bits */
+#define USART_STATR_PE ((uint16_t)0x0001)
+#define USART_STATR_FE ((uint16_t)0x0002)
+#define USART_STATR_NE ((uint16_t)0x0004)
+#define USART_STATR_ORE ((uint16_t)0x0008)
+#define USART_STATR_IDLE ((uint16_t)0x0010)
 #define USART_STATR_RXNE ((uint16_t)0x0020)
 #define USART_STATR_TC ((uint16_t)0x0040)
 #define USART_STATR_TXE ((uint16_t)0x0080)
@@ -376,6 +381,7 @@ typedef struct {
 #define USART_CTLR1_RXNEIE ((uint16_t)0x0020)
 #define USART_CTLR1_TCIE ((uint16_t)0x0040)
 #define USART_CTLR1_TXEIE ((uint16_t)0x0080)
+#define USART_CTLR1_M ((uint16_t)0x1000) /* 9-bit word */
 #define USART_CTLR1_PS ((uint16_t)0x0200)
 #define USART_CTLR1_PCE ((uint16_t)0x0400)
 #define USART_CTLR1_UE ((uint16_t)0x2000)
