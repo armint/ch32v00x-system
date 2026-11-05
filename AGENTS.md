@@ -11,6 +11,7 @@ This library provides the start-up code, the interrupt vector tables and the reg
 
 ## Guidelines
 - **Peripheral Drivers**: Shared peripheral interfaces are in `src/peripherals/`.
+- **Name Parity**: A function that does the same job as a function in `system-stm32` has the same public name, for example `enableTxEmptyInterrupt`. Check the `system-stm32` names before you add or rename a public function. The same rule applies to CMake variables: a variable that does the same job as one in `system-stm32` uses the same suffix, for example `CH32_DEVICE` for `STM32_DEVICE`. Keep the register differences inside the driver. Glue code such as `ch32v00x-art` uses these names and does not add its own.
 - **Driver Files**: Put each driver in a header and a source file with the same name, for example `Usart.h` and `Usart.cpp`. Put only short register accesses inline in the header.
 - **Family-Specific Code**: Put hardware-dependent code into `src/families/<family>/`. Give each family header a name that no other family uses, for example `Adc_V00x.h`. The shared header `src/peripherals/Adc.h` includes the family header of the chip.
 - **Device Macros in Shared Code**: Do not add a new test of a device macro, for example `CH32V003`, to a shared file. Put the difference into the family directory. Three shared files already test device macros: `src/peripherals/Adc.h`, `src/peripherals/Flash.cpp` and `src/peripherals/I2C.h`. Keep those tests in these three files. Do not add device-macro tests to other shared files.
