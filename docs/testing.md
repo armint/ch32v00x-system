@@ -65,7 +65,7 @@ The test uses the offset of the buffer in the `UsbDevice` object.
   Thus the test does not check the `Setup`, `Out` and `InComplete` events, or the EP0 toggle after a transfer.
   It also does not check the data that `readOut()` copies after a received packet.
 - USB interrupt timing: `INT_BUSY`, and the shared `INT_ST` and `RX_LEN` registers (see [USB known limits](usb.md#known-limits)).
-  The USB hardware test in `tests/ch32v30x-usb-loopback/` checks the interrupt handler on a board. This test is not done yet.
+  The USB hardware test, the [`usb-loopback`](https://gitlab.vandertogt.org/riscv/ch32v00x-examples/-/tree/main/examples/usb-loopback) example of ch32v00x-examples, checks the interrupt handler on a board. This test is not done yet.
   No test proves the `INT_ST` and `RX_LEN` race, because the time window is small.
 
 ### Add a test
@@ -105,7 +105,7 @@ The flash starts at address `0x0`. `Reset_Handler` must be at `0x0`
 and `g_pfnVectors` at `0x4`. The job fails if an address is different.
 
 The image does not test the USB driver.
-The USB hardware test is in `tests/ch32v30x-usb-loopback/`.
+The USB hardware test is the [`usb-loopback`](https://gitlab.vandertogt.org/riscv/ch32v00x-examples/-/tree/main/examples/usb-loopback) example of ch32v00x-examples.
 
 ## Continuous integration
 

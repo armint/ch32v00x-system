@@ -12,7 +12,7 @@
 // makes after a transfer. Thus the test does not run the interrupt handler,
 // and it checks no toggle state after a transfer. It also does not check
 // interrupt timing (INT_BUSY, the INT_ST and RX_LEN race of docs/usb.md).
-// The hardware test in tests/ch32v30x-usb-loopback/ is the place for the
+// The usb-loopback example of ch32v00x-examples is the place for the
 // interrupt handler and the toggle; it is not done yet. No test proves the
 // INT_ST and RX_LEN race: the window is too small (docs/usb.md, Known limits).
 //

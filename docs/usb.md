@@ -65,7 +65,7 @@ process it in the main loop.
 
 ## Hardware test
 
-The program in `tests/ch32v30x-usb-loopback/` tests the driver on a
+The [`usb-loopback`](https://gitlab.vandertogt.org/riscv/ch32v00x-examples/-/tree/main/examples/usb-loopback) example of ch32v00x-examples tests the driver on a
 CH32V307 board. It enumerates with a vendor interface named
 `CMSIS-DAP v2` and sends each bulk OUT packet back on the bulk IN
 endpoint. Its README gives the build and test steps.
