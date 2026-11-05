@@ -45,6 +45,31 @@ target_include_directories(test-usb-v307 PRIVATE
 target_compile_options(test-usb-v307 PRIVATE -Wall -Wextra -Werror)
 add_test(NAME usb-v307 COMMAND test-usb-v307)
 
+# The baud rate of the CH32V30x Usart with APB prescalers. The stubs-usart-v30x
+# directory gives <wch_device.h> with RCC_CFGR0 and the USART registers as host variables.
+add_executable(test-usart-v30x
+        test_usart_v30x.cpp
+        ${_src}/peripherals/Usart.cpp)
+target_include_directories(test-usart-v30x PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/stubs-usart-v30x
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${_src})
+target_compile_options(test-usart-v30x PRIVATE -Wall -Wextra -Werror)
+add_test(NAME usart-v30x COMMAND test-usart-v30x)
+
+# The CH32V30x ADC driver. The stubs-adc-v30x directory gives <wch_device.h>
+# with the ADC and RCC registers as host variables.
+add_executable(test-adc-v30x
+        test_adc_v30x.cpp
+        ${_src}/families/ch32v30x/Adc_V30x.cpp)
+target_include_directories(test-adc-v30x PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/stubs-adc-v30x
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${_src})
+target_compile_definitions(test-adc-v30x PRIVATE CH32V30x_D8C)
+target_compile_options(test-adc-v30x PRIVATE -Wall -Wextra -Werror)
+add_test(NAME adc-v30x COMMAND test-adc-v30x)
+
 # The CH32V30X Afio, Exti and GpioInterrupt. The stubs-exti-v30x directory
 # gives <wch_device.h> with the AFIO, EXTI and RCC registers as host
 # variables. The real utils/Interrupt.h is used: the test defines the
