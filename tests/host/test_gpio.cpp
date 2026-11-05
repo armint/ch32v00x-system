@@ -55,33 +55,35 @@ struct Port {
    }
 };
 
-using Mode = GpioPin::OutputMode;
-using Speed = GpioPin::OutputSpeed;
-using In = GpioPin::InputMode;
+using hw::GpioPin;
+using Mode = GpioPin::Mode;
+using Type = GpioPin::OutputType;
+using Pull = GpioPin::Pull;
+using Speed = GpioPin::Speed;
 
 void testRegisterLayout() {
    static_assert(offsetof(GPIO_TypeDef, INDR) == 0x08);
    static_assert(offsetof(GPIO_TypeDef, BCR) == 0x14);
 }
 
-void testConfigureOutput() {
+void testConfigure() {
    for(uint8_t pin = 0; pin < PinCount; ++pin) {
       Port port;
       GpioPin gpioPin(&port.gpio, pin);
 
-      gpioPin.configureOutput(Mode::PushPull, Speed::Output50MHz);
+      gpioPin.configure(Mode::Output, Type::PushPull, Pull::None, Speed::VeryHigh);
       CHECK(port.field(pin) == 0b0011);
       CHECK(port.othersUnchanged(pin));
 
-      gpioPin.configureOutput(Mode::OpenDrain, Speed::Output2MHz);
+      gpioPin.configure(Mode::Output, Type::OpenDrain);
       CHECK(port.field(pin) == 0b0110);
       CHECK(port.othersUnchanged(pin));
 
-      gpioPin.configureOutput(Mode::PushPull, Speed::Output10MHz, true);
+      gpioPin.configure(Mode::Alternate, Type::PushPull, Pull::None, Speed::High);
       CHECK(port.field(pin) == 0b1001);
       CHECK(port.othersUnchanged(pin));
 
-      gpioPin.configureOutput(Mode::OpenDrain, Speed::Output50MHz, true);
+      gpioPin.configure(Mode::Alternate, Type::OpenDrain, Pull::None, Speed::VeryHigh);
       CHECK(port.field(pin) == 0b1111);
       CHECK(port.othersUnchanged(pin));
    }
@@ -92,33 +94,91 @@ void testConfigureInput() {
       Port port;
       GpioPin gpioPin(&port.gpio, pin);
 
-      gpioPin.configureInput(In::Analog);
+      gpioPin.configure(Mode::Analog);
       CHECK(port.field(pin) == 0b0000);
       CHECK(port.othersUnchanged(pin));
 
-      gpioPin.configureInput(In::Floating);
+      gpioPin.configure(Mode::Input);
       CHECK(port.field(pin) == 0b0100);
       CHECK(port.othersUnchanged(pin));
       CHECK(port.gpio.BSHR == 0 && port.gpio.BCR == 0); // no pull selected
 
-      gpioPin.configureInput(In::PullDown);
+      gpioPin.configure(Mode::Input, Type::PushPull, Pull::Down);
       CHECK(port.field(pin) == 0b1000);
       CHECK(port.gpio.BCR == (1U << pin));
       CHECK(port.othersUnchanged(pin));
 
-      gpioPin.configureInput(In::PullUp);
+      gpioPin.configure(Mode::Input, Type::PushPull, Pull::Up);
       CHECK(port.field(pin) == 0b1000);
       CHECK(port.gpio.BSHR == (1U << pin));
       CHECK(port.othersUnchanged(pin));
    }
 }
 
+// The setters change only their part of the field (call setMode() first).
+void testSetters() {
+   for(uint8_t pin = 0; pin < PinCount; ++pin) {
+      Port port;
+      GpioPin gpioPin(&port.gpio, pin);
+
+      gpioPin.configure(Mode::Output, Type::OpenDrain, Pull::None, Speed::VeryHigh);
+      gpioPin.setMode(Mode::Alternate); // keeps the speed and open drain
+      CHECK(port.field(pin) == 0b1111);
+      gpioPin.setOutputType(Type::PushPull);
+      CHECK(port.field(pin) == 0b1011);
+      gpioPin.setSpeed(Speed::High);
+      CHECK(port.field(pin) == 0b1001);
+      gpioPin.setMode(Mode::Output);
+      CHECK(port.field(pin) == 0b0001);
+
+      gpioPin.setMode(Mode::Input);
+      CHECK(port.field(pin) == 0b0100);
+      gpioPin.setSpeed(Speed::VeryHigh); // inputs have no speed
+      CHECK(port.field(pin) == 0b0100);
+      gpioPin.setPull(Pull::Up);
+      CHECK(port.field(pin) == 0b1000);
+      CHECK(port.gpio.BSHR == (1U << pin));
+      gpioPin.setMode(Mode::Input); // keeps the pull
+      CHECK(port.field(pin) == 0b1000);
+      gpioPin.setPull(Pull::None);
+      CHECK(port.field(pin) == 0b0100);
+      CHECK(port.othersUnchanged(pin));
+   }
+}
+
+// write(), toggle() and read() use BSHR, BCR, OUTDR and INDR only.
+void testData() {
+   Port port;
+   const uint8_t pin = PinCount - 1;
+   GpioPin gpioPin(&port.gpio, pin);
+
+   gpioPin.write(true);
+   CHECK(port.gpio.BSHR == (1U << pin));
+   gpioPin.write(false);
+   CHECK(port.gpio.BCR == (1U << pin));
+
+   port.gpio.OUTDR = 0;
+   gpioPin.toggle();
+   CHECK(port.gpio.BSHR == (1U << pin)); // set
+   port.gpio.OUTDR = 1U << pin;
+   gpioPin.toggle();
+   CHECK(port.gpio.BSHR == (1U << (pin + 16))); // reset
+   CHECK(port.gpio.OUTDR == (1U << pin));       // OUTDR is not written
+
+   port.gpio.INDR = 1U << pin;
+   CHECK(gpioPin.read());
+   port.gpio.INDR = ~(1U << pin);
+   CHECK(!gpioPin.read());
+}
+
 } // namespace
 
 int main() {
    testRegisterLayout();
-   testConfigureOutput();
+   testConfigure();
    testConfigureInput();
+   testSetters();
+   testData();
    if(failures != 0) {
       std::printf("%d check(s) failed\n", failures);
       return 1;

@@ -22,7 +22,7 @@ The build uses `-Wall -Wextra -Werror`. Each test program returns a non-zero exi
 
 | Program | Checks |
 |---|---|
-| `test-gpio-v00x` | `GpioPin` on CH32V00X, pins 0 to 7: the 4-bit field in `CFGLR` for output and input modes, the pull-up and pull-down writes to `BSHR` and `BCR`. |
+| `test-gpio-v00x` | `hw::GpioPin` on CH32V00X, pins 0 to 7: the 4-bit field in `CFGLR` that `configure()` writes for each mode, the pull-up and pull-down writes to `BSHR` and `BCR`, the setters (`setMode()`, `setOutputType()`, `setSpeed()`, `setPull()`), and `write()`, `toggle()` and `read()`. |
 | `test-gpio-v20x` | The same checks on CH32V20X, pins 0 to 15. Pins 0 to 7 use `CFGLR`. Pins 8 to 15 use `CFGHR`. |
 | `test-gpio-v30x` | The same checks on CH32V30X, pins 0 to 15. |
 
@@ -57,7 +57,7 @@ The test uses the offset of the buffer in the `UsbDevice` object.
 
 - Real hardware behavior. A fake register does not model reset values, write-protect or side effects.
 - The device header itself. The stub copies the register layout from the family header. A change to the header layout does not change the stub.
-- The `GpioPin` inline functions `set()`, `clear()` and `toggle()`.
+- The critical section of `GpioPin`. The host stub does nothing.
 - The USB interrupt handler. A fake USBHS register holds the last written value.
   It does not model the write-1-to-clear bits of `INT_FG`.
   It does not model the response change after a transfer.

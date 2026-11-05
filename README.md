@@ -46,7 +46,7 @@ in [Chip families](docs/families.md).
 |---|---|
 | Start-up | Reset handler, weak exception handlers, vector table per family |
 | System timer and delays | `initSysTick()` and `getSysTick()` (your project sets the tick rate), `delaymS()` and `delayuS()` |
-| GPIO and EXTI | `GpioPin`, `Exti` |
+| GPIO and EXTI | `hw::GpioPin` (the API of `hw::GpioPin` in `system-stm32`), `Exti` |
 | Communication | `Usart`, `I2c`, `hw::UsbDevice` (CH32V30X only, USB device on USBHS) |
 | Analog and timing | `Adc` (CH32V00X only), `Timer`, `Dma` |
 | Other | `Flash`, `Interrupt` (connects C++ member functions as interrupt handlers) |

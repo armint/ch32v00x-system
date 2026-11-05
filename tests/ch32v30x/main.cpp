@@ -7,8 +7,8 @@
 int main() {
    // Blue LED of the CH32V307 board on PB4
    RCC->APB2PCENR |= RCC_IOPBEN;
-   const GpioPin led(GPIOB, 4);
-   led.configureOutput(GpioPin::OutputMode::PushPull, GpioPin::OutputSpeed::Output2MHz);
+   const hw::GpioPin led(GPIOB, 4);
+   led.configure(hw::GpioPin::Mode::Output);
    while(true) {
       led.toggle();
       for(uint32_t i = 0; i < 1000000; i = i + 1) {
