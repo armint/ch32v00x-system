@@ -41,7 +41,11 @@ the pins and the cycle counts are different.
   `CH16_Temp` and `CH17_Vref` are the internal channels.
 - `SamplingCycles` gives 1.5, 7.5, 13.5, 28.5, 41.5, 55.5, 71.5 and 239.5 cycles.
 - `ClockDivider` divides PCLK2 by 2, 4, 6 or 8. The ADC clock must not
-  exceed 14 MHz. At 144 MHz, PCLK2 is 72 MHz, so use `div6` or `div8`.
+  exceed 14 MHz. The start-up code of this library does not divide APB2,
+  so PCLK2 is 144 MHz. Then even `div8` gives 18 MHz, which is too fast.
+  Set the APB2 prescaler (`RCC_CFGR0` PPRE2) to 2 for a legal ADC clock.
+  Note that `Usart` assumes PCLK2 equals `SystemCoreClock`. After a PPRE2
+  change, the baud rate of USART1 is wrong.
 - There is no `setCalibrationVoltage()` and no injected trigger.
 - `enableClock()` and `reset()` act on the ADC of the object.
 - `enableInternalChannels()` switches channels 16 and 17 on. Wait for the
