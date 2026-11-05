@@ -23,7 +23,7 @@ namespace hw {
 
 namespace {
 
-using namespace gpio_cfg;
+using namespace gpio_f1;
 
 struct PinConfig {
    uint8_t cnf;

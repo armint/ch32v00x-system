@@ -4,8 +4,9 @@
 
 #include <stdint.h>
 
-// CH32 pin configuration encoding (the STM32F1 encoding, RM0008 9.2.1),
-// shared by GpioPin and the FastPin direction switch.
+// CH32 pin configuration encoding, shared by GpioPin and the FastPin
+// direction switch. It is the STM32F1 encoding (RM0008 9.2.1), so the
+// namespace has the name that system-stm32 uses: hw::gpio_f1.
 //
 // Each pin has one 4-bit field in CFGLR (pins 0-7) or CFGHR (pins 8-15):
 // CNF[1:0] in the upper two bits and MODE[1:0] in the lower two bits.
@@ -18,7 +19,7 @@
 // In input pull mode, the OUTDR bit selects pull-up (1) or pull-down (0).
 // Outputs have no internal pull resistors.
 
-namespace hw::gpio_cfg {
+namespace hw::gpio_f1 {
 
 constexpr uint8_t MODE_INPUT = 0b00;
 constexpr uint8_t MODE_10MHZ = 0b01;
@@ -86,4 +87,4 @@ static_assert(configIndex(7) == 0 && configShift(7) == 28, "pin 7: CFGLR bits 28
 static_assert(configIndex(8) == 1 && configShift(8) == 0, "pin 8: CFGHR bits 0..3");
 static_assert(configIndex(15) == 1 && configShift(15) == 28, "pin 15: CFGHR bits 28..31");
 
-} // namespace hw::gpio_cfg
+} // namespace hw::gpio_f1
