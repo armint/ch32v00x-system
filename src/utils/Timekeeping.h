@@ -13,7 +13,7 @@ extern "C" {
 typedef int64_t timestamp_t;
 typedef uint32_t duration_t;
 
-// Ticks since SysTick_Config()
+// Ticks since the start. SysTick_Config() does not reset the count.
 timestamp_t getUptimeTicks();
 
 // Called from the SysTick interrupt with the new tick count. Weak: the

@@ -10,6 +10,14 @@
 
 #define SYSTICK_SR_CNTIF (1ul << 0) /* Counting value comparison flag */
 
+// CH32V20X and CH32V30X have a 64-bit counter and compare value (CH32FV2x_V3xRM
+// 9.5.5). The high words keep the values of earlier code (e.g. a loader).
+#if defined(CH32V20x_D8W) || defined(CH32V20x_D8) || defined(CH32V20x_D6) || defined(CH32V30x_D8C)
+#define SYSTICK_64BIT 1
+#else
+#define SYSTICK_64BIT 0
+#endif
+
 static volatile timestamp_t sysTickCount;
 
 extern "C" void __attribute__((section(".after_vectors"), interrupt)) SysTick_Handler(void) {
@@ -45,6 +53,11 @@ uint32_t SysTick_Config(uint32_t ticks) {
    SysTick->SR &= ~SYSTICK_SR_CNTIF;
    SysTick->CMP = ticks - 1;
    SysTick->CNT = 0;
+#if SYSTICK_64BIT
+   // A non-zero high word would delay the first compare match without end.
+   SysTick->CMPH = 0;
+   SysTick->CNTH = 0;
+#endif
    SysTick->CTLR = SYSTICK_CTRL_STRE | SYSTICK_CTRL_STCLK | SYSTICK_CTRL_STIE | SYSTICK_CTRL_STE;
    return 0;
 }

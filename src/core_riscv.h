@@ -98,9 +98,9 @@ typedef struct {
    __IO uint32_t CTLR;
    __IO uint32_t SR;
    __IO uint32_t CNT;
-   uint32_t RESERVED0;
+   __IO uint32_t CNTH; /* CH32V20X/CH32V30X: high word of the 64-bit counter. Reserved on CH32V00X. */
    __IO uint32_t CMP;
-   uint32_t RESERVED1;
+   __IO uint32_t CMPH; /* CH32V20X/CH32V30X: high word of the 64-bit compare value. Reserved on CH32V00X. */
 } SysTick_Type;
 
 
