@@ -75,11 +75,23 @@ endpoint. Its README gives the build and test steps.
 - The hardware test is not done. Enumeration on a host and a bulk loopback
   are not confirmed.
 - The reference manual does not say if EP0 accepts a SETUP packet while
-  EP0 answers NAK. The driver expects this behavior. The hardware test must
-  confirm it.
-- The `RX_LEN` register holds the length of the last received packet for
-  all endpoints. A SETUP packet can change it before the interrupt handler
-  reads the length of a bulk OUT packet. The time window is the interrupt
-  entry time.
+  EP0 answers NAK or STALL. The driver expects this behavior. The driver
+  ends a STALL on EP0 only when the next SETUP packet arrives. The hardware
+  test must confirm both cases.
+- The `INT_ST` and `RX_LEN` registers are global for all endpoints.
+  `INT_ST` holds the token and the endpoint of the last transfer. `RX_LEN`
+  holds the length of the last received packet. A SETUP packet can change
+  both registers before the interrupt handler reads them for a transfer of
+  endpoints 1 to 15. The time window is the interrupt entry time. These are
+  the effects:
+  - The handler sees a SETUP token, and the IN or OUT event is lost.
+  - After a lost IN event, the IN endpoint stays ready. It sends the same
+    packet again, and the driver reports no `InComplete` event. A USB stack
+    that waits for this event stops.
+  - A wrong `RX_LEN` value gives a wrong length for an OUT packet.
+
+  The reference manual does not say if the controller holds these
+  registers while a transfer interrupt waits. The hardware test does not
+  prove it either, because the window is small.
 - The vendor SVD file names bits 5 to 7 of `USB_INT_EN` differently from
   the reference manual. The header follows the reference manual.

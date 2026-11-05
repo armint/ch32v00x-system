@@ -58,10 +58,14 @@ namespace hw {
 // begin() and end() are for the main loop only.
 //
 // Limits: no isochronous endpoints, no double-buffered endpoints, no remote
-// wake-up, no test modes. The global RX_LEN register holds the length of
-// the last received packet. A SETUP that arrives while an OUT event of
-// endpoint 1..15 waits in the interrupt handler can change it. The handler
-// reads it first, so the window is the interrupt entry time.
+// wake-up, no test modes. INT_ST (token and endpoint of the last
+// transfer) and RX_LEN (length of the last received packet) are global. A
+// SETUP that completes while a TRANSFER event of endpoint 1..15 waits for
+// the handler can overwrite both. Then the handler sees a SETUP token, and
+// the IN or OUT event is lost: an IN endpoint stays ACK and sends the same
+// packet again, with no InComplete. A wrong RX_LEN gives a wrong OUT length.
+// The window is the interrupt entry time. The hardware test must show if
+// the controller holds INT_ST and RX_LEN for a pending TRANSFER.
 class UsbDevice {
    public:
    static constexpr uint8_t EndpointCount = 16;
