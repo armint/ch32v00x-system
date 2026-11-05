@@ -28,6 +28,9 @@ STRUCTS = {
     "RCC": ("RCC_TypeDef", ["CTLR", "CFGR0", "INTR", "APB2PRSTR", "APB1PRSTR", "AHBPCENR",
                             "APB2PCENR", "APB1PCENR", "BDCTLR", "RSTSCKR", "AHBRSTR", "CFGR2"]),
     "GPIOA": ("GPIO_TypeDef", ["CFGLR", "CFGHR", "INDR", "OUTDR", "BSHR", "BCR", "LCKR"]),
+    "AFIO": ("AFIO_TypeDef", ["ECR", "PCFR1", ("EXTICR[0]", "EXTICR1"), ("EXTICR[1]", "EXTICR2"),
+                              ("EXTICR[2]", "EXTICR3"), ("EXTICR[3]", "EXTICR4"), "PCFR2"]),
+    "EXTI": ("EXTI_TypeDef", ["INTENR", "EVENR", "RTENR", "FTENR", "SWIEVR", "INTFR"]),
     "USART1": ("USART_TypeDef", ["STATR", "DATAR", "BRR", "CTLR1", "CTLR2", "CTLR3", "GPR"]),
     "USBHS": ("USBHS_TypeDef", [
         ("CTRL", "USB_CTRL"), ("HOST_CTRL", "UHOST_CTRL"), ("INT_EN", "USB_INT_EN"),
@@ -85,6 +88,15 @@ FIELDS = {
     "RCC_CFGR2_USBFSSRC": ("CFGR2", "USBFSSRC"),
 }
 
+# Same, for the bits of the AFIO_PCFR1 register. The SW_CFG value of the
+# header (100) is a value of the field, not a mask, so it is not checked.
+AFIO_FIELDS = {
+    "AFIO_PCFR1_SPI1_RM": ("PCFR1", "SPI1_RM"), "AFIO_PCFR1_I2C1_RM": ("PCFR1", "I2C1_RM"),
+    "AFIO_PCFR1_USART1_RM": ("PCFR1", "USART1_RM"), "AFIO_PCFR1_USART2_RM": ("PCFR1", "USART2_RM"),
+    "AFIO_PCFR1_USART3_RM_MASK": ("PCFR1", "USART3_RM"), "AFIO_PCFR1_SW_CFG_MASK": ("PCFR1", "SW_CFG"),
+    "AFIO_PCFR1_SPI3_RM": ("PCFR1", "SPI3_RM"),
+}
+
 # Same, for the bits of the USART registers. USART1 stands for all USART blocks.
 USART_FIELDS = {
     "USART_STATR_RXNE": ("STATR", "RXNE"), "USART_STATR_TC": ("STATR", "TC"),
@@ -138,7 +150,7 @@ USBHS_FIELDS = {
 }
 
 # Base addresses in the header -> SVD peripheral.
-BASES = {"RCC_BASE": "RCC", "GPIOA_BASE": "GPIOA", "GPIOB_BASE": "GPIOB",
+BASES = {"RCC_BASE": "RCC", "AFIO_BASE": "AFIO", "EXTI_BASE": "EXTI", "GPIOA_BASE": "GPIOA", "GPIOB_BASE": "GPIOB",
          "GPIOC_BASE": "GPIOC", "GPIOD_BASE": "GPIOD", "GPIOE_BASE": "GPIOE",
          "USART1_BASE": "USART1", "USART2_BASE": "USART2", "USART3_BASE": "USART3",
          "UART4_BASE": "UART4", "UART5_BASE": "UART5", "UART6_BASE": "UART6",
@@ -192,6 +204,7 @@ def build_asserts(periphs):
                          f'"{struct}.{member} differs from SVD");')
         lines.append("")
     checks = [(m, "RCC", rf) for m, rf in FIELDS.items()]
+    checks += [(m, "AFIO", rf) for m, rf in AFIO_FIELDS.items()]
     checks += [(m, "USART1", rf) for m, rf in USART_FIELDS.items()]
     checks += [(m, "USBHS", rf) for m, rf in USBHS_FIELDS.items()]
     for macro, svd_name, (reg, field) in checks:
