@@ -38,7 +38,7 @@ class Usart {
       usart.CTLR1 &= ~USART_CTLR1_RE;
    }
 
-   inline void enableTxDma() const {
+   inline void enableDmaTx() const {
       usart.CTLR3 |= USART_CTLR3_DMAT;
    }
 
@@ -46,7 +46,7 @@ class Usart {
       usart.CTLR3 &= ~USART_CTLR3_DMAT;
    }
 
-   inline void enableRxDma() const {
+   inline void enableDmaRx() const {
       usart.CTLR3 |= USART_CTLR3_DMAR;
    }
 

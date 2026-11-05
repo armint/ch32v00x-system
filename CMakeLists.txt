@@ -30,7 +30,7 @@ set(CMAKE_C_STANDARD_REQUIRED True)
 set(CMAKE_C_DIALECT gnu)
 
 # Chip family of the build. It selects the directory src/families/<family>.
-# The device macro (CH32V003, CH32V20x_D8W, ...) is still set by the consumer.
+# The device macro (CH32V003, CH32V20x_D8W, ...) is set by CH32_DEVICE below, or by the consumer.
 set(CH32_FAMILY "CH32V00X" CACHE STRING "CH32 family to build for (CH32V00X, CH32V20X, CH32V30X)")
 set_property(CACHE CH32_FAMILY PROPERTY STRINGS CH32V00X CH32V20X CH32V30X)
 if (NOT CH32_FAMILY MATCHES "^(CH32V00X|CH32V20X|CH32V30X)$")

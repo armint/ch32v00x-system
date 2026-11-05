@@ -15,12 +15,12 @@
 |---|---|---|
 | `CH32_FAMILY` | `CH32V00X` | Chip family of the build: `CH32V00X`, `CH32V20X` or `CH32V30X`. See [Chip families](families.md). |
 | `CH32_DEVICE` | empty | Device macro, for example `CH32V003` or `CH32V30x_D8C`. Empty: your project sets the macro. Same job as `STM32_DEVICE` in system-stm32. |
-| `CH32V00X_SYSTEM_HSE_VALUE` | empty | HSE crystal frequency in Hz. Empty: the device header default. Same job as `SYSTEM_STM32_HSE_VALUE` in system-stm32. |
+| `CH32V00X_SYSTEM_HSE_VALUE` | empty | HSE crystal frequency in Hz. Empty: the device header default. CH32V30X accepts only 8000000, because its clock setup fixes the PLL multiplier. Same job as `SYSTEM_STM32_HSE_VALUE` in system-stm32. |
 | `GCC_TOOLCHAIN_PREFIX` | `/usr`, or the parent of the `bin/` directory of `CMAKE_C_COMPILER` when that is set | Directory that contains `bin/` with the toolchain tools. |
 | `TARGET_TRIPLET` | `riscv-none-elf` | Prefix of the tool names, for example `riscv64-unknown-elf`. |
 
-Your project sets the device macro of the chip, for example `CH32V003` or
-`CH32V20x_D8W`. The device macro and `CH32_FAMILY` must match. If they do
+Set `CH32_DEVICE`, or let your project define the device macro of the chip,
+for example `CH32V003` or `CH32V20x_D8W`. The device macro and `CH32_FAMILY` must match. If they do
 not match, the build stops with an error.
 
 ## C++ standard
