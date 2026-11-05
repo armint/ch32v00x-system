@@ -15,6 +15,9 @@ workflow:
 .family-matrix: &family-matrix
   - CH32_FAMILY: CH32V00X
     CH32_FLAGS: "-DCH32V003 -march=rv32ec_zicsr_zifencei -mabi=ilp32e"
+  # CH32V006 compiles the V006 ADC driver, which CH32V003 does not.
+  - CH32_FAMILY: CH32V00X
+    CH32_FLAGS: "-DCH32V006 -march=rv32ec_zicsr_zifencei_zmmul -mabi=ilp32e"
   - CH32_FAMILY: CH32V20X
     CH32_FLAGS: "-DCH32V20x_D8W -march=rv32imac_zicsr_zifencei -mabi=ilp32"
   - CH32_FAMILY: CH32V30X
