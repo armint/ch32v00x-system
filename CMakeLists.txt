@@ -30,7 +30,7 @@ set(CMAKE_C_STANDARD_REQUIRED True)
 set(CMAKE_C_DIALECT gnu)
 
 # Chip family of the build. It selects the directory src/families/<family>.
-# The device macro (CH32V003, CH32V20x_D8W, ...) is still set by the consumer.
+# The device macro (CH32V003, CH32V20x_D8W, ...) is set by CH32_DEVICE below, or by the consumer.
 set(CH32_FAMILY "CH32V00X" CACHE STRING "CH32 family to build for (CH32V00X, CH32V20X, CH32V30X)")
 set_property(CACHE CH32_FAMILY PROPERTY STRINGS CH32V00X CH32V20X CH32V30X)
 if (NOT CH32_FAMILY MATCHES "^(CH32V00X|CH32V20X|CH32V30X)$")
@@ -91,6 +91,23 @@ else ()
 endif ()
 
 add_library(ch32v00x-system OBJECT ${PROJECT_SOURCES})
+
+# Device macro of the chip, for example CH32V003 or CH32V30x_D8C. Same job as
+# STM32_DEVICE in system-stm32. Empty: the consumer sets the macro itself.
+set(CH32_DEVICE "" CACHE STRING "CH32 device macro, for example CH32V003 or CH32V30x_D8C")
+if (CH32_DEVICE)
+    target_compile_definitions(ch32v00x-system PUBLIC ${CH32_DEVICE})
+endif ()
+
+# HSE crystal in Hz. Same job as SYSTEM_STM32_HSE_VALUE in system-stm32.
+# Empty: the device header default.
+set(CH32V00X_SYSTEM_HSE_VALUE "" CACHE STRING "HSE crystal frequency in Hz (empty: device header default)")
+if (CH32V00X_SYSTEM_HSE_VALUE)
+    if (NOT CH32V00X_SYSTEM_HSE_VALUE MATCHES "^[1-9][0-9]*$")
+        message(FATAL_ERROR "CH32V00X_SYSTEM_HSE_VALUE must be a frequency in Hz, got '${CH32V00X_SYSTEM_HSE_VALUE}'")
+    endif ()
+    target_compile_definitions(ch32v00x-system PUBLIC HSE_VALUE=${CH32V00X_SYSTEM_HSE_VALUE}UL)
+endif ()
 
 # The family directory is flat in the installed package, like src/.
 target_include_directories(

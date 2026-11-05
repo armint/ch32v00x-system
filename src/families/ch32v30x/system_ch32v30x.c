@@ -6,6 +6,11 @@
 #define HSE_STARTUP_TIMEOUT 0x5000u
 #define SYSCLK_PLL_HZ 144000000u /* HSE x 18 */
 
+/* SetSysClock() fixes PLLMUL at x18, so only an 8 MHz HSE gives SYSCLK_PLL_HZ. */
+/* _Static_assert, not #if: the device header writes HSE_VALUE with a cast, which #if cannot evaluate. */
+_Static_assert(HSE_VALUE == 8000000u,
+               "SetSysClock() supports only an 8 MHz HSE on CH32V30x. Change PLLMUL and SYSCLK_PLL_HZ for another crystal.");
+
 uint32_t SystemCoreClock = HSI_VALUE;
 
 /* Start HSE and the PLL, then switch SYSCLK to the PLL. The core keeps HSI
