@@ -29,6 +29,9 @@ namespace hw {
 template <uintptr_t PortBase, uint8_t Pin>
 struct FastPin {
    static_assert(Pin < 16, "GPIO pin number must be 0-15");
+#if defined(CH32V003) || defined(CH32V002) || defined(CH32V006)
+   static_assert(Pin < 8, "CH32V00X ports have pins 0-7");
+#endif
 
    static constexpr uint32_t mask = 1UL << Pin;
 
