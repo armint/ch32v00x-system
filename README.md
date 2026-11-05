@@ -77,7 +77,7 @@ toolchain file `cmake/gcc_riscv.cmake`. For all options, see
 | `cmake/` | The RISC-V toolchain file, the package configuration and helper modules for the examples build. |
 | `svd/` | SVD register descriptions, for reference and debug tools. |
 | `tests/host/` | Host tests with fake registers. They run with `ctest` and need no board. See [Testing](docs/testing.md). |
-| `tests/` | Checks of the library. `check-svd-offsets.py` compares the CH32V30x device header with the SVD. `ch32v30x-usb-loopback/` is a hardware test of the USB device driver. |
+| `tests/` | Checks of the library. `check-svd-offsets.py` compares the CH32V30x device header with the SVD. `ch32v30x/` is a test image that CI links, see [Testing](docs/testing.md#test-images). `ch32v30x-usb-loopback/` is a hardware test of the USB device driver. |
 | `etc/openocd.cfg` | OpenOCD configuration for the WCH-LinkE debug adapter. It needs the WCH fork of OpenOCD. |
 
 ## Documentation

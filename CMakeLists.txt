@@ -151,6 +151,16 @@ else ()
     set(CH32V00X_SYSTEM_USE_SPAN_COMPAT OFF)
 endif ()
 
+option(CH32V00X_SYSTEM_BUILD_TEST_IMAGE
+    "Build the test image of the family (CH32_FAMILY=CH32V30X only; needs a RISC-V toolchain)" OFF)
+if (CH32V00X_SYSTEM_BUILD_TEST_IMAGE)
+    if (CH32_FAMILY STREQUAL "CH32V30X")
+        add_subdirectory(tests/ch32v30x)
+    else ()
+        message(FATAL_ERROR "CH32V00X_SYSTEM_BUILD_TEST_IMAGE needs CH32_FAMILY=CH32V30X")
+    endif ()
+endif ()
+
 # The installed package is header-only. The library is an OBJECT library, and
 # install(TARGETS) does not install its objects, so no compiled code is exported.
 # Consumers build the sources with add_subdirectory(). See README.md.
