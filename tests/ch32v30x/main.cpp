@@ -3,7 +3,7 @@
 // The start-up code calls SystemInit() before main(), as in the USB loopback test.
 #include <peripherals/FastPin.h>
 #include <peripherals/GpioPin.h>
-#include <wch_device.h>
+#include <cmsis_device.h>
 
 int main() {
    // Blue LED of the CH32V307 board on PB4

@@ -44,7 +44,7 @@ in [Chip families](docs/families.md).
 
 | Area | Drivers |
 |---|---|
-| Start-up | Reset handler, weak exception handlers, vector table per family |
+| Start-up | Reset handler, weak exception handlers, vector table per family, the weak hooks `os_startup_initialize_hardware_early()` (calls `SystemInit()`) and `os_startup_initialize_hardware()`, and the device header `cmsis_device.h` |
 | System timer and delays | `SysTick_Config()` and `getUptimeTicks()` in `utils/Timekeeping.h` (your project sets the tick rate), `delaymS()` and `delayuS()` in `delaybusywait.h` |
 | GPIO and EXTI | `hw::GpioPin` and `hw::FastPin` (the API of `system-stm32`), `Exti` |
 | Communication | `Usart`, `I2c`, `hw::UsbDevice` (CH32V30X only, USB device on USBHS) |
