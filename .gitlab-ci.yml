@@ -1,7 +1,7 @@
 stages:
   - build
 
-image: "docker.vandertogt.org/firmware-builder:v1.14.0"
+image: "ghcr.io/armint/firmware-build-image:v1.15.0"
 
 workflow:
   rules:

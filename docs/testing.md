@@ -45,7 +45,7 @@ On CH32V00X, it checks that the reserved word after `CFGLR` stays the same.
 ## Continuous integration
 
 The file `.gitlab-ci.yml` defines the GitLab pipeline. All jobs run in the
-`build` stage. They use the builder image `firmware-builder`, which has the
+`build` stage. They use the builder image `ghcr.io/armint/firmware-build-image:v1.15.0`, which has the
 RISC-V toolchain. Each build job looks for `riscv-none-elf-gcc` with
 `command -v`. The job fails if the tool is missing.
 
