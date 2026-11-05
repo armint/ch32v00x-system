@@ -65,7 +65,8 @@ The test uses the offset of the buffer in the `UsbDevice` object.
   Thus the test does not check the `Setup`, `Out` and `InComplete` events, or the EP0 toggle after a transfer.
   It also does not check the data that `readOut()` copies after a received packet.
 - USB interrupt timing: `INT_BUSY`, and the shared `INT_ST` and `RX_LEN` registers (see [USB known limits](usb.md#known-limits)).
-  The USB hardware test in `tests/ch32v30x-usb-loopback/` must check these items.
+  The USB hardware test in `tests/ch32v30x-usb-loopback/` checks the interrupt handler on a board. This test is not done yet.
+  No test proves the `INT_ST` and `RX_LEN` race, because the time window is small.
 
 ### Add a test
 
