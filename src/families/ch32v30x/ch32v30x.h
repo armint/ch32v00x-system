@@ -14,7 +14,9 @@
 #error "ch32v30x.h is for CH32V30x_D8C. Define CH32V30x_D8C."
 #endif
 
+#ifndef HSE_VALUE
 #define HSE_VALUE ((uint32_t)8000000) /* External crystal of the board, in Hz */
+#endif
 #define HSI_VALUE ((uint32_t)8000000) /* Internal RC oscillator, in Hz */
 
 #ifdef __cplusplus
