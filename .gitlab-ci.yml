@@ -89,3 +89,30 @@ host-tests:
     - cmake -S tests/host -B build-host -G "Unix Makefiles"
     - cmake --build build-host -j$(nproc)
     - ctest --test-dir build-host --output-on-failure
+
+# Links the CH32V307 test image (tests/ch32v30x) at C++23 and checks the
+# vector table. The flash starts at 0x0 (alias of 0x08000000): the reset jump
+# is the first word, g_pfnVectors follows at 0x4.
+build-v307-test-image:
+  stage: build
+  variables:
+    GIT_DEPTH: 0
+  script:
+    - *find-toolchain
+    - cmake -B build -G "Unix Makefiles"
+        -D CMAKE_TOOLCHAIN_FILE=cmake/gcc_riscv.cmake
+        -D GCC_TOOLCHAIN_PREFIX=${GCC_TOOLCHAIN_PREFIX}
+        -D CMAKE_BUILD_TYPE=Release
+        -D CMAKE_CXX_STANDARD=23
+        -D CH32_FAMILY=CH32V30X
+        -D CH32V00X_SYSTEM_BUILD_TEST_IMAGE=ON
+        -D "CMAKE_C_FLAGS=-DCH32V30x_D8C -march=rv32imafc_zicsr_zifencei -mabi=ilp32f"
+        -D "CMAKE_CXX_FLAGS=-DCH32V30x_D8C -march=rv32imafc_zicsr_zifencei -mabi=ilp32f"
+    - cmake --build build --target test-image-v307 -j$(nproc)
+    - |
+      NM=$(dirname "$(command -v riscv-none-elf-gcc)")/riscv-none-elf-nm
+      elf=build/tests/ch32v30x/test-image-v307
+      vectors=$(${NM} ${elf} | awk '$3 == "g_pfnVectors" {print $1}')
+      reset=$(${NM} ${elf} | awk '$3 == "Reset_Handler" {print $1}')
+      [ "${vectors}" = "00000004" ] || { echo "g_pfnVectors at '${vectors}', expected 00000004"; exit 1; }
+      [ "${reset}" = "00000000" ] || { echo "Reset_Handler at '${reset}', expected 00000000"; exit 1; }
