@@ -45,7 +45,7 @@
  * Also useful on platform with external RAM, that need to be
  * initialised before filling the BSS section.
  */
-void __attribute__((weak)) startup_initialize_hardware_early(void) {
+void __attribute__((weak)) os_startup_initialize_hardware_early(void) {
    SystemInit();
 }
 
@@ -62,7 +62,7 @@ void __attribute__((weak)) startup_initialize_hardware_early(void) {
  * require custom inits (before constructors), otherwise these inits can
  * be done in main().
  */
-void __attribute__((weak)) startup_initialize_hardware() {
+void __attribute__((weak)) os_startup_initialize_hardware() {
    SystemCoreClockUpdate();
 }
 
