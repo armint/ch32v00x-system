@@ -1,0 +1,91 @@
+stages:
+  - build
+
+image: "ghcr.io/armint/firmware-build-image:v1.15.0"
+
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: "$CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS"
+      when: never
+    - if: "$CI_COMMIT_BRANCH"
+
+# The families that must build. The C++23 and the C++17 jobs use the same list.
+# Device macro, -march and -mabi are the values of docs/building.md.
+.family-matrix: &family-matrix
+  - CH32_FAMILY: CH32V00X
+    CH32_FLAGS: "-DCH32V003 -march=rv32ec_zicsr_zifencei -mabi=ilp32e"
+  # CH32V006 compiles the V006 ADC driver, which CH32V003 does not.
+  - CH32_FAMILY: CH32V00X
+    CH32_FLAGS: "-DCH32V006 -march=rv32ec_zicsr_zifencei_zmmul -mabi=ilp32e"
+  - CH32_FAMILY: CH32V20X
+    CH32_FLAGS: "-DCH32V20x_D8W -march=rv32imac_zicsr_zifencei -mabi=ilp32"
+  - CH32_FAMILY: CH32V30X
+    CH32_FLAGS: "-DCH32V30x_D8C -march=rv32imafc_zicsr_zifencei -mabi=ilp32f"
+
+# Finds the RISC-V toolchain in the image. The job fails if it is missing.
+.find-toolchain: &find-toolchain
+  - command -v riscv-none-elf-gcc || { echo "riscv-none-elf-gcc not found in the image"; exit 1; }
+  - GCC_TOOLCHAIN_PREFIX=$(dirname "$(dirname "$(command -v riscv-none-elf-gcc)")")
+
+# Builds the ch32v00x-system OBJECT library standalone for each family at
+# C++23. hw::span must be std::span here: the job fails if CMake fetched
+# span-compat or defined CH32V00X_SYSTEM_USE_SPAN_COMPAT.
+build:
+  stage: build
+  variables:
+    GIT_DEPTH: 0
+  parallel:
+    matrix: *family-matrix
+  script:
+    - *find-toolchain
+    - cmake -B build -G "Unix Makefiles"
+        -D CMAKE_TOOLCHAIN_FILE=cmake/gcc_riscv.cmake
+        -D GCC_TOOLCHAIN_PREFIX=${GCC_TOOLCHAIN_PREFIX}
+        -D CMAKE_BUILD_TYPE=Release
+        -D CMAKE_CXX_STANDARD=23
+        -D CH32_FAMILY=${CH32_FAMILY}
+        -D "CMAKE_C_FLAGS=${CH32_FLAGS}"
+        -D "CMAKE_CXX_FLAGS=${CH32_FLAGS}"
+    - cmake --build build --target ch32v00x-system -j$(nproc)
+    - grep -q -- "-std=gnu++23" build/CMakeFiles/ch32v00x-system.dir/flags.make
+    - if grep -q "CH32V00X_SYSTEM_USE_SPAN_COMPAT" build/CMakeFiles/ch32v00x-system.dir/flags.make; then
+        echo "C++23 build defines CH32V00X_SYSTEM_USE_SPAN_COMPAT"; exit 1;
+      fi
+    - if [ -e build/_deps/span_compat-src ]; then
+        echo "C++23 build fetched span-compat"; exit 1;
+      fi
+
+# The same families at C++17. hw::span is span_compat::span here. The job
+# fails if CMake did not take the span-compat path with
+# SPAN_COMPAT_USE_STD_SPAN=0.
+build-cpp17:
+  stage: build
+  variables:
+    GIT_DEPTH: 0
+  parallel:
+    matrix: *family-matrix
+  script:
+    - *find-toolchain
+    - cmake -B build -G "Unix Makefiles"
+        -D CMAKE_TOOLCHAIN_FILE=cmake/gcc_riscv.cmake
+        -D GCC_TOOLCHAIN_PREFIX=${GCC_TOOLCHAIN_PREFIX}
+        -D CMAKE_BUILD_TYPE=Release
+        -D CMAKE_CXX_STANDARD=17
+        -D CH32_FAMILY=${CH32_FAMILY}
+        -D "CMAKE_C_FLAGS=${CH32_FLAGS}"
+        -D "CMAKE_CXX_FLAGS=${CH32_FLAGS}"
+    - cmake --build build --target ch32v00x-system -j$(nproc)
+    - |
+      flags=build/CMakeFiles/ch32v00x-system.dir/flags.make
+      grep -q -- "-std=gnu++17" ${flags} || { echo "not built at C++17"; exit 1; }
+      grep -q "CH32V00X_SYSTEM_USE_SPAN_COMPAT" ${flags} || { echo "span-compat path not taken"; exit 1; }
+      grep -q "SPAN_COMPAT_USE_STD_SPAN=0" ${flags} || { echo "span-compat not set to its own span"; exit 1; }
+
+# Host unit tests (tests/host): fake registers, no RISC-V toolchain needed.
+host-tests:
+  stage: build
+  script:
+    - cmake -S tests/host -B build-host -G "Unix Makefiles"
+    - cmake --build build-host -j$(nproc)
+    - ctest --test-dir build-host --output-on-failure
