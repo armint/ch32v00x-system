@@ -100,7 +100,16 @@ Use a commit of `main` in your submodule.
 ## License
 
 ch32v00x-system uses the MIT license. See [LICENSE](LICENSE).
-Third-party files keep the license in their file headers. Examples are the WCH
-device files (for example `src/core_riscv.h` and the CH32V00x and CH32V20x
-headers in `src/families/`), the start-up code from µOS++ (for example
-`src/bare-metal/startup.cpp`) and the files in `svd/`.
+Third-party files keep the copyright and the terms in their file headers:
+
+- The WCH device files, for example `src/core_riscv.h` and the CH32V00x and
+  CH32V20x headers in `src/families/`, come from the WCH example packages.
+  They keep the WCH copyright and terms.
+- The start-up code and the vector tables come from µOS++ by Liviu Ionescu
+  (MIT), for example `src/bare-metal/startup.cpp` and
+  `src/families/*/vectors_*.c`.
+- `svd/CMSIS-SVD.xsd` is from Arm (Apache-2.0).
+
+The files in `svd/vendor/` come from WCH (MounRiver Studio V182). The files in
+`svd/fixed/` are changed copies of them. These files have no license header.
+The MIT license of this repository does not apply to them.
