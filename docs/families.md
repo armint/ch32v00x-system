@@ -11,7 +11,7 @@ Set `CH32_FAMILY` at configure time. The value is one of:
 - `CH32V00X`: CH32V002, CH32V003 and CH32V006. This is the default.
 - `CH32V20X`: CH32V208.
 - `CH32V30X`: CH32V307. Only the start-up, clock, SysTick, delay, interrupt,
-  GPIO, USART and USB device code is ported. See the exclusion list below.
+  GPIO, USART, ADC, DMA, timer and USB device code is ported. See the exclusion list below.
   The USB device driver is in [USB device driver](usb.md).
 
 CMake stops with an error for any other value. It also stops when the
@@ -35,9 +35,14 @@ that names the value to set.
 CMake compiles the shared sources and the sources of the selected family
 only. The other family directories are not compiled.
 
-The CH32V30X family does not support the shared `Dma`, `Exti`, `Flash`, `I2C`
-and `Timer` drivers yet. `CMakeLists.txt` excludes these files for that
+The CH32V30X family does not support the shared `Exti`, `Flash` and `I2C`
+drivers yet. `CMakeLists.txt` excludes these files for that
 family. Their headers are still installed, but they do not compile for CH32V30X.
+
+The `Dma` driver addresses the 7 channels of DMA1 only. The CH32V30X header
+does not define DMA2, so code for DMA2 does not compile. The `Timer` driver
+works for TIM1 to TIM10. Only the advanced timers TIM1, TIM8, TIM9 and TIM10
+have the `BDTR` register for `enableMainOutput()` and `enableAutomaticOutput()`.
 
 ## Include paths
 
