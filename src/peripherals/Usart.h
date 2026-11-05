@@ -42,7 +42,7 @@ class Usart {
       usart.CTLR3 |= USART_CTLR3_DMAT;
    }
 
-   inline void disableTxDma() const {
+   inline void disableDmaTx() const {
       usart.CTLR3 &= ~USART_CTLR3_DMAT;
    }
 
@@ -50,7 +50,7 @@ class Usart {
       usart.CTLR3 |= USART_CTLR3_DMAR;
    }
 
-   inline void disableRxDma() const {
+   inline void disableDmaRx() const {
       usart.CTLR3 &= ~USART_CTLR3_DMAR;
    }
 
@@ -62,11 +62,11 @@ class Usart {
       usart.DATAR = data;
    }
 
-   inline bool isRxNotEmpty() const {
+   inline bool isRxRegisterNotEmpty() const {
       return (usart.STATR & USART_STATR_RXNE) != 0;
    }
 
-   inline bool isTxEmpty() const {
+   inline bool isTxRegisterEmpty() const {
       return (usart.STATR & USART_STATR_TXE) != 0;
    }
 
@@ -93,15 +93,15 @@ class Usart {
       usart.CTLR2 = (usart.CTLR2 & ~USART_CTLR2_STOP) | static_cast<uint32_t>(bits);
    }
 
-   inline void enableTransferCompleteInterrupt() const {
+   inline void enableTxCompleteInterrupt() const {
       usart.CTLR1 |= USART_CTLR1_TCIE;
    }
 
-   inline void disableTransferCompleteInterrupt() const {
+   inline void disableTxCompleteInterrupt() const {
       usart.CTLR1 &= ~USART_CTLR1_TCIE;
    }
 
-   inline bool isTransferCompleteInterruptEnabled() const {
+   inline bool isTxCompleteInterruptEnabled() const {
       return (usart.CTLR1 & USART_CTLR1_TCIE) != 0;
    }
 
