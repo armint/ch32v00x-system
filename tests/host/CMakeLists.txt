@@ -69,3 +69,20 @@ target_include_directories(test-adc-v30x PRIVATE
 target_compile_definitions(test-adc-v30x PRIVATE CH32V30x_D8C)
 target_compile_options(test-adc-v30x PRIVATE -Wall -Wextra -Werror)
 add_test(NAME adc-v30x COMMAND test-adc-v30x)
+
+# The CH32V30X Afio, Exti and GpioInterrupt. The stubs-exti-v30x directory
+# gives <wch_device.h> with the AFIO, EXTI and RCC registers as host
+# variables. The real utils/Interrupt.h is used: the test defines the
+# functions that it declares.
+add_executable(test-exti-afio-v30x
+        test_exti_afio_v30x.cpp
+        ${_src}/families/ch32v30x/Afio.cpp
+        ${_src}/families/ch32v30x/Exti_V30x.cpp
+        ${_src}/families/ch32v30x/GpioInterrupt.cpp)
+target_include_directories(test-exti-afio-v30x PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/stubs-exti-v30x
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${_src}/families/ch32v30x
+        ${_src})
+target_compile_options(test-exti-afio-v30x PRIVATE -Wall -Wextra -Werror)
+add_test(NAME exti-afio-v30x COMMAND test-exti-afio-v30x)
