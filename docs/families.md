@@ -43,6 +43,8 @@ The `Dma` driver addresses the 7 channels of DMA1 only. The CH32V30X header
 does not define DMA2, so code for DMA2 does not compile. The `Timer` driver
 works for TIM1 to TIM10. Only the advanced timers TIM1, TIM8, TIM9 and TIM10
 have the `BDTR` register for `enableMainOutput()` and `enableAutomaticOutput()`.
+TIM6 and TIM7 are basic timers. They have no channels. Use only the counter,
+prescaler, reload and update functions with them.
 
 ## Include paths
 
