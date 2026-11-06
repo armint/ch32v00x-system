@@ -31,7 +31,7 @@ library are in [ch32v00x-art](https://gitlab.vandertogt.org/riscv/ch32v00x-art).
 | `CH32V00X` | `CH32V002` | CH32V002 | Builds. Hardware test not recorded. |
 | `CH32V00X` | `CH32V006` | CH32V006 | Builds. Hardware test not recorded. |
 | `CH32V20X` | `CH32V20x_D8W` | CH32V208 | Builds. Hardware test not recorded. No ADC driver. |
-| `CH32V30X` | `CH32V30x_D8C` | CH32V307 | Start-up, clock, GPIO (with AFIO and EXTI), USART, ADC, DMA, timer, flash and USB device build. Hardware test of ADC, DMA and timer recorded (see below). Other drivers not ported yet. |
+| `CH32V30X` | `CH32V30x_D8C` | CH32V307 | Start-up, clock, GPIO (with AFIO and EXTI), USART, SPI, ADC, DMA, timer, flash and USB device build. Hardware test of ADC, DMA and timer recorded (see below). Other drivers not ported yet. |
 
 On CH32V30X, the start-up, the clock, SysTick, the delays, `Interrupt` and
 `GpioPin` build. `GpioPin` sets pins 0 to 7 in `CFGLR` and pins 8 to 15 in `CFGHR`.
@@ -39,7 +39,7 @@ The `hw::Usart` driver builds for USART1 to USART3 and UART4 to UART8. A loopbac
 The baud rate uses the APB prescaler (`Rcc::getAPB2Clock()` and `Rcc::getAPBClock()`): USART1 follows PPRE2, the other USARTs follow PPRE1. This also applies to CH32V20X. Call `setBaudRate()` again after a prescaler change.
 The USB device driver `hw::UsbDevice` builds for the USBHS controller. A test on a host is not done yet.
 The `Adc` driver builds for ADC1 and ADC2. Include `<Adc.h>`. It has the names of the STM32F1 `Adc` in `system-stm32` (see [ADC](docs/adc.md)).
-The `Dma` driver builds for DMA1 and, on CH32V30X, DMA2 (see [DMA driver](docs/dma.md)). The `hw::Timer` driver builds for TIM1 to TIM10 (see [Timer driver](docs/timer.md)).
+The `Dma` driver builds for DMA1 and, on CH32V30X, DMA2 (see [DMA driver](docs/dma.md)). The `hw::Timer` driver builds for TIM1 to TIM10 (see [Timer driver](docs/timer.md)). The `hw::Spi` driver builds for SPI1 to SPI3 (see [SPI driver](docs/spi.md)).
 On the YD-CH32V307VCT6 board, the `adc-dma` and `timer` examples of [ch32v00x-examples](https://gitlab.vandertogt.org/riscv/ch32v00x-examples) work.
 `adc-dma` uses ADC1 with DMA1 channel 1. `timer` uses TIM2 channel 1 on PA15 and TIM3 channel 1 on PB4, through the AFIO remaps.
 The `Flash` driver builds. Its hardware test is the `flash` example. See [Flash driver](docs/flash.md).
@@ -53,7 +53,7 @@ in [Chip families](docs/families.md).
 | Start-up | Reset handler, weak exception handlers, vector table per family, the weak hooks `os_startup_initialize_hardware_early()` (calls `SystemInit()`) and `os_startup_initialize_hardware()`, and the device header `cmsis_device.h` |
 | System timer and delays | `SysTick_Config()` and `getUptimeTicks()` in `utils/Timekeeping.h` (your project sets the tick rate), `delaymS()` and `delayuS()` in `delaybusywait.h`. On CH32V20X and CH32V30X, `SysTick->CNT` is also a free-running 32-bit core-clock cycle counter (see `utils/Timekeeping.h`) |
 | GPIO and EXTI | `hw::GpioPin` and `hw::FastPin` (the API of `system-stm32`), `Exti`, and on CH32V30X also `hw::Afio` and `GpioInterrupt`. See [GPIO](docs/gpio.md). |
-| Communication | `hw::Usart`, `I2c`, `hw::UsbDevice` (CH32V30X only, USB device on USBHS) |
+| Communication | `hw::Usart`, `hw::Spi` (see [SPI driver](docs/spi.md)), `I2c`, `hw::UsbDevice` (CH32V30X only, USB device on USBHS) |
 | Chip ID | `hw::Uid` in `peripherals/Uid.h`: the 96-bit unique ID (CH32V00X, CH32V20X, CH32V30X) |
 | Analog and timing | `Adc` (CH32V00X and CH32V30X), `hw::Timer` (the API of `system-stm32`, see [Timer driver](docs/timer.md)), `Dma` |
 | Clocks and resets | `Rcc` in `peripherals/Rcc.h`: peripheral clock enables, peripheral resets and the bus clocks (the names of `system-stm32`). See [RCC driver](docs/rcc.md). |
@@ -96,6 +96,7 @@ toolchain file `cmake/gcc_riscv.cmake`. For all options, see
 | [Chip families](docs/families.md) | `CH32_FAMILY`, family directories, device-specific code, adding a family |
 | [ADC](docs/adc.md) | Calibration on CH32V002 and CH32V006. The ADC of CH32V30X |
 | [RCC driver](docs/rcc.md) | `Rcc`: peripheral clock enables, peripheral resets, bus clocks, per family |
+| [SPI driver](docs/spi.md) | `hw::Spi`: names, NSS modes, DMA channels, bus clock, limits |
 | [DMA driver](docs/dma.md) | `Dma::Channel`: names, DMA2 channels 8 to 11, interrupt flags |
 | [Timer driver](docs/timer.md) | `hw::Timer`: names, old names, check against the CH32V30x manual, DMA requests of the timers |
 | [Flash driver](docs/flash.md) | `Flash` on CH32V30X: erase size, half-word programming, erased value, clock limit |
