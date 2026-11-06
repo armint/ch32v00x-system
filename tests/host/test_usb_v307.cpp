@@ -537,11 +537,12 @@ void testDoubleBufferedStallAndNak() {
 // also while a TRANSFER interrupt waits (INT_BUSY does not NAK then). It writes the packet into the buffer
 // that RX_TOG[0] selects, sets RX_LEN, flips RX_TOG[0] and sets TRANSFER. The handler does not run (the
 // main loop masks the interrupt). Returns false if the endpoint answers NAK.
-bool controllerAccepts(UsbDevice &usb, uint8_t n, uint8_t fill, uint16_t size) {
+// singleBuffer: the packet always goes into the RX_DMA buffer.
+bool controllerAccepts(UsbDevice &usb, uint8_t n, uint8_t fill, uint16_t size, bool singleBuffer = false) {
    if(rxResponse(n) != USBHS_UEP_R_RES_ACK) {
       return false;
    }
-   const bool second = (ep(n).RX_CTRL & USBHS_UEP_R_TOG_DATA1) != 0;
+   const bool second = !singleBuffer && (ep(n).RX_CTRL & USBHS_UEP_R_TOG_DATA1) != 0;
    std::memset(const_cast<uint8_t *>(bufferAt(usb, second ? txDma(n) : rxDma(n))), fill, size);
    hostUsbhs.RX_LEN = size;
    ep(n).RX_CTRL ^= USBHS_UEP_R_TOG_DATA1;
@@ -582,6 +583,39 @@ void testDoubleBufferedNakWhileHeld() {
    usb.handleInterrupt();
    CHECK(eventCount == 3 && events[2].second == 30);
    CHECK(usb.readOut(0x01, data) == 30 && data[0] == 0xC2);
+}
+
+// Issue #25 on a single-buffered endpoint, with the controller model above: the main loop masks the USB
+// interrupt while the endpoint answers ACK. Two packets arrive before the handler runs. This pins the known
+// loss: one packet is overwritten, and the toggle that the handler writes back makes the host's next packet
+// a repeat. A NAK after the handler holds the packet, as in the double-buffered case.
+void testSingleBufferedMaskedInterrupt() {
+   UsbDevice usb;
+   resetFakes();
+   eventCount = 0;
+   usb.begin(&recordEvent, nullptr);
+   CHECK(usb.openEndpoint(0x02, EndpointType::Bulk, 64));
+   CHECK(usb.armOut(0x02));
+   std::array<uint8_t, 64> data{};
+
+   // Interrupt masked: p1 (DATA0) and p2 (DATA1) both land in the one buffer.
+   CHECK(controllerAccepts(usb, 2, 0xA0, 10, true));
+   CHECK(controllerAccepts(usb, 2, 0xB1, 20, true));
+   usb.handleInterrupt(); // one TRANSFER event for both
+   CHECK(eventCount == 1 && events[0].second == 20);
+   CHECK(usb.readOut(0x02, data) == 20 && data[0] == 0xB1); // p1 is lost
+   // The handler wrote back the software toggle (DATA1), but the host sends p3 as DATA0: a toggle mismatch.
+   CHECK((ep(2).RX_CTRL & USBHS_UEP_R_TOG_DATA1) != 0);
+   CHECK(rxResponse(2) == USBHS_UEP_R_RES_NAK);
+   CHECK(!controllerAccepts(usb, 2, 0xC2, 30, true)); // held: NAK
+
+   // Interrupt not masked: one event per packet, no loss.
+   CHECK(usb.armOut(0x02));
+   CHECK(controllerAccepts(usb, 2, 0xC2, 30, true));
+   usb.handleInterrupt();
+   CHECK(eventCount == 2 && events[1].second == 30);
+   CHECK(!controllerAccepts(usb, 2, 0xD3, 40, true));
+   CHECK(usb.readOut(0x02, data) == 30 && data[0] == 0xC2);
 }
 
 // An IN packet that the host acknowledged: the hardware flips T_TOG[0] and the handler runs.
@@ -897,6 +931,7 @@ int main() {
    testDoubleBufferedReceive();
    testDoubleBufferedStallAndNak();
    testDoubleBufferedNakWhileHeld();
+   testSingleBufferedMaskedInterrupt();
    testEndpointCountLimit();
    if(failures == 0) {
       std::printf("usb-v307: all checks passed\n");
