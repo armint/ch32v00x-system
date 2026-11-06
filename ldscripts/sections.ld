@@ -260,6 +260,9 @@ SECTIONS
         _sbss = .;              /* STM specific definition */
         *(.bss_begin .bss_begin.*)
 
+        /* Small zero-initialised variables (gp-relative). They must lie
+           inside the range that the startup code clears. */
+        *(.sbss .sbss.*)
         *(.bss .bss.*)
         *(COMMON)
         
