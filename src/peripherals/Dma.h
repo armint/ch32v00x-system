@@ -14,15 +14,18 @@ enum class ChannelPriority {
    very_high = (DMA_CFGR1_PL_0 | DMA_CFGR1_PL_1)
 };
 
-class Channel {
-   private:
+struct Channel {
    const uint8_t _channelPosition;
    DMA_TypeDef &_dma;
    DMA_Channel_TypeDef &_channel;
    DMA_Channel_TypeDef &getChannelTypedef() const;
 
-   public:
    Channel(DMA_TypeDef *dma, uint8_t channelNumber);
+
+   Channel(const Channel &) = default;
+   Channel(Channel &&) = default;
+   Channel &operator=(const Channel &) = delete;
+   Channel &operator=(Channel &&) = delete;
 
    void configure(void *peripheralAddress,
                   void *memoryAddress,
@@ -78,7 +81,7 @@ class Channel {
       setPeripheralDataSize(size);
    }
 
-   inline void setDataCount(uint16_t count) const {
+   inline void setTransferCount(uint16_t count) const {
       _channel.CNTR = count;
    }
 
@@ -139,27 +142,62 @@ class Channel {
       _channel.CFGR |= (uint32_t)DMA_CFGR1_TEIE;
    }
 
+   // Interrupt flag registers and the first flag bit of this channel.
+   // On CH32V30X the flags of the DMA2 channels 8 to 11 are in the extend registers.
+   inline volatile uint32_t &flagRegister() const {
+#if defined(DMA2_Channel8_BASE)
+      return _channelPosition < 7 ? _dma.INTFR : _dma.EXTEM_INTFR;
+#else
+      return _dma.INTFR;
+#endif
+   }
+
+   inline volatile uint32_t &flagClearRegister() const {
+#if defined(DMA2_Channel8_BASE)
+      return _channelPosition < 7 ? _dma.INTFCR : _dma.EXTEM_INTFCR;
+#else
+      return _dma.INTFCR;
+#endif
+   }
+
+   inline uint32_t flagShift() const {
+#if defined(DMA2_Channel8_BASE)
+      return (_channelPosition < 7 ? _channelPosition : _channelPosition - 7) * 4;
+#else
+      return _channelPosition * 4;
+#endif
+   }
+
    inline void clearGlobalInterruptFlag() const {
-      _dma.INTFCR = (uint32_t)DMA_GIF1 << (_channelPosition * 4);
+      flagClearRegister() = (uint32_t)DMA_GIF1 << flagShift();
    }
 
    inline void clearTransferCompleteInterruptFlag() const {
-      _dma.INTFCR = (uint32_t)DMA_TCIF1 << (_channelPosition * 4);
+      flagClearRegister() = (uint32_t)DMA_TCIF1 << flagShift();
    }
 
    inline void clearHalfTransferInterruptFlag() const {
-      _dma.INTFCR = (uint32_t)DMA_CHTIF1 << (_channelPosition * 4);
+      flagClearRegister() = (uint32_t)DMA_CHTIF1 << flagShift();
    }
 
    inline void clearTransferErrorInterruptFlag() const {
-      _dma.INTFCR = (uint32_t)DMA_CTEIF1 << (_channelPosition * 4);
-   }
-   inline bool hasTransferCompleteInterruptFlag() const {
-      return _dma.INTFR & ((uint32_t)DMA_TCIF1 << (_channelPosition * 4));
+      flagClearRegister() = (uint32_t)DMA_CTEIF1 << flagShift();
    }
 
-   inline bool hasHalfTransferInterruptFlag() const {
-      return _dma.INTFR & ((uint32_t)DMA_CHTIF1 << (_channelPosition * 4));
+   inline bool isGlobalInterruptFlagSet() const {
+      return flagRegister() & ((uint32_t)DMA_GIF1 << flagShift());
+   }
+
+   inline bool isTransferCompleteInterruptFlagSet() const {
+      return flagRegister() & ((uint32_t)DMA_TCIF1 << flagShift());
+   }
+
+   inline bool isHalfTransferInterruptFlagSet() const {
+      return flagRegister() & ((uint32_t)DMA_CHTIF1 << flagShift());
+   }
+
+   inline bool isTransferErrorInterruptFlagSet() const {
+      return flagRegister() & ((uint32_t)DMA_CTEIF1 << flagShift());
    }
 };
 } // namespace Dma

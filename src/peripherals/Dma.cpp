@@ -31,9 +31,9 @@ void Channel::configure(void *peripheralAddress,
 }
 
 DMA_Channel_TypeDef &Channel::getChannelTypedef() const {
-   uintptr_t chAddress = DMA1_Channel1_BASE + _channelPosition * (DMA1_Channel2_BASE - DMA1_Channel1_BASE);
-   return *reinterpret_cast<DMA_Channel_TypeDef *>(chAddress);
+   // Channels 1 to 7 are 0x14 apart from 0x08. Channels 8 and up (CH32V30X DMA2) are 0x10 apart from 0x90.
+   const uintptr_t offset = _channelPosition < 7 ? 0x08 + _channelPosition * 0x14 : 0x90 + (_channelPosition - 7) * 0x10;
+   return *reinterpret_cast<DMA_Channel_TypeDef *>(reinterpret_cast<uintptr_t>(&_dma) + offset);
 }
-
 
 } // namespace Dma
