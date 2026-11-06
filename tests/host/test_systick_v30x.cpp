@@ -117,7 +117,8 @@ void testLowWordCarry() {
    // 2^32 cycles are 29826.16 periods: the compare value passes the low word carry at period 29827.
    uint64_t counter = 0;
    uint32_t ticks = 0;
-   while(compare() < (1ull << 32) + 2ull * period) {
+   // The bound makes a missing CMPH write fail the test and not hang it.
+   while(compare() < (1ull << 32) + 2ull * period && ticks < 40000) {
       counter = compare();
       match(counter);
       ++ticks;
