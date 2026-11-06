@@ -5,28 +5,28 @@
 class Adc {
    public:
    enum class SamplingCycles {
-      ADCSampling3 = 0,
-      ADCSampling9,
-      ADCSampling15,
-      ADCSampling30,
-      ADCSampling43,
-      ADCSampling57,
-      ADCSampling73,
-      ADCSampling241
+      Cycles3 = 0,
+      Cycles9,
+      Cycles15,
+      Cycles30,
+      Cycles43,
+      Cycles57,
+      Cycles73,
+      Cycles241
    };
 
    enum class Channel {
-      CH0_PA2 = 0,
-      CH1_PA1,
-      CH2_PC4,
-      CH3_PD2,
-      CH4_PD3,
-      CH5_PD5,
-      CH6_PD6,
-      CH7_PD4,
-      CH8_Vref,
-      CH9_OPA,
-      CH10_Vcal
+      PA2 = 0,
+      PA1,
+      PC4,
+      PD2,
+      PD3,
+      PD5,
+      PD6,
+      PD4,
+      Vrefint,
+      Opa,
+      Vcal
    };
    enum class ClockDivider {
       div2 = 0b00000,
