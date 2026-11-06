@@ -402,19 +402,14 @@ extern uint32_t __get_MIMPID(void);
 extern uint32_t __get_MHARTID(void);
 extern uint32_t __get_SP(void);
 
-// Early core setup, called first by _start(). Used by every family.
+// Early core setup, called first by _start_c(), after _start has set gp and sp. Used by every family.
 // INTSYSCR 0x2 enables interrupt nesting and leaves the hardware stack off
 // (RM section 9.5.3.1). On CH32V30x (QingKe V4F) the same value does not turn
 // nesting on: PMTCFG stays 00. mstatus.FS is set for floating point on FPU targets.
 inline void __attribute__((always_inline)) cpuInit(void) {
    extern void Reset_Handler();
-   // Set the GP register to allow relative memory access
-   asm volatile(".option push\n"
-                ".option norelax\n"
-                "la gp, __global_pointer$\n"
-                ".option pop\n"
-                "la sp, __stack\n"
-                "li t0, 0x2\n"
+   // gp and sp are already set by _start.
+   asm volatile("li t0, 0x2\n"
                 "csrw 0x804, t0\n");
 #if __riscv_flen
    // Enable the floating-point unit: mstatus.FS = Initial.
