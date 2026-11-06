@@ -104,6 +104,25 @@ int main() {
    CHECK((hostAdc1.CTLR2 & ADC_TSVREFE) == 0);
    CHECK(hostAdc2.CTLR2 == 0);
 
+   // convert(): the fake never sets EOC, so a conversion that starts ends as a timeout (false).
+   Adc adc2(ADC2);
+   uint16_t raw = 0;
+   // (a) ADC off: no register changes.
+   CHECK(!adc2.convert(Adc::PA0, raw));
+   CHECK(hostAdc2.CTLR2 == 0);
+   // (b) ADC on, trigger already SWSTART: only SWSTART is added, no rewrite of the same value.
+   adc2.enable();
+   adc2.setRegularConversionTrigger(Adc::RegularTrigger::SWSTART);
+   const uint32_t before = hostAdc2.CTLR2;
+   CHECK(!adc2.convert(Adc::PA0, raw));
+   CHECK(hostAdc2.CTLR2 == (before | ADC_SWSTART));
+   // (c) A stale EOC is cleared before the start: the wait does not end at once.
+   hostAdc2.STATR = ADC_EOC;
+   hostAdc2.RDATAR = 1234;
+   CHECK(!adc2.convert(Adc::PA1, raw));
+   CHECK((hostAdc2.STATR & ADC_EOC) == 0);
+   CHECK(raw == 0);
+
    if(failures == 0) {
       std::printf("adc-v30x: all checks passed\n");
    }

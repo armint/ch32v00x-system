@@ -69,9 +69,19 @@ bool Adc::calibrate() const {
 }
 
 bool Adc::convert(Channel channel, uint16_t &value) const {
+   if(!(adc.CTLR2 & ADC_ADON)) {
+      return false;
+   }
    configureRegularChannel(0, channel);
    setRegularConversionCount(1);
-   setRegularConversionTrigger(RegularTrigger::SWSTART);
+   // A CTLR2 write that changes no bit while ADON is 1 starts a conversion (RM). Thus write the
+   // trigger only on a change, and let start() make the only conversion.
+   constexpr uint32_t software = static_cast<uint32_t>(RegularTrigger::SWSTART) | ADC_EXTTRIG;
+   if((adc.CTLR2 & (ADC_EXTSEL | ADC_EXTTRIG)) != software) {
+      setRegularConversionTrigger(RegularTrigger::SWSTART);
+   }
+   // A stale end-of-conversion flag (an earlier timeout) would end the wait at once. EOC is rc_w0.
+   adc.STATR = ~static_cast<uint32_t>(ADC_EOC);
    start();
    // 239.5 + 12.5 cycles at 9 MHz are 28 us. The wait is far longer, and ends in a few ms at 144 MHz.
    for(uint32_t i = 0; i < waitPasses; ++i) {
