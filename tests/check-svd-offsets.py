@@ -115,15 +115,20 @@ FIELDS = {
 # Same, for the timer bits. TIM1 has all registers of the other timers. A
 # third tuple item selects one bit of a wider field (0 is its lowest bit).
 TIM_FIELDS = {
-    "TIM_CEN": ("CTLR1", "CEN"), "TIM_DIR": ("CTLR1", "DIR"), "TIM_ARPE": ("CTLR1", "ARPE"),
-    "TIM_MMS": ("CTLR2", "MMS"),
+    "TIM_CEN": ("CTLR1", "CEN"), "TIM_URS": ("CTLR1", "URS"), "TIM_OPM": ("CTLR1", "OPM"),
+    "TIM_DIR": ("CTLR1", "DIR"), "TIM_ARPE": ("CTLR1", "ARPE"),
+    "TIM_MMS": ("CTLR2", "MMS"), "TIM_MSM": ("SMCFGR", "MSM"),
     "TIM_UIE": ("DMAINTENR", "UIE"), "TIM_CC1IE": ("DMAINTENR", "CC1IE"), "TIM_TIE": ("DMAINTENR", "TIE"),
+    "TIM_UDE": ("DMAINTENR", "UDE"), "TIM_CC1DE": ("DMAINTENR", "CC1DE"),
     "TIM_UIF": ("INTFR", "UIF"), "TIM_CC1IF": ("INTFR", "CC1IF"),
+    "TIM_CC2IF": ("INTFR", "CC2IF"), "TIM_CC3IF": ("INTFR", "CC3IF"), "TIM_CC4IF": ("INTFR", "CC4IF"),
+    "TIM_COMIF": ("INTFR", "COMIF"), "TIM_TIF": ("INTFR", "TIF"), "TIM_BIF": ("INTFR", "BIF"),
     "TIM_UG": ("SWEVGR", "UG"),
     "TIM_OC1PE": ("CHCTLR1_Output", "OC1PE"), "TIM_OC1M": ("CHCTLR1_Output", "OC1M"),
     "TIM_OC1M_0": ("CHCTLR1_Output", "OC1M", 0), "TIM_OC1M_1": ("CHCTLR1_Output", "OC1M", 1),
     "TIM_OC1M_2": ("CHCTLR1_Output", "OC1M", 2),
     "TIM_CC1E": ("CCER", "CC1E"), "TIM_CC1P": ("CCER", "CC1P"),
+    "TIM_CC1NE": ("CCER", "CC1NE"), "TIM_CC1NP": ("CCER", "CC1NP"),
     "TIM_AOE": ("BDTR", "AOE"), "TIM_MOE": ("BDTR", "MOE"),
 }
 
