@@ -6,7 +6,7 @@ Host tests run on the build machine. They do not need a board or the RISC-V tool
 They compile library sources with the native compiler (C++23).
 A stub `wch_device.h` replaces the device header.
 The stub gives the registers of one family as plain variables in memory.
-The GPIO tests use `stubs-<family>/`. The USB test uses `stubs-usb-v307/`. The SysTick test uses `stubs-systick-v30x/`. The Usart test uses `stubs-usart-v30x/`. The ADC test uses `stubs-adc-v30x/`. The AFIO and EXTI test uses `stubs-exti-v30x/`. The Flash test uses `stubs-flash-v30x/`. The Rcc test uses `stubs-rcc-v30x/`. The Dma test uses `stubs-dma-v30x/`.
+The GPIO tests use `stubs-<family>/`. The USB test uses `stubs-usb-v307/`. The SysTick test uses `stubs-systick-v30x/`. The Usart test uses `stubs-usart-v30x/`. The ADC test uses `stubs-adc-v30x/`. The AFIO and EXTI test uses `stubs-exti-v30x/`. The Flash test uses `stubs-flash-v30x/`. The Rcc test uses `stubs-rcc-v30x/`. The Dma test uses `stubs-dma-v30x/`. The Spi test uses `stubs-spi-v30x/`.
 
 Run the tests:
 
@@ -31,6 +31,7 @@ The build uses `-Wall -Wextra -Werror`. Each test program returns a non-zero exi
 | `test-dma-v30x` | `Dma::Channel` with the CH32V30X registers. The channel registers of channels 1 to 11 have the offsets of the RM. The interrupt flags of channels 1 to 7 are in `INTFR` and `INTFCR`. The flags of channels 8 to 11 are in the extend registers. It does not test a transfer. |
 | `test-adc-v30x` | The CH32V30X `Adc` driver: the sequence registers, the sample time registers, the prescaler, the clock and reset bits of ADC1 and ADC2, and the trigger. It does not test `calibrate()`. |
 | `test-rcc-v30x` | The CH32V30X `Rcc` driver: each clock enable sets its bit in the register of the correct bus and changes no other bit. Each reset function leaves its reset bit clear and changes no other bit. `getAPBClock()` and `getAPB2Clock()` follow PPRE1 and PPRE2. The test sees only the end state of a register: it does not check that a reset function sets the bit before it clears it. |
+| `test-spi-v30x` | `hw::Spi` with the CH32V30X bits: the `CTLR1` and `CTLR2` values of `configure()` (the settings of the JTAG fast path of the firmware), `SSI` for a master and a slave with `NssMode::Soft`, the other NSS modes, the prescaler field, the timeouts of `transfer()` and `waitUntilIdle()`, and the bus clock of SPI1 (PCLK2) and SPI3 (PCLK1). It does not test a transfer on hardware. |
 
 Each test starts with a known pattern in the configuration registers.
 It checks the field of the selected pin.

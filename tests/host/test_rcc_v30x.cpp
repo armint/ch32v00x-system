@@ -42,8 +42,10 @@ int main() {
    CHECK(setsOnly(Rcc::enableUSART3Clock, &RCC_TypeDef::APB1PCENR, 1ul << 18));
    CHECK(setsOnly(Rcc::enableSPI1Clock, &RCC_TypeDef::APB2PCENR, 1ul << 12));
    CHECK(setsOnly(Rcc::enableSPI2Clock, &RCC_TypeDef::APB1PCENR, 1ul << 14));
+   CHECK(setsOnly(Rcc::enableSPI3Clock, &RCC_TypeDef::APB1PCENR, 1ul << 15));
    CHECK(setsOnly(Rcc::enableTIM1Clock, &RCC_TypeDef::APB2PCENR, 1ul << 11));
    CHECK(setsOnly(Rcc::enableTIM3Clock, &RCC_TypeDef::APB1PCENR, 1ul << 1));
+   CHECK(setsOnly(Rcc::enableTIM10Clock, &RCC_TypeDef::APB2PCENR, 1ul << 20));
    CHECK(setsOnly(Rcc::enableDMA1Clock, &RCC_TypeDef::AHBPCENR, 1ul << 0));
    CHECK(setsOnly(Rcc::enableDMA2Clock, &RCC_TypeDef::AHBPCENR, 1ul << 1));
 
@@ -56,6 +58,8 @@ int main() {
    CHECK(clearsOnly(Rcc::resetSPI1, &RCC_TypeDef::APB2PRSTR, 1ul << 12));
    CHECK(clearsOnly(Rcc::resetTIM1, &RCC_TypeDef::APB2PRSTR, 1ul << 11));
    CHECK(clearsOnly(Rcc::resetTIM3, &RCC_TypeDef::APB1PRSTR, 1ul << 1));
+   CHECK(clearsOnly(Rcc::resetSPI3, &RCC_TypeDef::APB1PRSTR, 1ul << 15));
+   CHECK(clearsOnly(Rcc::resetTIM10, &RCC_TypeDef::APB2PRSTR, 1ul << 20));
 
    // Bus clocks. HCLK is SystemCoreClock.
    hostRcc.CFGR0 = 0;

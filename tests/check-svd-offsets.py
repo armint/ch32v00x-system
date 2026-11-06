@@ -39,6 +39,9 @@ STRUCTS = {
     "FLASH": ("FLASH_TypeDef", ["KEYR", "OBKEYR", "STATR", "CTLR", "ADDR", "OBR", "WPR", "MODEKEYR"]),
     "EXTI": ("EXTI_TypeDef", ["INTENR", "EVENR", "RTENR", "FTENR", "SWIEVR", "INTFR"]),
     "USART1": ("USART_TypeDef", ["STATR", "DATAR", "BRR", "CTLR1", "CTLR2", "CTLR3", "GPR"]),
+    # The SVD has no I2SPR (0x20). The RM gives it for SPI2 and SPI3 (tables 20-2 and 20-3).
+    "SPI1": ("SPI_TypeDef", ["CTLR1", "CTLR2", "STATR", "DATAR", "CRCR", "RCRCR", "TCRCR",
+                             ("I2SCFGR", "SPI_I2S_CFGR"), "HSCR"]),
     "USBHS": ("USBHS_TypeDef", [
         ("CTRL", "USB_CTRL"), ("HOST_CTRL", "UHOST_CTRL"), ("INT_EN", "USB_INT_EN"),
         ("DEV_AD", "USB_DEV_AD"), ("FRAME_NO", "USB_FRAME_NO"), ("SUSPEND", "USB_USB_SUSPEND"),
@@ -102,8 +105,11 @@ FIELDS = {
     "RCC_TIM7EN": ("APB1PCENR", "TIM7EN"),
     "RCC_SPI1EN": ("APB2PCENR", "SPI1EN"),
     "RCC_SPI2EN": ("APB1PCENR", "SPI2EN"),
+    "RCC_SPI3EN": ("APB1PCENR", "SPI3EN"),
     "RCC_TIM1RST": ("APB2PRSTR", "TIM1RST"),
     "RCC_SPI1RST": ("APB2PRSTR", "SPI1RST"),
+    "RCC_TIM10RST": ("APB2PRSTR", "TIM10RST"),
+    "RCC_SPI3RST": ("APB1PRSTR", "SPI3RST"),
     "RCC_TIM3RST": ("APB1PRSTR", "TIM3RST"),
     "RCC_CFGR2_USBHSDIV_MASK": ("CFGR2", "USBHSDIV"),
     "RCC_CFGR2_USBHSPLLSRC": ("CFGR2", "USBHSPLLSRC"),
@@ -177,6 +183,25 @@ USART_FIELDS = {
     "USART_CTLR3_DMAR": ("CTLR3", "DMAR"), "USART_CTLR3_DMAT": ("CTLR3", "DMAT"),
 }
 
+# Same, for the bits of the SPI registers. SPI1 stands for all SPI blocks.
+SPI_FIELDS = {
+    "SPI_CTLR1_CPHA": ("CTLR1", "CPHA"), "SPI_CTLR1_CPOL": ("CTLR1", "CPOL"),
+    "SPI_CTLR1_MSTR": ("CTLR1", "MSTR"), "SPI_CTLR1_BR": ("CTLR1", "BR"),
+    "SPI_CTLR1_BR_0": ("CTLR1", "BR", 0), "SPI_CTLR1_BR_1": ("CTLR1", "BR", 1),
+    "SPI_CTLR1_BR_2": ("CTLR1", "BR", 2),
+    "SPI_CTLR1_SPE": ("CTLR1", "SPE"), "SPI_CTLR1_LSBFIRST": ("CTLR1", "LSBFIRST"),
+    "SPI_CTLR1_SSI": ("CTLR1", "SSI"), "SPI_CTLR1_SSM": ("CTLR1", "SSM"),
+    "SPI_CTLR1_RXONLY": ("CTLR1", "RXONLY"), "SPI_CTLR1_DFF": ("CTLR1", "DFF"),
+    "SPI_CTLR1_CRCNEXT": ("CTLR1", "CRCNEXT"), "SPI_CTLR1_CRCEN": ("CTLR1", "CRCEN"),
+    "SPI_CTLR1_BIDIOE": ("CTLR1", "BIDIOE"), "SPI_CTLR1_BIDIMODE": ("CTLR1", "BIDIMODE"),
+    "SPI_CTLR2_RXDMAEN": ("CTLR2", "RXDMAEN"), "SPI_CTLR2_TXDMAEN": ("CTLR2", "TXDMAEN"),
+    "SPI_CTLR2_SSOE": ("CTLR2", "SSOE"), "SPI_CTLR2_ERRIE": ("CTLR2", "ERRIE"),
+    "SPI_CTLR2_RXNEIE": ("CTLR2", "RXNEIE"), "SPI_CTLR2_TXEIE": ("CTLR2", "TXEIE"),
+    "SPI_STATR_RXNE": ("STATR", "RXNE"), "SPI_STATR_TXE": ("STATR", "TXE"),
+    "SPI_STATR_CRCERR": ("STATR", "CRCERR"), "SPI_STATR_MODF": ("STATR", "MODF"),
+    "SPI_STATR_OVR": ("STATR", "OVR"), "SPI_STATR_BSY": ("STATR", "BSY"),
+}
+
 # Same, for the USBHS registers. The SVD names INT_EN bits 5 to 7 wrongly
 # (RB_U_1WIRE_MODE, RB_UIE_DEV_NAK at bit 6). The header follows the RM
 # (SETUP_ACT, ISO_ACT, DEV_NAK), so these bits are not checked.
@@ -225,7 +250,7 @@ BASES = {"RCC_BASE": "RCC", "AFIO_BASE": "AFIO", "EXTI_BASE": "EXTI", "GPIOA_BAS
          "TIM1_BASE": "TIM1", "TIM2_BASE": "TIM2", "TIM3_BASE": "TIM3", "TIM4_BASE": "TIM4",
          "TIM5_BASE": "TIM5", "TIM6_BASE": "TIM6", "TIM7_BASE": "TIM7", "TIM8_BASE": "TIM8",
          "TIM9_BASE": "TIM9", "TIM10_BASE": "TIM10", "DMA1_BASE": "DMA1", "DMA2_BASE": "DMA2",
-         "FLASH_R_BASE": "FLASH"}
+         "FLASH_R_BASE": "FLASH", "SPI1_BASE": "SPI1", "SPI2_BASE": "SPI2", "SPI3_BASE": "SPI3"}
 
 # The SVD lists the DMA channel registers flat (CFGR1, CNTR1, ... CFGR7).
 # DMAx_Channel<n>_BASE must point at CFGR<n>, and DMA_Channel_TypeDef must
@@ -293,6 +318,7 @@ def build_asserts(periphs):
     for member, off in (("EXTEM_INTFR", 0xD0), ("EXTEM_INTFCR", 0xD4)):
         lines.append(f'_Static_assert(offsetof(DMA_TypeDef, {member}) == 0x{off:02X}, '
                      f'"DMA_TypeDef.{member} differs from RM");')
+    lines.append('_Static_assert(offsetof(SPI_TypeDef, I2SPR) == 0x20, "SPI_TypeDef.I2SPR differs from RM");')
     cfgr1 = register_offset(dma1, "CFGR1")
     for member, reg in DMA_CHANNEL_MEMBERS:
         off = register_offset(dma1, reg) - cfgr1
@@ -305,6 +331,7 @@ def build_asserts(periphs):
     checks += [(m, "AFIO", rf) for m, rf in AFIO_FIELDS.items()]
     checks += [(m, "USART1", rf) for m, rf in USART_FIELDS.items()]
     checks += [(m, "FLASH", rf) for m, rf in FLASH_FIELDS.items()]
+    checks += [(m, "SPI1", rf) for m, rf in SPI_FIELDS.items()]
     checks += [(m, "USBHS", rf) for m, rf in USBHS_FIELDS.items()]
     for macro, svd_name, (reg, field, *bit) in checks:
         lsb, width = field_position(periphs[svd_name], reg, field)

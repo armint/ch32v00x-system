@@ -155,3 +155,17 @@ target_include_directories(test-dma-v30x PRIVATE
         ${_src}/peripherals)
 target_compile_options(test-dma-v30x PRIVATE -Wall -Wextra -Werror)
 add_test(NAME dma-v30x COMMAND test-dma-v30x)
+
+# The Spi driver with the CH32V30X bits. The stubs-spi-v30x directory gives <wch_device.h>
+# with the SPI and RCC registers as host variables.
+add_executable(test-spi-v30x
+        test_spi_v30x.cpp
+        ${_src}/peripherals/Spi.cpp
+        ${_src}/peripherals/Rcc.cpp)
+target_include_directories(test-spi-v30x PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/stubs-spi-v30x
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${_src}/families/ch32v30x
+        ${_src})
+target_compile_options(test-spi-v30x PRIVATE -Wall -Wextra -Werror)
+add_test(NAME spi-v30x COMMAND test-spi-v30x)

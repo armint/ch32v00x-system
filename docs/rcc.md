@@ -26,8 +26,10 @@ CH32FV2x_V3xRM, chapter 3 ("RM" below), and the WCH device headers.
 | `enableUSART3Clock()` | no | no | yes |
 | `enableSPI1Clock()` | yes | yes | yes |
 | `enableSPI2Clock()` | no | no | yes |
+| `enableSPI3Clock()`, `resetSPI3()` | no | no | yes |
 | `enableTIM1Clock()`, `resetTIM1()` | yes | yes | yes |
 | `enableTIM3Clock()`, `resetTIM3()` | CH32V002, CH32V006 | yes | yes |
+| `enableTIM10Clock()`, `resetTIM10()` | no | no | yes |
 | `enableDMA1Clock()` | yes | yes | yes |
 | `enableDMA2Clock()` | no | no | yes |
 | `resetSPI1()` | yes | yes | yes |
@@ -51,8 +53,9 @@ peripheral.
 
 ### Peripheral reset
 
-`resetSPI1()`, `resetTIM1()` and `resetTIM3()` set the reset bit of the
-peripheral in `APB2PRSTR` or `APB1PRSTR` and then clear it. After the
+The reset functions (`resetSPI1()`, `resetSPI3()`, `resetTIM1()`,
+`resetTIM3()` and `resetTIM10()`) set the reset bit of the peripheral in
+`APB2PRSTR` or `APB1PRSTR` and then clear it. After the
 call, all registers of the peripheral have their reset values. The clock
 enable bit does not change. `system-stm32` has no reset function yet.
 These names are the proposal for it.
