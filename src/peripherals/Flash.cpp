@@ -13,28 +13,41 @@ constexpr uint32_t PAGE_SIZE = 64;
 #endif
 constexpr uint32_t PAGE_MASK = PAGE_SIZE - 1;
 
-writable_section::writable_section() {
+#if defined(FLASH_CTLR_FLOCK)
+constexpr uint32_t FAST_LOCK = FLASH_CTLR_FLOCK;
+#else
+constexpr uint32_t FAST_LOCK = FLASH_CTLR_FAST_LOCK;
+#endif
+
+namespace {
+void wait_ready() {
    while(FLASH->STATR & FLASH_STATR_BSY) {
-      // Wait while the flash is busy
    }
+}
+} // namespace
 
-
-   FLASH->KEYR = KEY1;
-   FLASH->KEYR = KEY2;
+writable_section::writable_section() {
+   wait_ready();
+   // A key write while the controller is unlocked is a wrong sequence: the RM says that it
+   // locks the controller until the next reset. Thus write the keys only when locked.
+   if(FLASH->CTLR & FLASH_CTLR_LOCK) {
+      FLASH->KEYR = KEY1;
+      FLASH->KEYR = KEY2;
+   }
    // For option bytes.
    //	FLASH->OBKEYR = FLASH_KEY1;
    //	FLASH->OBKEYR = FLASH_KEY2;
 
-   // For unlocking programming, in general.
-   FLASH->MODEKEYR = KEY1;
-   FLASH->MODEKEYR = KEY2;
+   // Fast mode: page erase and page programming.
+   if(FLASH->CTLR & FAST_LOCK) {
+      FLASH->MODEKEYR = KEY1;
+      FLASH->MODEKEYR = KEY2;
+   }
 }
 
 writable_section::~writable_section() {
-   while(FLASH->STATR & FLASH_STATR_BSY) {
-      // Wait while the flash is busy
-   }
-   FLASH->KEYR = 0;
+   wait_ready();
+   FLASH->CTLR |= FAST_LOCK | FLASH_CTLR_LOCK;
 }
 
 
