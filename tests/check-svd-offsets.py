@@ -33,6 +33,7 @@ STRUCTS = {
                              "PSC", "ATRLR", "RPTCR", "CH1CVR", "CH2CVR", "CH3CVR", "CH4CVR", "BDTR",
                              "DMACFGR", "DMAADR"]),
     "DMA1": ("DMA_TypeDef", ["INTFR", "INTFCR"]),
+    "DMA2": ("DMA_TypeDef", ["INTFR", "INTFCR"]),
     "AFIO": ("AFIO_TypeDef", ["ECR", "PCFR1", ("EXTICR[0]", "EXTICR1"), ("EXTICR[1]", "EXTICR2"),
                               ("EXTICR[2]", "EXTICR3"), ("EXTICR[3]", "EXTICR4"), "PCFR2"]),
     "FLASH": ("FLASH_TypeDef", ["KEYR", "OBKEYR", "STATR", "CTLR", "ADDR", "OBR", "WPR", "MODEKEYR"]),
@@ -88,6 +89,7 @@ FIELDS = {
     "RCC_UART5EN": ("APB1PCENR", "UART5EN"),
     "RCC_USBHSEN": ("AHBPCENR", "USBHS_EN"),
     "RCC_DMA1EN": ("AHBPCENR", "DMA1EN"),
+    "RCC_DMA2EN": ("AHBPCENR", "DMA2EN"),
     "RCC_TIM1EN": ("APB2PCENR", "TIM1EN"),
     "RCC_TIM8EN": ("APB2PCENR", "TIM8EN"),
     "RCC_TIM9EN": ("APB2PCENR", "TIM9_EN"),
@@ -217,13 +219,15 @@ BASES = {"RCC_BASE": "RCC", "AFIO_BASE": "AFIO", "EXTI_BASE": "EXTI", "GPIOA_BAS
          "UART7_BASE": "UART7", "UART8_BASE": "UART8", "USBHS_BASE": "USBHS",
          "TIM1_BASE": "TIM1", "TIM2_BASE": "TIM2", "TIM3_BASE": "TIM3", "TIM4_BASE": "TIM4",
          "TIM5_BASE": "TIM5", "TIM6_BASE": "TIM6", "TIM7_BASE": "TIM7", "TIM8_BASE": "TIM8",
-         "TIM9_BASE": "TIM9", "TIM10_BASE": "TIM10", "DMA1_BASE": "DMA1",
+         "TIM9_BASE": "TIM9", "TIM10_BASE": "TIM10", "DMA1_BASE": "DMA1", "DMA2_BASE": "DMA2",
          "FLASH_R_BASE": "FLASH"}
 
 # The SVD lists the DMA channel registers flat (CFGR1, CNTR1, ... CFGR7).
-# DMA1_Channel<n>_BASE must point at CFGR<n>, and DMA_Channel_TypeDef must
-# match the offsets of channel 1.
-DMA_CHANNELS = 7
+# DMAx_Channel<n>_BASE must point at CFGR<n>, and DMA_Channel_TypeDef must
+# match the offsets of channel 1. DMA2 has 11 channels. The SVD has no
+# EXTEM_INTFR and EXTEM_INTFCR, so these two registers are not checked
+# (offsets 0xD0 and 0xD4 are from the RM, tables 11-8).
+DMA_CHANNELS = {"DMA1": 7, "DMA2": 11}
 DMA_CHANNEL_MEMBERS = [("CNTR", "CNTR1"), ("PADDR", "PADDR1"), ("MADDR", "MADDR1")]
 
 
@@ -274,11 +278,16 @@ def build_asserts(periphs):
                          f'"{struct}.{member} differs from SVD");')
         lines.append("")
     dma1 = periphs["DMA1"]
-    dma1_base = int(dma1.findtext("baseAddress"), 0)
-    for n in range(1, DMA_CHANNELS + 1):
-        addr = dma1_base + register_offset(dma1, f"CFGR{n}")
-        lines.append(f'_Static_assert(DMA1_Channel{n}_BASE == 0x{addr:08X}UL, '
-                     f'"DMA1_Channel{n}_BASE differs from SVD");')
+    for dma_name, channels in DMA_CHANNELS.items():
+        dma = periphs[dma_name]
+        base = int(dma.findtext("baseAddress"), 0)
+        for n in range(1, channels + 1):
+            addr = base + register_offset(dma, f"CFGR{n}")
+            lines.append(f'_Static_assert({dma_name}_Channel{n}_BASE == 0x{addr:08X}UL, '
+                         f'"{dma_name}_Channel{n}_BASE differs from SVD");')
+    for member, off in (("EXTEM_INTFR", 0xD0), ("EXTEM_INTFCR", 0xD4)):
+        lines.append(f'_Static_assert(offsetof(DMA_TypeDef, {member}) == 0x{off:02X}, '
+                     f'"DMA_TypeDef.{member} differs from RM");')
     cfgr1 = register_offset(dma1, "CFGR1")
     for member, reg in DMA_CHANNEL_MEMBERS:
         off = register_offset(dma1, reg) - cfgr1

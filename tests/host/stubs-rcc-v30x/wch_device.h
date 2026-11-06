@@ -27,6 +27,7 @@ extern RCC_TypeDef hostRcc;
 #define RCC (&hostRcc)
 
 #define RCC_DMA1EN (1ul << 0)
+#define RCC_DMA2EN (1ul << 1)
 #define RCC_AFIOEN (1ul << 0)
 #define RCC_IOPAEN (1ul << 2)
 #define RCC_IOPBEN (1ul << 3)

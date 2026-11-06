@@ -45,6 +45,7 @@ int main() {
    CHECK(setsOnly(Rcc::enableTIM1Clock, &RCC_TypeDef::APB2PCENR, 1ul << 11));
    CHECK(setsOnly(Rcc::enableTIM3Clock, &RCC_TypeDef::APB1PCENR, 1ul << 1));
    CHECK(setsOnly(Rcc::enableDMA1Clock, &RCC_TypeDef::AHBPCENR, 1ul << 0));
+   CHECK(setsOnly(Rcc::enableDMA2Clock, &RCC_TypeDef::AHBPCENR, 1ul << 1));
 
    // An enable keeps the other clocks on.
    hostRcc.APB2PCENR = 0x00F00000;

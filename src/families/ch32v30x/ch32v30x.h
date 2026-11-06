@@ -159,6 +159,7 @@ typedef enum IRQn {
 #define TIM9_BASE 0x40014C00UL
 #define TIM10_BASE 0x40015000UL
 #define DMA1_BASE 0x40020000UL
+#define DMA2_BASE 0x40020400UL
 #define FLASH_R_BASE 0x40022000UL /* Flash controller (FPEC), RM chapter 32 */
 
 typedef struct {
@@ -189,6 +190,7 @@ typedef struct {
 /* AHB peripheral clock enable bits (RCC_AHBPCENR) */
 #define RCC_USBHSEN (1ul << 11)
 #define RCC_DMA1EN (1ul << 0)
+#define RCC_DMA2EN (1ul << 1)
 
 /* APB2 peripheral clock enable bits (RCC_APB2PCENR) */
 #define RCC_AFIOEN (1ul << 0)
@@ -509,8 +511,9 @@ typedef struct {
 #define TIM_AOE (1ul << 14)
 #define TIM_MOE (1ul << 15)
 
-/* DMA1 has 7 channels. DMA2 is not in this header: the Dma driver
- * addresses the channels of DMA1 only. */
+/* DMA1 has 7 channels and DMA2 has 11. The flags of DMA2 channels 8 to 11
+ * are in the extend registers, not in INTFR and INTFCR. The extend registers
+ * exist on DMA2 only. */
 typedef struct {
    volatile uint32_t CFGR;  /* 0x00 Configuration */
    volatile uint32_t CNTR;  /* 0x04 Number of data to transfer */
@@ -521,6 +524,9 @@ typedef struct {
 typedef struct {
    volatile uint32_t INTFR;  /* 0x00 Interrupt flags */
    volatile uint32_t INTFCR; /* 0x04 Interrupt flag clear, write 1 to clear */
+   volatile uint32_t RESERVED[50]; /* 0x08 Channel registers, see DMA_Channel_TypeDef */
+   volatile uint32_t EXTEM_INTFR;  /* 0xD0 Flags of channels 8 to 11 (DMA2 only) */
+   volatile uint32_t EXTEM_INTFCR; /* 0xD4 Flag clear of channels 8 to 11 (DMA2 only) */
 } DMA_TypeDef;
 
 #define DMA1_Channel1_BASE (DMA1_BASE + 0x08UL)
@@ -531,7 +537,21 @@ typedef struct {
 #define DMA1_Channel6_BASE (DMA1_BASE + 0x6CUL)
 #define DMA1_Channel7_BASE (DMA1_BASE + 0x80UL)
 
+/* Channels 1 to 7 are 0x14 apart. Channels 8 to 11 start at 0x90 and are 0x10 apart. */
+#define DMA2_Channel1_BASE (DMA2_BASE + 0x08UL)
+#define DMA2_Channel2_BASE (DMA2_BASE + 0x1CUL)
+#define DMA2_Channel3_BASE (DMA2_BASE + 0x30UL)
+#define DMA2_Channel4_BASE (DMA2_BASE + 0x44UL)
+#define DMA2_Channel5_BASE (DMA2_BASE + 0x58UL)
+#define DMA2_Channel6_BASE (DMA2_BASE + 0x6CUL)
+#define DMA2_Channel7_BASE (DMA2_BASE + 0x80UL)
+#define DMA2_Channel8_BASE (DMA2_BASE + 0x90UL)
+#define DMA2_Channel9_BASE (DMA2_BASE + 0xA0UL)
+#define DMA2_Channel10_BASE (DMA2_BASE + 0xB0UL)
+#define DMA2_Channel11_BASE (DMA2_BASE + 0xC0UL)
+
 #define DMA1 ((DMA_TypeDef *)DMA1_BASE)
+#define DMA2 ((DMA_TypeDef *)DMA2_BASE)
 #define DMA1_Channel1 ((DMA_Channel_TypeDef *)DMA1_Channel1_BASE)
 #define DMA1_Channel2 ((DMA_Channel_TypeDef *)DMA1_Channel2_BASE)
 #define DMA1_Channel3 ((DMA_Channel_TypeDef *)DMA1_Channel3_BASE)
@@ -539,6 +559,17 @@ typedef struct {
 #define DMA1_Channel5 ((DMA_Channel_TypeDef *)DMA1_Channel5_BASE)
 #define DMA1_Channel6 ((DMA_Channel_TypeDef *)DMA1_Channel6_BASE)
 #define DMA1_Channel7 ((DMA_Channel_TypeDef *)DMA1_Channel7_BASE)
+#define DMA2_Channel1 ((DMA_Channel_TypeDef *)DMA2_Channel1_BASE)
+#define DMA2_Channel2 ((DMA_Channel_TypeDef *)DMA2_Channel2_BASE)
+#define DMA2_Channel3 ((DMA_Channel_TypeDef *)DMA2_Channel3_BASE)
+#define DMA2_Channel4 ((DMA_Channel_TypeDef *)DMA2_Channel4_BASE)
+#define DMA2_Channel5 ((DMA_Channel_TypeDef *)DMA2_Channel5_BASE)
+#define DMA2_Channel6 ((DMA_Channel_TypeDef *)DMA2_Channel6_BASE)
+#define DMA2_Channel7 ((DMA_Channel_TypeDef *)DMA2_Channel7_BASE)
+#define DMA2_Channel8 ((DMA_Channel_TypeDef *)DMA2_Channel8_BASE)
+#define DMA2_Channel9 ((DMA_Channel_TypeDef *)DMA2_Channel9_BASE)
+#define DMA2_Channel10 ((DMA_Channel_TypeDef *)DMA2_Channel10_BASE)
+#define DMA2_Channel11 ((DMA_Channel_TypeDef *)DMA2_Channel11_BASE)
 
 /* DMA_INTFR and DMA_INTFCR bits of channel 1. Each next channel is 4 bits higher. */
 #define DMA_GIF1 (1ul << 0)
