@@ -105,3 +105,12 @@ jobs:
           reset=$("$NM" "$elf" | awk '$3 == "Reset_Handler" {print $1}')
           [ "$vectors" = 00000004 ] || { echo "g_pfnVectors at '$vectors', expected 00000004"; exit 1; }
           [ "$reset" = 00000000 ] || { echo "Reset_Handler at '$reset', expected 00000000"; exit 1; }
+      - name: Check that .sbss is inside .bss
+        run: |
+          # The start-up code clears only __bss_start__ .. __bss_end__.
+          OBJDUMP="$GCC_TOOLCHAIN_PREFIX/bin/riscv-none-elf-objdump"
+          sections=$("$OBJDUMP" -h build/tests/ch32v30x/test-image-v307)
+          if printf '%s\n' "$sections" | grep ' \.sbss'; then
+            echo "an .sbss output section exists: small zero variables are not cleared"
+            exit 1
+          fi
