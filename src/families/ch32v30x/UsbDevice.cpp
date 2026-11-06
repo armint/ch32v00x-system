@@ -160,6 +160,7 @@ bool UsbDevice::openEndpoint(uint8_t address, EndpointType type, uint16_t maxPac
       if(n != 0) {
          // As the system-stm32 driver: DATA0 and NAK, and no packet that was received before (SET_INTERFACE
          // resets the data toggle of its endpoints).
+         drainCompleted(address);
          resetDirection(address);
       }
       return true;
@@ -262,6 +263,7 @@ bool UsbDevice::armOut(uint8_t address) {
    const uint8_t n = usb::endpointNumber(address);
    if(dir->doubleBuffered) {
       Direction &out = _endpoints[n].out;
+      out.nakHeld = false;
       out.reported = NoBuffer;
       if(out.pending != NoBuffer) {
          const uint8_t buffer = out.pending;
@@ -311,6 +313,7 @@ void UsbDevice::setStall(uint8_t address, bool stall) {
    if(dir == nullptr || !dir->open) {
       return;
    }
+   drainCompleted(address);
    uint8_t n = usb::endpointNumber(address);
    if(usb::isInEndpoint(address)) {
       if(stall) {
@@ -357,20 +360,30 @@ bool UsbDevice::transferPending(uint8_t address) const {
                                      : (status & USBHS_UIS_TOKEN_MASK) == USBHS_UIS_TOKEN_OUT && (status & USBHS_UIS_TOG_OK) != 0;
 }
 
-bool UsbDevice::setNak(uint8_t address) {
-   Interrupt::BlockingSection block(UsbIrq);
-   const Direction *dir = direction(address);
-   if(dir == nullptr || !dir->open) {
-      return false;
+// Handles a transfer that the hardware has completed and the handler has not reported yet, with the
+// interrupt masked (the caller holds the BlockingSection). Then no completion of this direction comes later
+// and undoes a reset or a NAK of the main loop.
+void UsbDevice::drainCompleted(uint8_t address) {
+   if((USBHS->INT_FG & USBHS_UIF_BUS_RST) == 0 && transferPending(address)) {
+      handleTransfer(USBHS->INT_ST, (USBHS->INT_FG & USBHS_UIF_SETUP_ACT) != 0);
+      USBHS->INT_FG = USBHS_UIF_TRANSFER;
    }
-   const bool pending = transferPending(address);
+}
+
+void UsbDevice::setNak(uint8_t address) {
+   Interrupt::BlockingSection block(UsbIrq);
+   Direction *dir = direction(address);
+   if(dir == nullptr || !dir->open) {
+      return;
+   }
+   drainCompleted(address);
    uint8_t n = usb::endpointNumber(address);
    if(usb::isInEndpoint(address)) {
       setTxResponse(n, USBHS_UEP_T_RES_NAK);
    } else {
+      dir->nakHeld = true;
       setRxResponse(n, USBHS_UEP_R_RES_NAK);
    }
-   return pending;
 }
 
 // A reopen of an open direction (n = 1..15): DATA0, NAK, and no earlier packet.
@@ -378,6 +391,7 @@ void UsbDevice::resetDirection(uint8_t address) {
    const uint8_t n = usb::endpointNumber(address);
    Direction &dir = usb::isInEndpoint(address) ? _endpoints[n].in : _endpoints[n].out;
    dir.toggle = 0;
+   dir.nakHeld = false;
    if(usb::isInEndpoint(address)) {
       ctrl(n).T_LEN = 0;
       ctrl(n).TX_CTRL = USBHS_UEP_T_TOG_AUTO | USBHS_UEP_T_RES_NAK;
@@ -448,7 +462,7 @@ void UsbDevice::handleTransfer(uint8_t status, bool setupPending) {
             if(out.reported == NoBuffer) {
                // The software has no packet: report this one. The hardware fills the other buffer next, so the
                // endpoint stays ACK.
-               if(response == USBHS_UEP_R_RES_NAK) {
+               if(response == USBHS_UEP_R_RES_NAK && !out.nakHeld) {
                   response = USBHS_UEP_R_RES_ACK;
                }
                ctrl(n).RX_CTRL = controlByte(out.toggle, response);

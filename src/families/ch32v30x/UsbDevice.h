@@ -194,15 +194,12 @@ class UsbDevice {
 
    /**
     * @brief Sets NAK on one direction of an endpoint. This drops a pending
-    * startIn() or armOut().
-    * @return true if the USB hardware has completed a transfer of this
-    * direction of the endpoint (an IN packet that the host acknowledged, or a
-    * received OUT packet) and the interrupt handler has not reported it yet.
-    * The event follows, also when the interrupt is masked now. The USB
-    * controller layer uses this to decide if a cancelled IN packet was taken.
-    * Not in system-stm32 (there setNak() returns nothing).
+    * startIn() or armOut(). A transfer that the hardware has completed and
+    * the handler has not reported yet is reported first (the callback runs
+    * now), so no event of this direction follows later. The same holds for
+    * setStall() and for openEndpoint() on an open direction.
     */
-   bool setNak(uint8_t address);
+   void setNak(uint8_t address);
 
    /**
     * @brief The interrupt handler. begin() connects it to USBHS_IRQn
@@ -227,6 +224,7 @@ class UsbDevice {
       // double-buffered OUT endpoint it is also the buffer that receives the next packet.
       uint8_t toggle = 0;
       bool doubleBuffered = false;
+      bool nakHeld = false; // OUT: setNak() until the next armOut(); the handler does not set ACK then
       uint8_t reported = NoBuffer; // the buffer that the software reads (readOut())
       uint8_t pending = NoBuffer;  // a received packet that waits for armOut()
    };
@@ -251,6 +249,7 @@ class UsbDevice {
    void reportDoubleBuffered(uint8_t n, uint8_t buffer);
    void resetDirection(uint8_t address);
    bool transferPending(uint8_t address) const;
+   void drainCompleted(uint8_t address);
    void resetDoubleBuffer(uint8_t n);
    void handleTransfer(uint8_t status, bool setupPending);
    Direction *direction(uint8_t address);

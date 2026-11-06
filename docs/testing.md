@@ -77,7 +77,7 @@ It checks these items:
 - The packet copy and the `T_LEN` and `TX_CTRL` values of `startIn()`, and the `RX_CTRL` value of `armOut()`.
 - The reopen of an open endpoint: DATA0, NAK, and no waiting packet.
 - The software copy of the data toggle: a flip that the main loop undid is written back by the handler, and a STALL that the main loop set stays.
-- The return value of `setNak()` (a transfer that waits for the handler).
+- A transfer that waits for the handler is reported inside `setNak()`, `setStall()` and the reopen.
 - The `TX_CTRL` and `RX_CTRL` values of `setStall()` and `setNak()`.
   When STALL stops, the toggle bits are DATA0. On endpoints 1 to 15, the auto-toggle bit stays set.
 
