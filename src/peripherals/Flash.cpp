@@ -6,39 +6,76 @@
 
 namespace Flash {
 
-#if defined(CH32V20x_D8W) || defined(CH32V20x_D8) || defined(CH32V20x_D6)
+#if defined(CH32V20x_D8W) || defined(CH32V20x_D8) || defined(CH32V20x_D6) || defined(CH32V30x_D8C)
 constexpr uint32_t PAGE_SIZE = 256;
 #else
 constexpr uint32_t PAGE_SIZE = 64;
 #endif
 constexpr uint32_t PAGE_MASK = PAGE_SIZE - 1;
 
-writable_section::writable_section() {
-   while(FLASH->STATR & FLASH_STATR_BSY) {
-      // Wait while the flash is busy
+#if defined(FLASH_CTLR_FLOCK)
+constexpr uint32_t FAST_LOCK = FLASH_CTLR_FLOCK;
+#else
+constexpr uint32_t FAST_LOCK = FLASH_CTLR_FAST_LOCK;
+#endif
+
+namespace {
+#if defined(CH32V30x_D8C)
+// RM 32.1, note 2: the flash access clock must not exceed 60 MHz. It is HCLK / 2, so above
+// 120 MHz HCLK runs at SYSCLK / 2 for the time of one erase or program operation. The
+// peripheral clocks are also halved for that time. The CH32V20x has the same rule: not done yet.
+class SlowClock {
+   public:
+   SlowClock()
+      : _saved(RCC->CFGR0) {
+      if(SystemCoreClock > 120000000u) {
+         RCC->CFGR0 = (_saved & ~RCC_CFGR0_HPRE_MASK) | RCC_CFGR0_HPRE_DIV2;
+      }
+   }
+   ~SlowClock() {
+      RCC->CFGR0 = _saved;
    }
 
+   private:
+   uint32_t _saved;
+};
+#else
+struct SlowClock {};
+#endif
 
-   FLASH->KEYR = KEY1;
-   FLASH->KEYR = KEY2;
+void wait_ready() {
+   while(FLASH->STATR & FLASH_STATR_BSY) {
+   }
+}
+} // namespace
+
+writable_section::writable_section() {
+   wait_ready();
+   // A key write while the controller is unlocked is a wrong sequence: the RM says that it
+   // locks the controller until the next reset. Thus write the keys only when locked.
+   if(FLASH->CTLR & FLASH_CTLR_LOCK) {
+      FLASH->KEYR = KEY1;
+      FLASH->KEYR = KEY2;
+   }
    // For option bytes.
    //	FLASH->OBKEYR = FLASH_KEY1;
    //	FLASH->OBKEYR = FLASH_KEY2;
 
-   // For unlocking programming, in general.
-   FLASH->MODEKEYR = KEY1;
-   FLASH->MODEKEYR = KEY2;
+   // Fast mode: page erase and page programming.
+   if(FLASH->CTLR & FAST_LOCK) {
+      FLASH->MODEKEYR = KEY1;
+      FLASH->MODEKEYR = KEY2;
+   }
 }
 
 writable_section::~writable_section() {
-   while(FLASH->STATR & FLASH_STATR_BSY) {
-      // Wait while the flash is busy
-   }
-   FLASH->KEYR = 0;
+   wait_ready();
+   FLASH->CTLR |= FAST_LOCK | FLASH_CTLR_LOCK;
 }
 
 
 void erase_page(void *address) {
+   [[maybe_unused]] SlowClock slow_clock;
 
    // 1. Ensure no flash operation ongoing (BSY cleared)
    while(FLASH->STATR & FLASH_STATR_BSY) {
@@ -64,6 +101,7 @@ bool write_buffer(void *address, hw::span<uint8_t> data) {
       return false;
    }
 
+   [[maybe_unused]] SlowClock slow_clock;
    uintptr_t addr = reinterpret_cast<uintptr_t>(address);
    const uint8_t *data_ptr = data.data();
    size_t remaining = data.size();
@@ -96,6 +134,10 @@ bool write_buffer(void *address, hw::span<uint8_t> data) {
 
       // 3. Load word into buffer
       *reinterpret_cast<volatile uint32_t *>(addr) = word;
+#ifdef FLASH_STATR_WRBSY
+      while(FLASH->STATR & FLASH_STATR_WRBSY) {
+      }
+#endif
 #ifdef FLASH_CTLR_BUF_LOAD
       FLASH->CTLR = FLASH_CTLR_PAGE_PG | FLASH_CTLR_BUF_LOAD;
       while(FLASH->STATR & FLASH_STATR_BSY) {
@@ -138,4 +180,23 @@ bool write_buffer(void *address, hw::span<uint8_t> data) {
    FLASH->CTLR &= ~FLASH_CTLR_PAGE_PG;
    return true;
 }
+
+#if defined(FLASH_CTLR_PG)
+bool program_halfword(void *address, uint16_t value) {
+   if((reinterpret_cast<uintptr_t>(address) & 1u) != 0u) {
+      return false;
+   }
+   auto *const target = static_cast<volatile uint16_t *>(address);
+   [[maybe_unused]] SlowClock slow_clock;
+   wait_ready();
+   FLASH->STATR = FLASH_STATR_EOP | FLASH_STATR_WRPRTERR;
+   FLASH->CTLR |= FLASH_CTLR_PG;
+   *target = value; // RM 32.5.3: each half-word write starts one programming
+   wait_ready();
+   FLASH->CTLR &= ~FLASH_CTLR_PG;
+   const bool protected_page = (FLASH->STATR & FLASH_STATR_WRPRTERR) != 0u;
+   FLASH->STATR = FLASH_STATR_EOP | FLASH_STATR_WRPRTERR;
+   return !protected_page && *target == value;
+}
+#endif
 } // namespace Flash

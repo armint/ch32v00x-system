@@ -99,3 +99,16 @@ target_include_directories(test-systick-v30x PRIVATE
 target_compile_definitions(test-systick-v30x PRIVATE CH32V30x_D8C)
 target_compile_options(test-systick-v30x PRIVATE -Wall -Wextra -Werror)
 add_test(NAME systick-v30x COMMAND test-systick-v30x)
+
+# The shared Flash driver with the CH32V30x registers. The stubs-flash-v30x directory gives
+# <wch_device.h> with models of the FLASH registers and RCC_CFGR0 as host variables.
+add_executable(test-flash-v30x
+        test_flash_v30x.cpp
+        ${_src}/peripherals/Flash.cpp)
+target_include_directories(test-flash-v30x PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/stubs-flash-v30x
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${_src})
+target_compile_definitions(test-flash-v30x PRIVATE CH32V30x_D8C)
+target_compile_options(test-flash-v30x PRIVATE -Wall -Wextra -Werror)
+add_test(NAME flash-v30x COMMAND test-flash-v30x)

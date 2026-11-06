@@ -159,6 +159,7 @@ typedef enum IRQn {
 #define TIM9_BASE 0x40014C00UL
 #define TIM10_BASE 0x40015000UL
 #define DMA1_BASE 0x40020000UL
+#define FLASH_R_BASE 0x40022000UL /* Flash controller (FPEC), RM chapter 32 */
 
 typedef struct {
    volatile uint32_t CTLR;     /* 0x00 Clock control */
@@ -225,6 +226,7 @@ typedef struct {
 #define RCC_CFGR0_SWS_MASK (3ul << 2)
 #define RCC_CFGR0_SWS_PLL (2ul << 2)
 #define RCC_CFGR0_HPRE_MASK (0xFul << 4)
+#define RCC_CFGR0_HPRE_DIV2 (8ul << 4) /* HCLK = SYSCLK / 2 */
 #define RCC_CFGR0_PPRE1_MASK (7ul << 8)
 #define RCC_CFGR0_PPRE2_MASK (7ul << 11)
 #define RCC_ADCPRE (3ul << 14)
@@ -326,6 +328,37 @@ typedef struct {
 #define AFIO_PCFR1_SW_CFG_MASK (7ul << 24)
 #define AFIO_PCFR1_SW_CFG_DISABLE (4ul << 24) /* 0xx: SWD on PA13 and PA14, 100: both GPIO */
 #define AFIO_PCFR1_SPI3_RM (1ul << 28)
+
+typedef struct {
+   uint32_t RESERVED0;         /* 0x00 */
+   volatile uint32_t KEYR;     /* 0x04 FPEC key */
+   volatile uint32_t OBKEYR;   /* 0x08 Option byte key */
+   volatile uint32_t STATR;    /* 0x0C Status */
+   volatile uint32_t CTLR;     /* 0x10 Control */
+   volatile uint32_t ADDR;     /* 0x14 Address */
+   uint32_t RESERVED1;         /* 0x18 */
+   volatile uint32_t OBR;      /* 0x1C Option byte */
+   volatile uint32_t WPR;      /* 0x20 Write protection */
+   volatile uint32_t MODEKEYR; /* 0x24 Fast mode key */
+} FLASH_TypeDef;
+
+#define FLASH ((FLASH_TypeDef *)FLASH_R_BASE)
+
+/* FLASH_STATR bits */
+#define FLASH_STATR_BSY (1ul << 0)
+#define FLASH_STATR_WRBSY (1ul << 1) /* Fast page programming: the last word is not taken yet */
+#define FLASH_STATR_WRPRTERR (1ul << 4)
+#define FLASH_STATR_EOP (1ul << 5)
+
+/* FLASH_CTLR bits. The fast mode bits have the names of the CH32V20x header, so the
+ * shared Flash.cpp uses one name for both families. The RM name is in the comment. */
+#define FLASH_CTLR_PG (1ul << 0)  /* Standard programming, one half-word */
+#define FLASH_CTLR_STRT (1ul << 6)
+#define FLASH_CTLR_LOCK (1ul << 7)
+#define FLASH_CTLR_FLOCK (1ul << 15)
+#define FLASH_CTLR_PAGE_PG (1ul << 16) /* RM: FTPG, fast programming of a 256-byte page */
+#define FLASH_CTLR_PAGE_ER (1ul << 17) /* RM: FTER, fast erase of a 256-byte page */
+#define FLASH_CTLR_PG_STRT (1ul << 21) /* RM: PGSTRT */
 
 typedef struct {
    volatile uint32_t INTENR; /* 0x00 Interrupt enable */

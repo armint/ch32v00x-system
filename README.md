@@ -31,7 +31,7 @@ library are in [ch32v00x-art](https://gitlab.vandertogt.org/riscv/ch32v00x-art).
 | `CH32V00X` | `CH32V002` | CH32V002 | Builds. Hardware test not recorded. |
 | `CH32V00X` | `CH32V006` | CH32V006 | Builds. Hardware test not recorded. |
 | `CH32V20X` | `CH32V20x_D8W` | CH32V208 | Builds. Hardware test not recorded. No ADC driver. |
-| `CH32V30X` | `CH32V30x_D8C` | CH32V307 | Start-up, clock, GPIO (with AFIO and EXTI), USART, ADC, DMA, timer and USB device build. Hardware test of ADC, DMA and timer recorded (see below). Other drivers not ported yet. |
+| `CH32V30X` | `CH32V30x_D8C` | CH32V307 | Start-up, clock, GPIO (with AFIO and EXTI), USART, ADC, DMA, timer, flash and USB device build. Hardware test of ADC, DMA and timer recorded (see below). Other drivers not ported yet. |
 
 On CH32V30X, the start-up, the clock, SysTick, the delays, `Interrupt` and
 `GpioPin` build. `GpioPin` sets pins 0 to 7 in `CFGLR` and pins 8 to 15 in `CFGHR`.
@@ -42,7 +42,8 @@ The `Adc` driver builds for ADC1 and ADC2.
 The `Dma` driver builds for DMA1 and the `Timer` driver for TIM1 to TIM10.
 On the YD-CH32V307VCT6 board, the `adc-dma` and `timer` examples of [ch32v00x-examples](https://gitlab.vandertogt.org/riscv/ch32v00x-examples) work.
 `adc-dma` uses ADC1 with DMA1 channel 1. `timer` uses TIM2 channel 1 on PA15 and TIM3 channel 1 on PB4, through the AFIO remaps.
-The I2C and flash drivers are not ported yet. The family list is
+The `Flash` driver builds. Its hardware test is the `flash` example. See [Flash driver](docs/flash.md).
+The I2C driver is not ported yet. The family list is
 in [Chip families](docs/families.md).
 
 ## Drivers
@@ -93,6 +94,7 @@ toolchain file `cmake/gcc_riscv.cmake`. For all options, see
 | [Building and using ch32v00x-system](docs/building.md) | Requirements, CMake variables, C++ standard, `hw::span`, compiler flags, installed package |
 | [Chip families](docs/families.md) | `CH32_FAMILY`, family directories, device-specific code, adding a family |
 | [ADC](docs/adc.md) | Calibration on CH32V002 and CH32V006. The ADC of CH32V30X |
+| [Flash driver](docs/flash.md) | `Flash` on CH32V30X: erase size, half-word programming, erased value, clock limit |
 | [GPIO, AFIO and EXTI](docs/gpio.md) | Which GPIO API each family has, `hw::Afio`, `Exti`, `GpioInterrupt` |
 | [Testing](docs/testing.md) | Host tests: how to run them, what they check and what they do not check |
 | [USB device driver](docs/usb.md) | `hw::UsbDevice` on the USBHS controller of CH32V307: layers, clock, endpoint behavior, known limits |

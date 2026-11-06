@@ -35,6 +35,7 @@ STRUCTS = {
     "DMA1": ("DMA_TypeDef", ["INTFR", "INTFCR"]),
     "AFIO": ("AFIO_TypeDef", ["ECR", "PCFR1", ("EXTICR[0]", "EXTICR1"), ("EXTICR[1]", "EXTICR2"),
                               ("EXTICR[2]", "EXTICR3"), ("EXTICR[3]", "EXTICR4"), "PCFR2"]),
+    "FLASH": ("FLASH_TypeDef", ["KEYR", "OBKEYR", "STATR", "CTLR", "ADDR", "OBR", "WPR", "MODEKEYR"]),
     "EXTI": ("EXTI_TypeDef", ["INTENR", "EVENR", "RTENR", "FTENR", "SWIEVR", "INTFR"]),
     "USART1": ("USART_TypeDef", ["STATR", "DATAR", "BRR", "CTLR1", "CTLR2", "CTLR3", "GPR"]),
     "USBHS": ("USBHS_TypeDef", [
@@ -142,6 +143,15 @@ AFIO_FIELDS = {
     "AFIO_PCFR1_TIM2_RM_MASK": ("PCFR1", "TIM2_RM"), "AFIO_PCFR1_TIM3_RM_MASK": ("PCFR1", "TIM3_RM"),
 }
 
+# Same, for the bits of the FLASH registers.
+FLASH_FIELDS = {
+    "FLASH_STATR_BSY": ("STATR", "BSY"), "FLASH_STATR_WRBSY": ("STATR", "WRBSY"),
+    "FLASH_STATR_WRPRTERR": ("STATR", "WRPRTERR"), "FLASH_STATR_EOP": ("STATR", "EOP"),
+    "FLASH_CTLR_PG": ("CTLR", "PG"), "FLASH_CTLR_STRT": ("CTLR", "STRT"), "FLASH_CTLR_LOCK": ("CTLR", "LOCK"),
+    "FLASH_CTLR_FLOCK": ("CTLR", "FLOCK"), "FLASH_CTLR_PAGE_PG": ("CTLR", "FTPG"),
+    "FLASH_CTLR_PAGE_ER": ("CTLR", "FTER"), "FLASH_CTLR_PG_STRT": ("CTLR", "PGSTRT"),
+}
+
 # Same, for the bits of the USART registers. USART1 stands for all USART blocks.
 USART_FIELDS = {
     "USART_STATR_RXNE": ("STATR", "RXNE"), "USART_STATR_TC": ("STATR", "TC"),
@@ -202,7 +212,8 @@ BASES = {"RCC_BASE": "RCC", "AFIO_BASE": "AFIO", "EXTI_BASE": "EXTI", "GPIOA_BAS
          "UART7_BASE": "UART7", "UART8_BASE": "UART8", "USBHS_BASE": "USBHS",
          "TIM1_BASE": "TIM1", "TIM2_BASE": "TIM2", "TIM3_BASE": "TIM3", "TIM4_BASE": "TIM4",
          "TIM5_BASE": "TIM5", "TIM6_BASE": "TIM6", "TIM7_BASE": "TIM7", "TIM8_BASE": "TIM8",
-         "TIM9_BASE": "TIM9", "TIM10_BASE": "TIM10", "DMA1_BASE": "DMA1"}
+         "TIM9_BASE": "TIM9", "TIM10_BASE": "TIM10", "DMA1_BASE": "DMA1",
+         "FLASH_R_BASE": "FLASH"}
 
 # The SVD lists the DMA channel registers flat (CFGR1, CNTR1, ... CFGR7).
 # DMA1_Channel<n>_BASE must point at CFGR<n>, and DMA_Channel_TypeDef must
@@ -274,6 +285,7 @@ def build_asserts(periphs):
     checks += [(m, "DMA1", rf) for m, rf in DMA_FIELDS.items()]
     checks += [(m, "AFIO", rf) for m, rf in AFIO_FIELDS.items()]
     checks += [(m, "USART1", rf) for m, rf in USART_FIELDS.items()]
+    checks += [(m, "FLASH", rf) for m, rf in FLASH_FIELDS.items()]
     checks += [(m, "USBHS", rf) for m, rf in USBHS_FIELDS.items()]
     for macro, svd_name, (reg, field, *bit) in checks:
         lsb, width = field_position(periphs[svd_name], reg, field)

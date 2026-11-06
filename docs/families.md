@@ -35,9 +35,9 @@ that names the value to set.
 CMake compiles the shared sources and the sources of the selected family
 only. The other family directories are not compiled.
 
-The CH32V30X family does not support the shared `Flash` and `I2C`
-drivers yet. `CMakeLists.txt` excludes these files for that
-family. Their headers are still installed, but they do not compile for CH32V30X.
+The CH32V30X family does not support the shared `I2C` driver yet.
+`CMakeLists.txt` excludes this file for that family. Its header is still
+installed, but it does not compile for CH32V30X.
 
 The `Dma` driver addresses the 7 channels of DMA1 only. The CH32V30X header
 does not define DMA2, so code for DMA2 does not compile. The `Timer` driver
@@ -63,7 +63,7 @@ holds the shared headers and the headers of the selected family.
 Some shared files test a device macro. These files are:
 
 - `src/peripherals/Adc.h`: selects the ADC header of the chip.
-- `src/peripherals/Flash.cpp`: selects the flash page size.
+- `src/peripherals/Flash.cpp`: selects the flash page size. On CH32V30X, it also halves HCLK during a flash operation (see [Flash driver](flash.md)).
 - `src/peripherals/I2C.h`: selects the register set of the I2C block.
 
 Do not add new device-macro tests to shared files. Put the difference into
