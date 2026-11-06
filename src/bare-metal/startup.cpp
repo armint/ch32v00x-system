@@ -35,7 +35,9 @@
 //
 // Control reaches here from the reset handler via jump or call.
 //
-// The actual steps performed by _start are:
+// The actual steps performed by _start (naked, sets gp and sp) and
+// _start_c are:
+// - load gp and sp
 // - copy the initialised data region(s)
 // - clear the BSS region(s)
 // - initialise the system
@@ -138,16 +140,27 @@ void run_fini_array(void) {
 /**
  * @details
  * This is the place where the CPU core will go immediately
- * after reset (the `Reset_Handler` calls this function).
+ * after reset (the `Reset_Handler` jumps to `_start`).
  *
- * To reach this location, the reset stack must point to a valid
- * internal RAM area.
+ * `_start` is naked: it loads `gp` and `sp` and then jumps to
+ * `_start_c()`. The value of `sp` after reset is not defined, so no
+ * code that uses the stack can run before this load.
  *
  * Debugging new system configurations usually begins with placing
  * a breakpoint at `_start()`, and stepping through the routine.
  */
 
-extern "C" [[gnu::section(".after_vectors"), gnu::noreturn, gnu::weak, gnu::used]] void _start(void) {
+extern "C" [[gnu::section(".after_vectors"), gnu::naked, gnu::weak, gnu::used]] void _start(void) {
+   // .option norelax: the linker must not relax the gp load itself.
+   asm volatile(".option push\n"
+                ".option norelax\n"
+                "la gp, __global_pointer$\n"
+                ".option pop\n"
+                "la sp, __stack\n"
+                "j _start_c\n");
+}
+
+extern "C" [[gnu::section(".after_vectors"), gnu::noreturn, gnu::used]] void _start_c(void) {
    cpuInit();
 
    // Initialise hardware right after reset, to switch clock to higher
