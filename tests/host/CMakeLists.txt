@@ -86,3 +86,16 @@ target_include_directories(test-exti-afio-v30x PRIVATE
         ${_src})
 target_compile_options(test-exti-afio-v30x PRIVATE -Wall -Wextra -Werror)
 add_test(NAME exti-afio-v30x COMMAND test-exti-afio-v30x)
+
+# The SysTick time base of CH32V30x (free-running counter, compare moved by the handler). The
+# stubs-systick-v30x directory gives <wch_device.h> with the SysTick registers as a host variable.
+add_executable(test-systick-v30x
+        test_systick_v30x.cpp
+        ${_src}/Timekeeping.cpp)
+target_include_directories(test-systick-v30x PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/stubs-systick-v30x
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${_src})
+target_compile_definitions(test-systick-v30x PRIVATE CH32V30x_D8C)
+target_compile_options(test-systick-v30x PRIVATE -Wall -Wextra -Werror)
+add_test(NAME systick-v30x COMMAND test-systick-v30x)
