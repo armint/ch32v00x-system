@@ -655,6 +655,63 @@ void testNakRetryKeepsTransfer() {
    }
 }
 
+// The board shows that a SETUP that completes while an OUT transfer waits clears TOG_OK (INT_FG 0x22,
+// INT_ST 0x02). The RX toggle then tells whether the packet was accepted.
+void testSetupClearsTogOk() {
+   // Double-buffered, the board case: the packet is reported, and the next one comes from the other buffer.
+   {
+      UsbDevice usb;
+      resetFakes();
+      eventCount = 0;
+      usb.begin(&recordEvent, nullptr);
+      CHECK(usb.openEndpoint(0x02, EndpointType::Bulk, 512, true));
+      CHECK(usb.armOut(0x02));
+      hostUsbhs.RX_LEN = 512;
+      ep(2).RX_CTRL ^= USBHS_UEP_R_TOG_DATA1; // the auto toggle moved on: accepted
+      hostUsbhs.INT_ST = static_cast<uint8_t>(USBHS_UIS_TOKEN_OUT | 2);
+      hostUsbhs.INT_FG = USBHS_UIF_TRANSFER | USBHS_UIF_SETUP_ACT;
+      usb.handleInterrupt();
+      CHECK(eventCount == 1);
+      CHECK(events[0].second == 512);
+      CHECK((ep(2).RX_CTRL & USBHS_UEP_R_TOG_DATA1) != 0);
+      CHECK(usb.armOut(0x02));
+      receivePacket(usb, 2, 7);
+      CHECK(eventCount == 2);
+      CHECK(events[1].second == 7);
+   }
+   // Single-buffered, drained inside setNak().
+   {
+      UsbDevice usb;
+      resetFakes();
+      eventCount = 0;
+      usb.begin(&recordEvent, nullptr);
+      CHECK(usb.openEndpoint(0x02, EndpointType::Bulk, 64));
+      CHECK(usb.armOut(0x02));
+      hostUsbhs.RX_LEN = 9;
+      ep(2).RX_CTRL ^= USBHS_UEP_R_TOG_DATA1;
+      hostUsbhs.INT_ST = static_cast<uint8_t>(USBHS_UIS_TOKEN_OUT | 2);
+      hostUsbhs.INT_FG = USBHS_UIF_TRANSFER | USBHS_UIF_SETUP_ACT;
+      usb.setNak(0x02);
+      CHECK(eventCount == 1);
+      CHECK(events[0].second == 9);
+   }
+   // A repeated packet next to a SETUP: the toggle did not move, so no event, and the endpoint stays armed.
+   {
+      UsbDevice usb;
+      resetFakes();
+      eventCount = 0;
+      usb.begin(&recordEvent, nullptr);
+      CHECK(usb.openEndpoint(0x02, EndpointType::Bulk, 64));
+      CHECK(usb.armOut(0x02));
+      hostUsbhs.RX_LEN = 9;
+      hostUsbhs.INT_ST = static_cast<uint8_t>(USBHS_UIS_TOKEN_OUT | 2);
+      hostUsbhs.INT_FG = USBHS_UIF_TRANSFER | USBHS_UIF_SETUP_ACT;
+      usb.handleInterrupt();
+      CHECK(eventCount == 0);
+      CHECK(rxResponse(2) == USBHS_UEP_R_RES_ACK);
+   }
+}
+
 size_t inCompleteCount = 0;
 
 void countInComplete(void *, const hw::usb::Event &event) {
@@ -876,6 +933,7 @@ int main() {
    testLostToggleFlipIsRepaired();
    testStallSurvivesHandler();
    testNakRetryKeepsTransfer();
+   testSetupClearsTogOk();
    testWaitingCompletionIsHandledBeforeReset();
    testDoubleBufferedOpen();
    testDoubleBufferedReceive();

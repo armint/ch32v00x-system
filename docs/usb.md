@@ -138,5 +138,14 @@ endpoint. Its README gives the build and test steps.
   did not, it would lose the packet. The board test checked NAKed OUT
   retries on the same endpoint only. The effect of a NAK on another
   endpoint is not known.
+- A SETUP packet that completes while an OUT transfer waits clears
+  `TOG_OK` in `INT_ST`. The endpoint and token bits stay correct (board
+  measurement: `INT_FG` `0x22`, `INT_ST` `0x02` for a good EP2 packet).
+  When `SETUP_ACT` is also set, the driver compares the RX toggle in
+  `UEPn_RX_CTRL` with its software copy. A changed toggle means that the
+  hardware accepted the packet. Without a SETUP, the driver uses `TOG_OK`.
+  The reason is that a read-modify-write in `setNak()` or `setStall()` can
+  undo the toggle change of the hardware. The board test did not check if
+  a SETUP changes the status of an IN transfer.
 - The vendor SVD file names bits 5 to 7 of `USB_INT_EN` differently from
   the reference manual. The header follows the reference manual.

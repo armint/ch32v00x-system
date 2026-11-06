@@ -249,6 +249,7 @@ class UsbDevice {
    void reportDoubleBuffered(uint8_t n, uint8_t buffer);
    void resetDirection(uint8_t address);
    bool transferPending(uint8_t address) const;
+   bool outToggleOk(uint8_t status, bool setupPending) const;
    void drainCompleted(uint8_t address);
    void resetDoubleBuffer(uint8_t n);
    void handleTransfer(uint8_t status, bool setupPending);

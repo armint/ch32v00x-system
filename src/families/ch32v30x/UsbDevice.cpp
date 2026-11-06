@@ -357,7 +357,21 @@ bool UsbDevice::transferPending(uint8_t address) const {
    }
    // An OUT packet with the wrong toggle is dropped by the handler: it makes no event.
    return usb::isInEndpoint(address) ? (status & USBHS_UIS_TOKEN_MASK) == USBHS_UIS_TOKEN_IN
-                                     : (status & USBHS_UIS_TOKEN_MASK) == USBHS_UIS_TOKEN_OUT && (status & USBHS_UIS_TOG_OK) != 0;
+                                     : (status & USBHS_UIS_TOKEN_MASK) == USBHS_UIS_TOKEN_OUT &&
+                                          outToggleOk(status, (USBHS->INT_FG & USBHS_UIF_SETUP_ACT) != 0);
+}
+
+// A SETUP that completes while an OUT transfer waits clears TOG_OK in INT_ST (board measurement, issue #25:
+// INT_FG 0x22, INT_ST 0x02 for a good EP2 packet). Then the RX toggle of endpoints 1..15 tells it: the auto
+// toggle moved on from the software copy only for a packet with the right toggle. Not used without a SETUP,
+// because a read-modify-write of setNak() or setStall() can undo the hardware flip (see handleTransfer()).
+bool UsbDevice::outToggleOk(uint8_t status, bool setupPending) const {
+   const uint8_t n = status & USBHS_UIS_ENDP_MASK;
+   if(!setupPending || n == 0 || n >= _endpointCount) {
+      return (status & USBHS_UIS_TOG_OK) != 0;
+   }
+   const uint8_t hardware = (ctrl(n).RX_CTRL & USBHS_UEP_R_TOG_DATA1) != 0 ? 1 : 0;
+   return hardware != _endpoints[n].out.toggle;
 }
 
 // Handles a transfer that the hardware has completed and the handler has not reported yet, with the
@@ -448,7 +462,7 @@ void UsbDevice::handleTransfer(uint8_t status, bool setupPending) {
       break;
    case USBHS_UIS_TOKEN_OUT: {
       uint16_t size = USBHS->RX_LEN;
-      if((status & USBHS_UIS_TOG_OK) == 0) {
+      if(!outToggleOk(status, setupPending)) {
          break; // repeated packet: the host lost the ACK. Stay armed.
       }
       if(n != 0 && n < _endpointCount) {
