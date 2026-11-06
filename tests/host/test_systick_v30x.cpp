@@ -8,6 +8,7 @@
 // the board: it compares the tick count with the cycle count over 60 s.
 
 #include "check.h"
+#include "peripherals/CycleCounter.h"
 #include "utils/Interrupt.h"
 #include "utils/Timekeeping.h"
 
@@ -134,6 +135,24 @@ void testLowWordCarry() {
    CHECK(getUptimeTicks() == before + ticks + 1);
 }
 
+// hw::CycleCounter (peripherals/CycleCounter.h): count() is the low word of the free-running counter.
+// start() changes nothing when SysTick_Config() has run, and starts a stopped counter at the core
+// clock without interrupt and without auto reload.
+void testCycleCounter() {
+   start();
+   hw::CycleCounter::start();
+   CHECK(hostSysTick.CTLR == (ctlrStclk | ctlrStie | ctlrSte));
+   setCounter(0x0000'0001'FFFF'FFF0ull);
+   CHECK(hw::CycleCounter::count() == 0xFFFF'FFF0u);
+   const uint32_t before = hw::CycleCounter::count();
+   setCounter(0x0000'0002'0000'0010ull);
+   CHECK(hw::CycleCounter::count() - before == 0x20u); // the difference is correct across the wrap
+
+   hostSysTick.CTLR = 0;
+   hw::CycleCounter::start();
+   CHECK(hostSysTick.CTLR == (ctlrStclk | ctlrSte));
+}
+
 } // namespace
 
 extern "C" void sysTickUpdateHook(timestamp_t sysTick) {
@@ -149,6 +168,7 @@ int main() {
    testSecondInterruptForOneMatch();
    testMatchBeforeTheCompare();
    testLowWordCarry();
+   testCycleCounter();
    if(failures == 0) {
       std::printf("systick-v30x: all checks passed\n");
    }

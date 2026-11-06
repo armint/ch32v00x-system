@@ -3,6 +3,7 @@
 // The start-up code calls SystemInit() before main(), as in the USB loopback test.
 #include <Afio.h>
 #include <cmsis_device.h>
+#include <peripherals/CycleCounter.h>
 #include <peripherals/FastPin.h>
 #include <peripherals/GpioPin.h>
 #include <utils/GpioInterrupt.h>
@@ -20,10 +21,12 @@ int main() {
    GpioInterrupt::connectHandler(&onKey, nullptr, GPIOB, 3, Exti::TriggerEdge::Falling);
    hw::Afio::setSwjConfig(hw::Afio::SwjConfig::SwdOnly);
    const hw::GpioPin led = Led::pin();
+   // CI compiles the cycle counter: the LED toggles every 1000000 core clock cycles.
+   hw::CycleCounter::start();
    while(true) {
       led.toggle();
-      for(uint32_t i = 0; i < 1000000; i = i + 1) {
-         asm volatile("");
+      const uint32_t start = hw::CycleCounter::count();
+      while(hw::CycleCounter::count() - start < 1000000u) {
       }
    }
 }
