@@ -180,4 +180,23 @@ bool write_buffer(void *address, hw::span<uint8_t> data) {
    FLASH->CTLR &= ~FLASH_CTLR_PAGE_PG;
    return true;
 }
+
+#if defined(FLASH_CTLR_PG)
+bool program_halfword(void *address, uint16_t value) {
+   if((reinterpret_cast<uintptr_t>(address) & 1u) != 0u) {
+      return false;
+   }
+   auto *const target = static_cast<volatile uint16_t *>(address);
+   [[maybe_unused]] SlowClock slow_clock;
+   wait_ready();
+   FLASH->STATR = FLASH_STATR_EOP | FLASH_STATR_WRPRTERR;
+   FLASH->CTLR |= FLASH_CTLR_PG;
+   *target = value; // RM 32.5.3: each half-word write starts one programming
+   wait_ready();
+   FLASH->CTLR &= ~FLASH_CTLR_PG;
+   const bool protected_page = (FLASH->STATR & FLASH_STATR_WRPRTERR) != 0u;
+   FLASH->STATR = FLASH_STATR_EOP | FLASH_STATR_WRPRTERR;
+   return !protected_page && *target == value;
+}
+#endif
 } // namespace Flash
