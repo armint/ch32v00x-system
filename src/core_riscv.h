@@ -338,6 +338,9 @@ __attribute__((always_inline)) RV_STATIC_INLINE void __WFE(void) {
  *          a pending interrupt ends the wait also when MIE is 0.
  *          __WFE sets WFITOWFE and leaves it set: this function clears it
  *          each time, so the call order of the two does not matter.
+ *          The WCH SDK does the same on CH32V20x and CH32V30x. Its CH32V00x
+ *          SDK (V2.0 and later) calls __WFE() from __WFI(); a plain wfi is
+ *          not tested on CH32V00x hardware.
  *
  * @return  none
  */
