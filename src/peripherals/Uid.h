@@ -7,7 +7,11 @@
 #include <wch_device.h>
 
 // The 96-bit unique ID of the chip, with the interface of hw::Uid in system-stm32. The ID is in the
-// electronic signature area (RM 31.2). A family without UID_BASE (CH32V00X) reads zeros.
+// electronic signature area (RM 31.2), at the same address on CH32V00X, CH32V20X and CH32V30X.
+#if !defined(UID_BASE)
+#error "hw::Uid: this family has no UID_BASE"
+#endif
+
 namespace hw::Uid {
 
 constexpr size_t SizeBytes = 12u;
@@ -17,15 +21,11 @@ constexpr size_t SizeWords = 3u;
  * @brief Returns a 32-bit word from the 96-bit UID (index 0, 1, or 2).
  */
 inline uint32_t word(size_t index) {
-#if defined(UID_BASE)
    if(index < SizeWords) {
       // volatile: one 32-bit load for each word
       const auto *uid = reinterpret_cast<const volatile uint32_t *>(UID_BASE);
       return uid[index];
    }
-#else
-   (void)index;
-#endif
    return 0u;
 }
 
