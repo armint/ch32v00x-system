@@ -75,18 +75,49 @@ process it in the main loop.
 ## Double-buffered OUT
 
 `openEndpoint(address, Bulk, size, true)` opens a bulk OUT endpoint with two
-buffers (RM 22.2.2.3, table 21-3). The hardware receives the next packet into
-the second buffer while the software reads the first. The interface is the
-same as in system-stm32: one Out event for each `armOut()`, and `readOut()`
-reads that packet. A packet that arrives before `armOut()` waits in its
-buffer, and `armOut()` reports it.
+buffers (RM 22.2.2.3, table 21-3). The hardware fills the two buffers in
+turn. The interface is the same as in system-stm32: one Out event for each
+`armOut()`, and `readOut()` reads that packet.
+
+The endpoint answers NAK after each packet, as a single-buffered endpoint
+does. Thus the hardware does not receive a packet while the software holds
+one, and a double buffer gives no throughput gain at this time. The reason
+is the board test of
+[issue #25](https://github.com/armint/ch32v00x-system/issues/25):
+
+- The test kept the endpoint at ACK for the second buffer while the main
+  loop read the first buffer.
+- `readOut()` masks the USB interrupt while it copies the packet. Thus the
+  transfer interrupt of the second packet waited.
+- The controller accepted more packets while `UIF_TRANSFER` was set. The
+  reference manual says that `INT_BUSY` makes the controller answer NAK
+  then (RM 22.2.1.1), but the test showed ACK.
+- A third packet overwrote the buffer that the software read, and `RX_LEN`
+  gave the length of another packet. The host saw ACK for each packet, but
+  the device lost packets in pairs.
+
+The cause of the `INT_BUSY` behavior is not confirmed. Only a board test
+can show if the change stops the loss.
 
 - The endpoint takes two buffers from the pool. Buffer 0 is `UEPn_RX_DMA`,
   and buffer 1 is `UEPn_TX_DMA`. Thus the IN direction of that endpoint
   number cannot open.
-- The data toggle bit `RX_TOG[0]` selects the buffer, and the hardware flips
-  it after each packet. The hardware does not NAK when both buffers are full,
-  so the interrupt handler sets NAK then, and `armOut()` sets ACK again.
+- The data toggle bit `RX_TOG[0]` selects the buffer. The driver writes the
+  toggle after each packet (see below), so the next packet goes into the
+  other buffer.
+- The endpoint still answers ACK from the end of a packet until the
+  interrupt handler writes NAK. A single-buffered endpoint has the same
+  window. If a second packet arrives in this window, two cases are possible:
+  - The handler sees each packet as a separate transfer. Then the second
+    packet waits in the other buffer, and the next `armOut()` reports it.
+  - The controller merges both packets into one `UIF_TRANSFER` event, as in
+    the board test. Then the driver loses a packet. Keep the window short:
+    do not mask the USB interrupt for a long time while the endpoint
+    answers ACK.
+- The WCH example `CH372Device_Double_Buffering` (openwch/ch32v307 on
+  GitHub) also sets NAK only when both buffers are full. It copies each
+  packet in the interrupt handler, so it does not mask the interrupt in
+  the main loop.
 - `setNak()` and `setStall()` do a read-modify-write of the control byte
   of the endpoint. A packet that the hardware completes in between can lose
   its toggle flip. The driver keeps the toggle of each endpoint 1 to 15 in
