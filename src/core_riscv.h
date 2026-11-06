@@ -334,12 +334,16 @@ __attribute__((always_inline)) RV_STATIC_INLINE void __WFE(void) {
 /*********************************************************************
  * @fn      __WFI
  *
- * @brief   Wait for Interrupt
+ * @brief   Wait for Interrupt. Clears SCTLR.WFITOWFE and runs one wfi, so
+ *          a pending interrupt ends the wait also when MIE is 0.
+ *          __WFE sets WFITOWFE and leaves it set: this function clears it
+ *          each time, so the call order of the two does not matter.
  *
  * @return  none
  */
 __attribute__((always_inline)) RV_STATIC_INLINE void __WFI(void) {
-   __WFE();
+   NVIC->SCTLR &= ~(1 << 3);
+   asm volatile("wfi");
 }
 
 /*********************************************************************
