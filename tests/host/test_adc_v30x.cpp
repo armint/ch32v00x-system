@@ -1,11 +1,11 @@
-// Host tests for the CH32V30x ADC driver (src/families/ch32v30x/Adc_V30x):
+// Host tests for the CH32V30x ADC driver (src/families/ch32v30x/Adc):
 // the sequence registers, the sample time registers, the prescaler, the clock
 // and reset bits of ADC1 and ADC2, and the trigger. The registers are host
 // memory (stub <wch_device.h> in stubs-adc-v30x/). calibrate() is not tested:
 // the fake has no hardware that clears RSTCAL and CAL.
 
 #include "check.h"
-#include "families/ch32v30x/Adc_V30x.h"
+#include "Adc.h"
 
 ADC_TypeDef hostAdc1;
 ADC_TypeDef hostAdc2;

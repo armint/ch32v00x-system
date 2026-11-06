@@ -50,10 +50,11 @@ prescaler, reload and update functions with them.
 
 CMake adds the directory of the selected family to the include path. A
 family header has a name that is unique across the families, for example
-`Adc_V00x.h`. A shared header selects the family header with a preprocessor
-test. For example, `src/peripherals/Adc.h` includes `Adc_V003.h` when
+`Adc_V00x.h`. A header can select the family header with a preprocessor
+test. For example, `src/families/ch32v00x/Adc.h` includes `Adc_V003.h` when
 `CH32V003` is defined, and `Adc_V00x.h` when `CH32V006` or `CH32V002` is
-defined. It includes `Adc_V30x.h` when `CH32V30x_D8C` is defined.
+defined. Include `<Adc.h>`, like in `system-stm32`. On CH32V30X, `Adc.h` in
+`src/families/ch32v30x/` is the driver itself.
 
 The installed package has the same include layout. Its include directory
 holds the shared headers and the headers of the selected family.
@@ -62,7 +63,6 @@ holds the shared headers and the headers of the selected family.
 
 Some shared files test a device macro. These files are:
 
-- `src/peripherals/Adc.h`: selects the ADC header of the chip.
 - `src/peripherals/Flash.cpp`: selects the flash page size. On CH32V30X, it also halves HCLK during a flash operation (see [Flash driver](flash.md)).
 - `src/peripherals/I2C.h`: selects the register set of the I2C block.
 
@@ -83,6 +83,6 @@ filter to `CMakeLists.txt`.
 3. Add the family name to the cache help string, to the `STRINGS` list and
    to the regular expression in `CMakeLists.txt`.
 4. Add the device macro check to `src/wch_device.h`.
-5. Check the three shared files that test device macros: `Adc.h`, `Flash.cpp` and `I2C.h`.
+5. Check the two shared files that test device macros: `Flash.cpp` and `I2C.h`.
    Exclude the shared drivers that the new family does not support in the `foreach` list of `CMakeLists.txt`.
 6. Update the family list in this document, in [Building and using ch32v00x-system](building.md) and in [the README](../README.md).

@@ -1,5 +1,5 @@
 #if defined(CH32V30x_D8C)
-#include "Adc_V30x.h"
+#include "Adc.h"
 
 void Adc::configureRegularChannel(uint8_t sequence, Channel channel) const {
    // RSQR3 holds positions 0 to 5, RSQR2 positions 6 to 11, RSQR1 positions 12 to 15.

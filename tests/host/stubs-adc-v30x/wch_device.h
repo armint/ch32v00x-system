@@ -1,7 +1,7 @@
 #pragma once
 
 // Host stand-in for <wch_device.h> of CH32V30X for the ADC driver
-// (src/families/ch32v30x/Adc_V30x.h). The ADC and RCC register blocks and the
+// (src/families/ch32v30x/Adc.h). The ADC register block and the
 // bits are copies from src/families/ch32v30x/ch32v30x.h. The registers are plain
 // host memory that test_adc_v30x.cpp defines, so a register holds the last
 // written value. The fake models no conversion and no calibration.
@@ -9,23 +9,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
-typedef struct {
-   volatile uint32_t CTLR;
-   volatile uint32_t CFGR0;
-   volatile uint32_t INTR;
-   volatile uint32_t APB2PRSTR;
-   volatile uint32_t APB1PRSTR;
-   volatile uint32_t AHBPCENR;
-   volatile uint32_t APB2PCENR;
-   volatile uint32_t APB1PCENR;
-   volatile uint32_t BDCTLR;
-   volatile uint32_t RSTSCKR;
-   volatile uint32_t AHBRSTR;
-   volatile uint32_t CFGR2;
-} RCC_TypeDef;
-
-extern RCC_TypeDef hostRcc;
-#define RCC (&hostRcc)
+// RCC registers, RCC bits and SystemCoreClock: the same stub as the Rcc test (Adc.cpp uses Rcc).
+#include "../stubs-rcc-v30x/wch_device.h"
 
 #define RCC_ADC1EN (1ul << 9)
 #define RCC_ADC2EN (1ul << 10)
