@@ -1,0 +1,36 @@
+#pragma once
+
+// Timer bits for the host stand-ins of <wch_device.h>. The values are the same in all
+// families. The stub defines TIM_BIT() first: CH32V00X and CH32V20X give the bits the
+// type uint16_t, CH32V30X gives them the type unsigned long, as the device headers do.
+
+#define TIM_CEN TIM_BIT(0x0001)
+#define TIM_URS TIM_BIT(0x0004)
+#define TIM_OPM TIM_BIT(0x0008)
+#define TIM_DIR TIM_BIT(0x0010)
+#define TIM_ARPE TIM_BIT(0x0080)
+#define TIM_MMS TIM_BIT(0x0070)
+#define TIM_MSM TIM_BIT(0x0080)
+#define TIM_UIE TIM_BIT(0x0001)
+#define TIM_CC1IE TIM_BIT(0x0002)
+#define TIM_TIE TIM_BIT(0x0040)
+#define TIM_UDE TIM_BIT(0x0100)
+#define TIM_CC1DE TIM_BIT(0x0200)
+#define TIM_UIF TIM_BIT(0x0001)
+#define TIM_CC1IF TIM_BIT(0x0002)
+#define TIM_CC2IF TIM_BIT(0x0004)
+#define TIM_CC3IF TIM_BIT(0x0008)
+#define TIM_CC4IF TIM_BIT(0x0010)
+#define TIM_COMIF TIM_BIT(0x0020)
+#define TIM_TIF TIM_BIT(0x0040)
+#define TIM_BIF TIM_BIT(0x0080)
+#define TIM_UG TIM_BIT(0x0001)
+#define TIM_OC1PE TIM_BIT(0x0008)
+#define TIM_OC1M TIM_BIT(0x0070)
+#define TIM_OC1M_0 TIM_BIT(0x0010)
+#define TIM_OC1M_1 TIM_BIT(0x0020)
+#define TIM_OC1M_2 TIM_BIT(0x0040)
+#define TIM_CC1E TIM_BIT(0x0001)
+#define TIM_CC1P TIM_BIT(0x0002)
+#define TIM_AOE TIM_BIT(0x4000)
+#define TIM_MOE TIM_BIT(0x8000)

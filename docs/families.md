@@ -39,11 +39,11 @@ The CH32V30X family does not support the shared `I2C` driver yet.
 `CMakeLists.txt` excludes this file for that family. Its header is still
 installed, but it does not compile for CH32V30X.
 
-The `Dma` driver addresses DMA1 and, on CH32V30X, DMA2 (see [DMA driver](dma.md)). The `Timer` driver
+The `Dma` driver addresses DMA1 and, on CH32V30X, DMA2 (see [DMA driver](dma.md)). The `hw::Timer` driver
 works for TIM1 to TIM10. Only the advanced timers TIM1, TIM8, TIM9 and TIM10
 have the `BDTR` register for `enableMainOutput()` and `enableAutomaticOutput()`.
 TIM6 and TIM7 are basic timers. They have no channels. Use only the counter,
-prescaler, reload and update functions with them.
+prescaler, reload and update functions with them (see [Timer driver](timer.md)).
 
 ## Include paths
 

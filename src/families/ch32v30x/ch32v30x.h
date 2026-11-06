@@ -478,20 +478,33 @@ typedef struct {
 
 /* TIM_CTLR1 bits */
 #define TIM_CEN (1ul << 0)
+#define TIM_URS (1ul << 2)
+#define TIM_OPM (1ul << 3)
 #define TIM_DIR (1ul << 4)
 #define TIM_ARPE (1ul << 7)
 
 /* TIM_CTLR2 */
 #define TIM_MMS (7ul << 4)
 
+/* TIM_SMCFGR bits */
+#define TIM_MSM (1ul << 7)
+
 /* TIM_DMAINTENR bits */
 #define TIM_UIE (1ul << 0)
 #define TIM_CC1IE (1ul << 1)
 #define TIM_TIE (1ul << 6)
+#define TIM_UDE (1ul << 8)
+#define TIM_CC1DE (1ul << 9)
 
 /* TIM_INTFR bits */
 #define TIM_UIF (1ul << 0)
 #define TIM_CC1IF (1ul << 1)
+#define TIM_CC2IF (1ul << 2)
+#define TIM_CC3IF (1ul << 3)
+#define TIM_CC4IF (1ul << 4)
+#define TIM_COMIF (1ul << 5)
+#define TIM_TIF (1ul << 6)
+#define TIM_BIF (1ul << 7)
 
 /* TIM_SWEVGR bits */
 #define TIM_UG (1ul << 0)
@@ -506,6 +519,8 @@ typedef struct {
 /* TIM_CCER bits of channel 1. Each next channel is 4 bits higher. */
 #define TIM_CC1E (1ul << 0)
 #define TIM_CC1P (1ul << 1)
+#define TIM_CC1NE (1ul << 2) /* advanced timers only */
+#define TIM_CC1NP (1ul << 3) /* advanced timers only */
 
 /* TIM_BDTR bits (advanced timers only) */
 #define TIM_AOE (1ul << 14)
