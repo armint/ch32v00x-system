@@ -10,13 +10,8 @@
 
 #define SYSTICK_SR_CNTIF (1ul << 0) /* Counting value comparison flag */
 
-// CH32V20X and CH32V30X have a 64-bit counter and compare value (CH32FV2x_V3xRM
-// 9.5.5). The high words keep the values of earlier code (e.g. a loader).
-#if defined(CH32V20x_D8W) || defined(CH32V20x_D8) || defined(CH32V20x_D6) || defined(CH32V30x_D8C)
-#define SYSTICK_64BIT 1
-#else
-#define SYSTICK_64BIT 0
-#endif
+// CH32V20X and CH32V30X have a 64-bit counter and compare value: their family header defines
+// SYSTICK_64BIT. The high words keep the values of earlier code (e.g. a loader).
 
 #if defined(__riscv)
 #define SYSTICK_HANDLER_ATTRS __attribute__((section(".after_vectors"), interrupt))
@@ -26,7 +21,7 @@
 
 static volatile timestamp_t sysTickCount;
 
-#if SYSTICK_64BIT
+#if defined(SYSTICK_64BIT)
 // The counter runs free at the core clock (no auto reload), so its low word,
 // SysTick->CNT, is a 32-bit core-clock cycle counter that the application can
 // read (it wraps every 2^32 cycles, 29.8 s at 144 MHz). The tick comes from
@@ -59,7 +54,7 @@ static constexpr uint32_t sysTickMinAheadCycles = 64;
 
 extern "C" void SYSTICK_HANDLER_ATTRS SysTick_Handler(void) {
    SysTick->SR &= ~SYSTICK_SR_CNTIF;
-#if SYSTICK_64BIT
+#if defined(SYSTICK_64BIT)
    // Count the periods that have passed. It is one tick, unless the interrupt was late by a whole period or more.
    // A second interrupt for the same match (compare rule "greater or equal") finds none and counts nothing.
    const uint64_t counter = readSysTickCounter();
@@ -111,7 +106,7 @@ uint32_t SysTick_Config(uint32_t ticks) {
    SysTick->CTLR = 0;
    NVIC_EnableIRQ(SysTicK_IRQn);
    SysTick->SR &= ~SYSTICK_SR_CNTIF;
-#if SYSTICK_64BIT
+#if defined(SYSTICK_64BIT)
    // Free-running up counter from 0 (STRE off), first match after one period.
    sysTickPeriod = ticks;
    sysTickNextCompare = ticks;

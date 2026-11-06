@@ -51,7 +51,7 @@ in [Chip families](docs/families.md).
 | Area | Drivers |
 |---|---|
 | Start-up | Reset handler, weak exception handlers, vector table per family, the weak hooks `os_startup_initialize_hardware_early()` (calls `SystemInit()`) and `os_startup_initialize_hardware()`, and the device header `cmsis_device.h` |
-| System timer and delays | `SysTick_Config()` and `getUptimeTicks()` in `utils/Timekeeping.h` (your project sets the tick rate), `delaymS()` and `delayuS()` in `delaybusywait.h`. On CH32V20X and CH32V30X, `SysTick->CNT` is also a free-running 32-bit core-clock cycle counter (see `utils/Timekeeping.h`) |
+| System timer and delays | `SysTick_Config()` and `getUptimeTicks()` in `utils/Timekeeping.h` (your project sets the tick rate), `delaymS()` and `delayuS()` in `delaybusywait.h`. On CH32V20X and CH32V30X, `hw::CycleCounter` in `peripherals/CycleCounter.h` is a free-running 32-bit core clock cycle counter (see [Cycle counter](docs/cycle-counter.md)) |
 | GPIO and EXTI | `hw::GpioPin` and `hw::FastPin` (the API of `system-stm32`), `Exti`, and on CH32V30X also `hw::Afio` and `GpioInterrupt`. See [GPIO](docs/gpio.md). |
 | Communication | `hw::Usart`, `hw::Spi` (see [SPI driver](docs/spi.md)), `I2c`, `hw::UsbDevice` (CH32V30X only, USB device on USBHS) |
 | Chip ID | `hw::Uid` in `peripherals/Uid.h`: the 96-bit unique ID (CH32V00X, CH32V20X, CH32V30X) |
@@ -101,6 +101,7 @@ toolchain file `cmake/gcc_riscv.cmake`. For all options, see
 | [Timer driver](docs/timer.md) | `hw::Timer`: names, old names, check against the CH32V30x manual, DMA requests of the timers |
 | [Flash driver](docs/flash.md) | `Flash` on CH32V30X: erase size, half-word programming, erased value, clock limit |
 | [GPIO, AFIO and EXTI](docs/gpio.md) | Which GPIO API each family has, `hw::Afio`, `Exti`, `GpioInterrupt` |
+| [Cycle counter](docs/cycle-counter.md) | `hw::CycleCounter`: the SysTick counter as cycle counter, `start()` on a stopped counter, no counter on CH32V00X |
 | [Testing](docs/testing.md) | Host tests: how to run them, what they check and what they do not check |
 | [USB device driver](docs/usb.md) | `hw::UsbDevice` on the USBHS controller of CH32V307: layers, clock, endpoint behavior, known limits |
 
