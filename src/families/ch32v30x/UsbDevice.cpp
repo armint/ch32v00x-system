@@ -375,6 +375,7 @@ bool UsbDevice::transferPending(uint8_t address, uint8_t status, bool setupPendi
 // INT_FG 0x22, INT_ST 0x02 for a good EP2 packet). Then the RX toggle of endpoints 1..15 tells it: the auto
 // toggle moved on from the software copy only for a packet with the right toggle. Not used without a SETUP,
 // because a read-modify-write of setNak() or setStall() can undo the hardware flip (see handleTransfer()).
+// Known limit: a SETUP and an undone flip on the same packet drop it (not seen on the board, docs/usb.md).
 bool UsbDevice::outToggleOk(uint8_t status, bool setupPending) const {
    const uint8_t n = status & USBHS_UIS_ENDP_MASK;
    if(!setupPending || n == 0 || n >= _endpointCount) {
