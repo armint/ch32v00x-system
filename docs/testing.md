@@ -62,6 +62,7 @@ The test also does not check the PFIC priority or the vector entry.
 - An interrupt that is late by more than one period counts the periods that passed, and the compare value is ahead of the counter again.
 - A second interrupt for one match, and a match a few cycles before the compare value, count correctly.
 - The tick count and the compare value stay right across the carry of the low word at 2^32 cycles.
+- `hw::CycleCounter`: `count()` returns the low word of the counter, and a difference of two counts is correct across the wrap. `start()` does not change a counter that `SysTick_Config()` started. `start()` sets STCLK and STE on a stopped counter.
 
 The test does not check that the hardware counts past the compare value without auto reload, or the compare rule (equal, or greater or equal). The `clock-time` example of `ch32v00x-examples` checks them on the board.
 
