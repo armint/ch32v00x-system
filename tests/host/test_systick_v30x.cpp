@@ -12,6 +12,7 @@
 #include "utils/Timekeeping.h"
 
 #include <cstring>
+#include <unistd.h>
 
 SysTick_Type hostSysTick;
 
@@ -117,7 +118,8 @@ void testLowWordCarry() {
    // 2^32 cycles are 29826.16 periods: the compare value passes the low word carry at period 29827.
    uint64_t counter = 0;
    uint32_t ticks = 0;
-   while(compare() < (1ull << 32) + 2ull * period) {
+   // The bound makes a missing CMPH write fail the test and not hang it.
+   while(compare() < (1ull << 32) + 2ull * period && ticks < 40000) {
       counter = compare();
       match(counter);
       ++ticks;
@@ -140,6 +142,7 @@ extern "C" void sysTickUpdateHook(timestamp_t sysTick) {
 }
 
 int main() {
+   alarm(20); // a handler loop that does not end (a broken compare write) fails the test and does not hang it
    testConfig();
    testTickEveryPeriod();
    testLateInterrupt();
