@@ -25,6 +25,8 @@ extern "C" {
 
 #define __MPU_PRESENT 0          /* Other CH32 devices does not provide an MPU */
 #define __Vendor_SysTickConfig 0 /* Set to 1 if different SysTick Config is used */
+/* The SysTick counter and compare value are 64 bits wide (CNTH, CMPH; CH32FV2x_V3xRM 9.5.5) */
+#define SYSTICK_64BIT 1
 
 #ifndef HSE_VALUE
 #if defined(CH32V20x_D8) || defined(CH32V20x_D8W)

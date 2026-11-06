@@ -126,6 +126,8 @@ typedef enum IRQn {
 
 #define HardFault_IRQn EXC_IRQn
 #define SysTicK_IRQn SysTick_IRQn
+/* The SysTick counter and compare value are 64 bits wide (CNTH, CMPH; CH32FV2x_V3xRM 9.5.5) */
+#define SYSTICK_64BIT 1
 
 /* Base addresses */
 #define AFIO_BASE 0x40010000UL

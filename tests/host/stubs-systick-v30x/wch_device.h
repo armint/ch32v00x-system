@@ -9,6 +9,7 @@
 
 typedef enum { SysTick_IRQn = 12 } IRQn_Type;
 #define SysTicK_IRQn SysTick_IRQn
+#define SYSTICK_64BIT 1 // as in src/families/ch32v30x/ch32v30x.h
 
 typedef struct {
    __IO uint32_t CTLR;
