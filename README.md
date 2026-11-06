@@ -53,7 +53,7 @@ in [Chip families](docs/families.md).
 | System timer and delays | `SysTick_Config()` and `getUptimeTicks()` in `utils/Timekeeping.h` (your project sets the tick rate), `delaymS()` and `delayuS()` in `delaybusywait.h` |
 | GPIO and EXTI | `hw::GpioPin` and `hw::FastPin` (the API of `system-stm32`), `Exti`, and on CH32V30X also `hw::Afio` and `GpioInterrupt`. See [GPIO](docs/gpio.md). |
 | Communication | `Usart`, `I2c`, `hw::UsbDevice` (CH32V30X only, USB device on USBHS) |
-| Chip ID | `hw::Uid` in `peripherals/Uid.h`: the 96-bit unique ID (CH32V30X; zeros on CH32V00X) |
+| Chip ID | `hw::Uid` in `peripherals/Uid.h`: the 96-bit unique ID (CH32V00X, CH32V20X, CH32V30X) |
 | Analog and timing | `Adc` (CH32V00X and CH32V30X), `Timer`, `Dma` |
 | Other | `Flash`, `Interrupt` (connects C++ member functions as interrupt handlers) |
 
