@@ -5,12 +5,12 @@ on channel 10. ADC (analog-to-digital converter) channel 10 measures this
 voltage. Read channel 10 to get the calibration value. Use this value to
 correct the other readings in software.
 
-The CH32V003 has its calibration voltage on channel 9 (`Channel::CH9_Vcal`).
+The CH32V003 has its calibration voltage on channel 9 (`Channel::Vcal`).
 The steps below apply to CH32V002 and CH32V006 only.
 
 ## Steps
 
-1. Read channel 10 (`Channel::CH10_Vcal`) at start-up. Store the value.
+1. Read channel 10 (`Channel::Vcal`) at start-up. Store the value.
 2. Read your input channel, for example channel 0 on pin PA2.
 3. Correct the reading: `corrected = reading x V_ref / reading_Vcal`. `V_ref`
    is the reference voltage of Vcal. This formula is not confirmed. Check it
@@ -31,45 +31,54 @@ The value depends on VDD (supply voltage). The exact relation is not confirmed.
 The CH32V307 has two ADCs, ADC1 and ADC2. Each has 16 external channels
 (channel 0 to 15) and a 12-bit result. ADC1 also has two internal channels:
 the temperature sensor on channel 16 and Vrefint (internal reference
-voltage) on channel 17. The class `Adc` has the same method names as the
-CH32V00X class. The channel and sample time names are different, because
-the pins and the cycle counts are different.
+voltage) on channel 17. Include `<Adc.h>`.
 
-## Differences from CH32V00X
+The names are the names of the STM32F1 `Adc` in `system-stm32` for the same
+job: `Channel` (`PA0`, `PB0`, `TempSensor`, `Vrefint`),
+`SamplingCycles::Cycles239_5`, the static `enableClock()`, `disableClock()`,
+`reset()` and `configureClock()`, and `enable()`, `disable()`, `calibrate()`,
+`setSamplingTime()` and `convert()`. These names are also the names of the
+CH32V00X class where the job is the same, for example `Cycles241` and
+`Vrefint`. The other functions of the class (`configureRegularChannel()`,
+`start()`, `value()`, the trigger and interrupt functions) have no
+equivalent in the `system-stm32` F1 class.
 
-- `Channel` names the pin of each channel, for example `CH8_PB0`.
-  `CH16_Temp` and `CH17_Vref` are the internal channels.
-- `SamplingCycles` gives 1.5, 7.5, 13.5, 28.5, 41.5, 55.5, 71.5 and 239.5 cycles.
-- `ClockDivider` divides PCLK2 by 2, 4, 6 or 8. The ADC clock must not
-  exceed 14 MHz. The start-up code of this library does not divide APB2,
-  so PCLK2 is 144 MHz. Then even `div8` gives 18 MHz, which is too fast.
-  Set the APB2 prescaler (`RCC_CFGR0` PPRE2) to 2 before you start the
-  USART. Then `div6` gives 12 MHz and `div8` gives 9 MHz. The `Usart`
-  driver must know the prescaler, or the baud rate of USART1 is wrong.
-  The `Usart` change in
-  [PR 5](https://github.com/armint/ch32v00x-system/pull/5) does this. This
-  ADC driver does not change PPRE2 itself.
+## Differences from STM32F1 and from CH32V00X
+
+- `enableClock()`, `disableClock()` and `reset()` are static. They take the
+  ADC as an optional argument. The default is ADC1, like in `system-stm32`.
+  Use `Adc::enableClock(ADC2)` for ADC2.
+- `configureClock()` sets the smallest PCLK2 divider (2, 4, 6 or 8) that
+  keeps the ADC clock at or below 14 MHz. It returns the ADC clock in Hz.
+  The start-up code of this library does not divide APB2, so PCLK2 is
+  144 MHz. Then even /8 gives 18 MHz, which is too fast. Set the APB2
+  prescaler (`RCC_CFGR0` PPRE2) to 2 before you start the USART. Then
+  `configureClock()` selects /6, which gives 12 MHz. The `Usart` driver
+  reads the prescaler, so the baud rate stays right.
+- `calibrate()` returns false when the ADC is off. It does not power the
+  ADC on. Call `enable()` first.
+- `ClockDivider` and `setClockDivider()` set the divider by hand.
+- There is no `readSupplyMillivolts()`.
 - There is no `setCalibrationVoltage()` and no injected trigger.
-- `enableClock()` and `reset()` act on the ADC of the object.
-- `enableInternalChannels()` switches channels 16 and 17 on. Wait for the
-  start-up time before you convert.
 
 ## Steps
 
 1. Set PPRE2 to 2 (`RCC->CFGR0`) before you initialize USART1. Call
-   `enableClock()`. Then call `Adc::setClockDivider(Adc::ClockDivider::div6)`
-   (12 MHz) or `div8` (9 MHz).
-2. Call `setSamplingTime()` for each channel. Vrefint and the temperature
-   sensor need at least 17.1 us.
+   `Adc::enableClock()` and `Adc::configureClock()`.
+2. Make an object: `Adc adc(ADC1);`. Call `setSamplingTime()` for each
+   channel. Vrefint and the temperature sensor need at least 17.1 us.
 3. Call `enable()`, then `calibrate()`. `calibrate()` blocks until the
    calibration ends.
 4. Call `enableInternalChannels()` if you use channel 16 or 17. Do it after
    `calibrate()`: with TSVREFE set, the input buffer stays on and the
    calibration offset is wrong for the external channels. Wait for the
    start-up time.
-5. Call `configureRegularChannel(0, channel)`. Call
-   `setRegularConversionTrigger(RegularTrigger::SWSTART)`.
-6. Call `start()`. Wait for `isConversionComplete()`. Read `value()`.
+5. For one conversion, call `convert(channel, value)`. It returns false if
+   the conversion does not end.
+6. For a sequence or for DMA, call `configureRegularChannel(0, channel)`
+   and `setRegularConversionTrigger(RegularTrigger::SWSTART)`. Call
+   `start()`. Wait for `isConversionComplete()`. Read `value()`.
 
-The CH32V30X ADC is not tested on hardware yet. Only the register values
-are checked by a host test.
+The old names worked on the YD-CH32V307 board in the `adc-dma` example. The
+new names need a new run on the board. The host test checks the register
+values, `configureClock()` and the refusal of `calibrate()` on an ADC that is off.
