@@ -63,7 +63,8 @@ add_test(NAME usart-v30x COMMAND test-usart-v30x)
 # with the ADC and RCC registers as host variables.
 add_executable(test-adc-v30x
         test_adc_v30x.cpp
-        ${_src}/families/ch32v30x/Adc.cpp)
+        ${_src}/families/ch32v30x/Adc.cpp
+        ${_src}/peripherals/Rcc.cpp)
 target_include_directories(test-adc-v30x PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/stubs-adc-v30x
         ${CMAKE_CURRENT_SOURCE_DIR}
