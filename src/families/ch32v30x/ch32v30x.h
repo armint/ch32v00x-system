@@ -201,6 +201,7 @@ typedef struct {
 #define RCC_ADC2EN (1ul << 10)
 #define RCC_USART1EN (1ul << 14)
 #define RCC_TIM1EN (1ul << 11)
+#define RCC_SPI1EN (1ul << 12)
 #define RCC_TIM8EN (1ul << 13)
 #define RCC_TIM9EN (1ul << 19)
 #define RCC_TIM10EN (1ul << 20)
@@ -215,6 +216,7 @@ typedef struct {
 #define RCC_UART6EN (1ul << 6)
 #define RCC_UART7EN (1ul << 7)
 #define RCC_UART8EN (1ul << 8)
+#define RCC_SPI2EN (1ul << 14)
 #define RCC_USART2EN (1ul << 17)
 #define RCC_USART3EN (1ul << 18)
 #define RCC_UART4EN (1ul << 19)
@@ -237,6 +239,11 @@ typedef struct {
 /* APB2 peripheral reset bits (RCC_APB2PRSTR) */
 #define RCC_ADC1RST (1ul << 9)
 #define RCC_ADC2RST (1ul << 10)
+#define RCC_TIM1RST (1ul << 11)
+#define RCC_SPI1RST (1ul << 12)
+
+/* APB1 peripheral reset bits (RCC_APB1PRSTR) */
+#define RCC_TIM3RST (1ul << 1)
 
 /* RCC_CFGR2 fields */
 #define RCC_CFGR2_PREDIV1_MASK (0xFul << 0)
