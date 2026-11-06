@@ -81,23 +81,28 @@ turn. The interface is the same as in system-stm32: one Out event for each
 
 The endpoint answers NAK after each packet, as a single-buffered endpoint
 does. Thus the hardware does not receive a packet while the software holds
-one, and a double buffer gives no throughput gain at this time. The reason
-is the board test of
+one. After this change, a double buffer gives no gain in throughput or in
+robustness. The driver keeps the mode only until a follow-up change removes
+it. Do not use it in new code.
+
+The reason for the NAK is the board test of
 [issue #25](https://github.com/armint/ch32v00x-system/issues/25):
 
-- The test kept the endpoint at ACK for the second buffer while the main
+- The driver kept the endpoint at ACK for the second buffer while the main
   loop read the first buffer.
 - `readOut()` masks the USB interrupt while it copies the packet. Thus the
   transfer interrupt of the second packet waited.
-- The controller accepted more packets while `UIF_TRANSFER` was set. The
-  reference manual says that `INT_BUSY` makes the controller answer NAK
-  then (RM 22.2.1.1), but the test showed ACK.
+- The test results agree with a controller that accepts more packets while
+  `UIF_TRANSFER` is set. The reference manual says that `INT_BUSY` makes the
+  controller answer NAK then (RM 22.2.1.1).
 - A third packet overwrote the buffer that the software read, and `RX_LEN`
-  gave the length of another packet. The host saw ACK for each packet, but
-  the device lost packets in pairs.
+  gave the length of another packet. Thus the device lost packets.
+- The device lost packets in pairs. The handler writes back the software
+  toggle, which does not include the extra packet. Thus the next packet has
+  the wrong toggle, and the driver ignores it.
 
-The cause of the `INT_BUSY` behavior is not confirmed. Only a board test
-can show if the change stops the loss.
+This `INT_BUSY` fault is inferred from the board result. No bus trace shows
+it. Only a board test can show if the change stops the loss.
 
 - The endpoint takes two buffers from the pool. Buffer 0 is `UEPn_RX_DMA`,
   and buffer 1 is `UEPn_TX_DMA`. Thus the IN direction of that endpoint
@@ -107,13 +112,14 @@ can show if the change stops the loss.
   other buffer.
 - The endpoint still answers ACK from the end of a packet until the
   interrupt handler writes NAK. A single-buffered endpoint has the same
-  window. If a second packet arrives in this window, two cases are possible:
-  - The handler sees each packet as a separate transfer. Then the second
-    packet waits in the other buffer, and the next `armOut()` reports it.
-  - The controller merges both packets into one `UIF_TRANSFER` event, as in
-    the board test. Then the driver loses a packet. Keep the window short:
-    do not mask the USB interrupt for a long time while the endpoint
-    answers ACK.
+  window. The board result agrees with a controller that merges a second
+  packet in this window into the same `UIF_TRANSFER` event. Then the driver
+  loses a packet in both modes. Keep the window short: do not mask the USB
+  interrupt for a long time while the endpoint answers ACK.
+- The driver also has a path for a second `UIF_TRANSFER` event while the
+  software holds a packet: `armOut()` reports that packet later. Only an
+  event queue in the controller can start this path. The reference manual
+  does not describe such a queue.
 - The WCH example `CH372Device_Double_Buffering` (openwch/ch32v307 on
   GitHub) also sets NAK only when both buffers are full. It copies each
   packet in the interrupt handler, so it does not mask the interrupt in

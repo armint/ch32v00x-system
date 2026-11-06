@@ -464,8 +464,11 @@ void testDoubleBufferedReceive() {
    CHECK(rxResponse(1) == USBHS_UEP_R_RES_NAK);
    CHECK(usb.readOut(0x01, data) == 10 && data[0] == 0xA0);
 
-   // A second packet that the handler finds while the software still reads
-   // buffer 0 (it came in the INT_BUSY window): it is in buffer 1 and waits.
+   // The pending path: a second TRANSFER event while the software holds
+   // buffer 0. receivePacket() ignores RX_RES, so this models an event queue
+   // that the RM does not describe; the board (issue #25) shows none. The
+   // double buffer gives no gain now and stays only until it is removed.
+   // These checks pin the driver logic until then: buffer 1 waits.
    std::memset(buf1, 0xB1, 64);
    receivePacket(usb, 1, 20);
    CHECK(eventCount == 1);

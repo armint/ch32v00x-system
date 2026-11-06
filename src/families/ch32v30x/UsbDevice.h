@@ -31,9 +31,10 @@ namespace hw {
 // interrupt handler sets it back to NAK after each received packet, so the
 // data stays in the endpoint buffer until the next armOut(). An IN endpoint
 // answers NAK until startIn(), and again after the host acknowledged the
-// packet. CTRL.INT_BUSY makes the controller NAK all tokens while a
-// transfer interrupt is pending, so no packet can arrive between the event
-// and the switch to NAK.
+// packet. The RM says that CTRL.INT_BUSY makes the controller NAK all tokens
+// while a transfer interrupt is pending (RM 22.2.1.1). The board test of
+// issue #25 does not agree (not confirmed): a packet can arrive between the
+// event and the switch to NAK.
 //
 // Data toggle: endpoints 1..15 use the automatic toggle of the hardware.
 // EP0 has none, so the driver sets DATA1 for both directions after each
@@ -63,12 +64,14 @@ namespace hw {
 // event per armOut(), and readOut() reads that packet. The endpoint number
 // then has no IN direction (the hardware uses the IN buffer address register
 // as the second OUT buffer). The handler sets NAK after each packet, as for a
-// single buffer, so the second buffer does not take a packet while the
-// software holds one: the board test of issue #25 showed that the controller
-// keeps ACKing while a TRANSFER interrupt waits (INT_BUSY did not NAK), and
-// overwrote both buffers. Thus a double buffer gives no throughput gain now.
-// A packet that the handler finds while the software holds one (the INT_BUSY
-// window) waits in its buffer, and armOut() reports it.
+// single buffer. Thus the second buffer does not receive a packet while the
+// software holds one. The board test of issue #25 agrees with a controller
+// that answers ACK while a TRANSFER interrupt waits (not confirmed, issue
+// #25). Thus a double buffer now gives no gain in throughput or robustness.
+// The mode stays only until a follow-up change removes it.
+// The pending path (a second TRANSFER event while the software holds a
+// packet, reported by armOut()) needs an event queue that the RM does not
+// describe.
 // setNak() and setStall() on an endpoint that answers ACK do a read-modify-write
 // of the control byte, and a packet that completes in between can lose its
 // toggle flip. The driver keeps the toggle in software and writes it back in

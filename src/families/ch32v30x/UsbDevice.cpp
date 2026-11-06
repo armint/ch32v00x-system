@@ -456,14 +456,14 @@ void UsbDevice::handleTransfer(uint8_t status, bool setupPending) {
          out.toggle ^= 1;
          uint8_t response = (ctrl(n).RX_CTRL & USBHS_UEP_R_RES_MASK) == USBHS_UEP_R_RES_STALL ? USBHS_UEP_R_RES_STALL : USBHS_UEP_R_RES_NAK;
          if(out.doubleBuffered) {
-            // NAK after each packet, as single-buffered: the controller does not NAK while TRANSFER waits
-            // (issue #25), so an ACK while the software holds a packet lets it overwrite both buffers.
+            // NAK after each packet, as single-buffered. The controller seems to accept packets while TRANSFER
+            // waits (not confirmed, issue #25), so an ACK while the software holds a packet can overwrite it.
             (buffer == 0 ? out.received : out.received1) = size;
             ctrl(n).RX_CTRL = controlByte(out.toggle, response);
             if(out.reported == NoBuffer) {
                reportDoubleBuffered(n, buffer);
             } else {
-               out.pending = buffer; // armOut() reports it
+               out.pending = buffer; // armOut() reports it. Needs an event queue that the RM does not describe.
             }
             break;
          }
@@ -505,9 +505,9 @@ void UsbDevice::handleInterrupt() {
       report(EventType::Reset, 0);
    }
 
-   // The transfer before the SETUP: with INT_BUSY no other token completes
-   // while TRANSFER is set, but a SETUP does. The layer above sees
-   // InComplete or Out first, then Setup.
+   // The transfer before the SETUP: a SETUP can complete while TRANSFER is
+   // set (and, per issue #25, other tokens too, not confirmed). The layer
+   // above sees InComplete or Out first, then Setup.
    if(flags & USBHS_UIF_TRANSFER) {
       handleTransfer(USBHS->INT_ST, (flags & USBHS_UIF_SETUP_ACT) != 0);
       USBHS->INT_FG = USBHS_UIF_TRANSFER;
