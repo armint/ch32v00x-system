@@ -31,7 +31,8 @@ class Usart {
    USART_TypeDef &usart;
 
    Usart(USART_TypeDef *uartBase)
-      : usart(*uartBase) {}
+      : usart(*uartBase) {
+   }
 
    inline void enableTx() const {
       usart.CTLR1 |= USART_CTLR1_TE;
@@ -140,8 +141,8 @@ class Usart {
       return (usart.CTLR1 & USART_CTLR1_RXNEIE) != 0;
    }
 
-   // The clock of the bus of this USART: APB2 for USART1 and APB1 for the others on CH32V30X, SystemCoreClock
-   // on the other families. The baud rate is derived from it.
+   // The clock of the bus of this USART: Rcc::getAPB2Clock() for USART1, Rcc::getAPBClock() for the others.
+   // The baud rate is derived from it.
    uint32_t getClockFrequency() const;
 
    // Data bits without the parity bit, parity and stop bits. Seven data bits need a parity bit: the hardware

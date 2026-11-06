@@ -1,24 +1,15 @@
 #include "Usart.h"
+#include "Rcc.h"
 #include <wch_device.h>
 
 namespace hw {
 
-#if defined(RCC_CFGR0_PPRE2_MASK)
-// CH32V30x: USART1 is on APB2, the other USARTs are on APB1. SystemCoreClock is
-// SYSCLK, so this assumes the AHB prescaler (HPRE) is /1, as the start-up sets it.
-// The BRR value holds the bus clock of the moment: call setBaudRate() again after
-// you change PPRE1 or PPRE2.
+// USART1 is on APB2, the other USARTs are on APB1 (CH32V00X has no APB prescaler). For the HPRE
+// limit of CH32V30X see Rcc.h. The BRR value holds the bus clock of the moment: call setBaudRate()
+// again after you change PPRE1 or PPRE2.
 static uint32_t busClock(const USART_TypeDef &usart) {
-   const uint32_t cfgr = RCC->CFGR0;
-   // Field 0xx is /1. 100, 101, 110 and 111 are /2, /4, /8 and /16.
-   const uint32_t field = (&usart == USART1) ? (cfgr & RCC_CFGR0_PPRE2_MASK) >> 11 : (cfgr & RCC_CFGR0_PPRE1_MASK) >> 8;
-   return SystemCoreClock >> ((field & 4) ? (field & 3) + 1 : 0);
+   return (&usart == USART1) ? Rcc::getAPB2Clock() : Rcc::getAPBClock();
 }
-#else
-static uint32_t busClock(const USART_TypeDef &) {
-   return SystemCoreClock;
-}
-#endif
 
 uint32_t Usart::getClockFrequency() const {
    return busClock(usart);

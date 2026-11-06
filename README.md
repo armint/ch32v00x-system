@@ -36,7 +36,7 @@ library are in [ch32v00x-art](https://gitlab.vandertogt.org/riscv/ch32v00x-art).
 On CH32V30X, the start-up, the clock, SysTick, the delays, `Interrupt` and
 `GpioPin` build. `GpioPin` sets pins 0 to 7 in `CFGLR` and pins 8 to 15 in `CFGHR`.
 The `hw::Usart` driver builds for USART1 to USART3 and UART4 to UART8. A loopback test on hardware is not done yet.
-The baud rate uses the APB prescaler: USART1 follows PPRE2, the other USARTs follow PPRE1. Call `setBaudRate()` again after a prescaler change.
+The baud rate uses the APB prescaler (`Rcc::getAPB2Clock()` and `Rcc::getAPBClock()`): USART1 follows PPRE2, the other USARTs follow PPRE1. This also applies to CH32V20X. Call `setBaudRate()` again after a prescaler change.
 The USB device driver `hw::UsbDevice` builds for the USBHS controller. A test on a host is not done yet.
 The `Adc` driver builds for ADC1 and ADC2.
 The `Dma` driver builds for DMA1 and the `Timer` driver for TIM1 to TIM10.

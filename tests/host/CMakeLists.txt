@@ -49,10 +49,12 @@ add_test(NAME usb-v307 COMMAND test-usb-v307)
 # directory gives <wch_device.h> with RCC_CFGR0 and the USART registers as host variables.
 add_executable(test-usart-v30x
         test_usart_v30x.cpp
-        ${_src}/peripherals/Usart.cpp)
+        ${_src}/peripherals/Usart.cpp
+        ${_src}/peripherals/Rcc.cpp)
 target_include_directories(test-usart-v30x PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/stubs-usart-v30x
         ${CMAKE_CURRENT_SOURCE_DIR}
+        ${_src}/families/ch32v30x
         ${_src})
 target_compile_options(test-usart-v30x PRIVATE -Wall -Wextra -Werror)
 add_test(NAME usart-v30x COMMAND test-usart-v30x)
