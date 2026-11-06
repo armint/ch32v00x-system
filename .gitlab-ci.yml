@@ -118,4 +118,5 @@ build-v307-test-image:
       [ "${reset}" = "00000000" ] || { echo "Reset_Handler at '${reset}', expected 00000000"; exit 1; }
       # .sbss must be inside .bss: the start-up code clears only __bss_start__ .. __bss_end__.
       OBJDUMP=$(dirname "$(command -v riscv-none-elf-gcc)")/riscv-none-elf-objdump
-      ! ${OBJDUMP} -h ${elf} | grep -q ' \.sbss' || { echo "an .sbss output section exists: small zero variables are not cleared"; exit 1; }
+      sections=$(${OBJDUMP} -h ${elf})
+      if printf '%s\n' "${sections}" | grep ' \.sbss'; then echo "an .sbss output section exists: small zero variables are not cleared"; exit 1; fi
