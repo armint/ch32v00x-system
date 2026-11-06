@@ -57,8 +57,22 @@ namespace hw {
 // mask the USBHS interrupt while they run (Interrupt::BlockingSection).
 // begin() and end() are for the main loop only.
 //
-// Limits: no isochronous endpoints, no double-buffered endpoints, no remote
-// wake-up, no test modes. INT_ST (token and endpoint of the last
+// Double-buffered bulk OUT (RM 22.2.2.3, table 21-3): openEndpoint() with
+// doubleBuffered true gives an OUT endpoint two buffers. The hardware
+// receives the next packet into the second buffer while the software still
+// reads the first. The interface stays the same as in system-stm32: one Out
+// event per armOut(), and readOut() reads that packet. A packet that arrives
+// before armOut() waits in its buffer, and armOut() reports it. The
+// endpoint number then has no IN direction (the hardware uses the IN buffer
+// address register as the second OUT buffer). The hardware does not NAK when
+// both buffers are full, so the interrupt handler sets NAK then.
+// setNak() and setStall() on an endpoint that answers ACK do a read-modify-write
+// of the control byte, and a packet that completes in between can lose its
+// toggle flip. The driver keeps the toggle in software and writes it back in
+// the handler, so the loss does not stay (Direction::toggle).
+//
+// Limits: no isochronous endpoints, no double-buffered IN endpoints, no
+// remote wake-up, no test modes. INT_ST (token and endpoint of the last
 // transfer) and RX_LEN (length of the last received packet) are global. A
 // SETUP that completes while a TRANSFER event of endpoint 1..15 waits for
 // the handler can overwrite both. Then the handler sees a SETUP token, and
@@ -129,9 +143,13 @@ class UsbDevice {
     * @return false for endpoint number >= the endpointCount of the
     * constructor, isochronous type, control type on an endpoint other than
     * 0, maxPacketSize 0 or above the limit of the type (control 64, bulk
-    * 512, interrupt 1024), doubleBuffered true, a direction that is already
-    * open with another maxPacketSize (call closeAllEndpoints() first), or
-    * not enough pool memory. Reopening EP0 with 64 bytes returns true.
+    * 512, interrupt 1024), doubleBuffered true on an IN or non-bulk
+    * endpoint, doubleBuffered true while the IN direction of that number
+    * is open (or the reverse: IN while the OUT direction is double-buffered),
+    * a direction that is already open with another maxPacketSize or
+    * doubleBuffered value (call closeAllEndpoints() first), or not enough
+    * pool memory. A double-buffered endpoint takes two buffers from the
+    * pool. Reopening EP0 with 64 bytes returns true.
     */
    [[nodiscard]] bool openEndpoint(uint8_t address, usb::EndpointType type, uint16_t maxPacketSize, bool doubleBuffered = false);
 
@@ -152,7 +170,9 @@ class UsbDevice {
 
    /**
     * @brief Lets an OUT endpoint accept the next packet. On EP0 this ends
-    * a STALL.
+    * a STALL. Double-buffered: frees the buffer of the reported packet. If
+    * the next packet is already in the other buffer, it reports that packet
+    * (Out event) before it returns.
     * @return false if the endpoint is not open.
     */
    bool armOut(uint8_t address);
@@ -174,7 +194,10 @@ class UsbDevice {
 
    /**
     * @brief Sets NAK on one direction of an endpoint. This drops a pending
-    * startIn() or armOut().
+    * startIn() or armOut(). A transfer that the hardware has completed and
+    * the handler has not reported yet is reported first (the callback runs
+    * now), so no event of this direction follows later. The same holds for
+    * setStall() and for openEndpoint() on an open direction.
     */
    void setNak(uint8_t address);
 
@@ -185,11 +208,25 @@ class UsbDevice {
    void handleInterrupt();
 
    private:
+   static constexpr uint8_t NoBuffer = 0xFF;
+
    struct Direction {
       uint8_t *buffer = nullptr;
       uint16_t maxPacketSize = 0;
       uint16_t received = 0; // OUT: size of the last reported packet
       bool open = false;
+      // Double-buffered OUT only. buffer is buffer 0, buffer1 buffer 1.
+      uint8_t *buffer1 = nullptr;
+      uint16_t received1 = 0; // size of the packet in buffer 1
+      // Endpoints 1..15: the data toggle bit that the hardware has next, kept in software. The handler
+      // flips it after each packet and writes it to the hardware, so a read-modify-write of the main
+      // loop that undoes the flip of the hardware (setNak(), setStall()) does not stay. For a
+      // double-buffered OUT endpoint it is also the buffer that receives the next packet.
+      uint8_t toggle = 0;
+      bool doubleBuffered = false;
+      bool nakHeld = false; // OUT: setNak() until the next armOut(); the handler does not set ACK then
+      uint8_t reported = NoBuffer; // the buffer that the software reads (readOut())
+      uint8_t pending = NoBuffer;  // a received packet that waits for armOut()
    };
 
    struct Endpoint {
@@ -209,6 +246,11 @@ class UsbDevice {
 
    void resetEndpoints();
    void report(usb::EventType type, uint8_t endpoint, uint16_t size = 0);
+   void reportDoubleBuffered(uint8_t n, uint8_t buffer);
+   void resetDirection(uint8_t address);
+   bool transferPending(uint8_t address) const;
+   void drainCompleted(uint8_t address);
+   void resetDoubleBuffer(uint8_t n);
    void handleTransfer(uint8_t status, bool setupPending);
    Direction *direction(uint8_t address);
    const Direction *direction(uint8_t address) const;

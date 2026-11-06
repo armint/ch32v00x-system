@@ -5,6 +5,11 @@
 // driver writes, the packet copy of startIn(), and the STALL and NAK
 // helpers.
 //
+// The double-buffered OUT tests call the interrupt handler with the INT_FG,
+// INT_ST, RX_LEN and RX_CTRL values that the hardware would leave (the
+// test flips RX_TOG[0] as the auto toggle does). Whether the real USBHS
+// selects the buffer as the RM table 21-3 says is for the hardware test.
+//
 // The USBHS and RCC registers are plain host memory (stub <wch_device.h> in
 // stubs-usb-v307/), so a register holds the value of the last write. The
 // fake does not model the write-1-to-clear INT_FG flags, the automatic data
@@ -288,8 +293,9 @@ void testOpenEndpointRejects() {
    CHECK(!usb.openEndpoint(0x81, EndpointType::Bulk, 513));
    CHECK(!usb.openEndpoint(0x81, EndpointType::Interrupt, 1025));
    CHECK(!usb.openEndpoint(0x00, EndpointType::Control, 65));
-   CHECK(!usb.openEndpoint(0x81, EndpointType::Bulk, 64, true)); // double-buffered
-   CHECK(!usb.openEndpoint(0x01, EndpointType::Bulk, 64, true));
+   CHECK(!usb.openEndpoint(0x81, EndpointType::Bulk, 64, true)); // double-buffered IN
+   CHECK(!usb.openEndpoint(0x01, EndpointType::Interrupt, 64, true)); // double-buffered, not bulk
+   CHECK(!usb.openEndpoint(0x00, EndpointType::Control, 64, true));
    CHECK(snapshot() == before);
 
    // Reopening EP0 with 64 bytes is allowed and writes nothing.
@@ -299,12 +305,16 @@ void testOpenEndpointRejects() {
 
    CHECK(usb.openEndpoint(0x83, EndpointType::Bulk, 64));
    const uint32_t dma = txDma(3);
-   ep(3).TX_CTRL = USBHS_UEP_T_RES_ACK; // a packet waits: reopen must not reset it
+   ep(3).TX_CTRL = USBHS_UEP_T_RES_ACK | USBHS_UEP_T_TOG_DATA1; // a packet waits, toggle DATA1
+   ep(3).T_LEN = 5;
+   CHECK(usb.openEndpoint(0x83, EndpointType::Bulk, 64)); // same size: keeps the buffer
+   // A reopen is SET_INTERFACE: DATA0, NAK, and the waiting packet is gone (as in the system-stm32 driver).
+   CHECK(ep(3).TX_CTRL == TxOpen);
+   CHECK(ep(3).T_LEN == 0);
+   CHECK(txDma(3) == dma);
    before = snapshot();
-   CHECK(usb.openEndpoint(0x83, EndpointType::Bulk, 64));  // same size: keeps the buffer
    CHECK(!usb.openEndpoint(0x83, EndpointType::Bulk, 32)); // other size
    CHECK(snapshot() == before);
-   CHECK(txDma(3) == dma);
 }
 
 void testStartIn() {
@@ -371,6 +381,339 @@ void testArmOutAndReadOut() {
    CHECK(usb.readOut(0x00, buffer) == 0);
    CHECK(usb.readOut(0x82, buffer) == 0);
    CHECK(blockingDepth == 0);
+}
+
+
+// Events that the callback got, in order: 'O' for Out with the size.
+std::array<std::pair<uint8_t, uint16_t>, 16> events{};
+size_t eventCount = 0;
+
+void recordEvent(void *, const hw::usb::Event &event) {
+   if(event.type == hw::usb::EventType::Out && eventCount < events.size()) {
+      events[eventCount++] = { event.endpoint, event.size };
+   }
+}
+
+// What the hardware does for an OUT packet of endpoint n that it accepts: it
+// writes the length, flips RX_TOG[0] (auto toggle) and raises TRANSFER.
+void receivePacket(UsbDevice &usb, uint8_t n, uint16_t size) {
+   hostUsbhs.RX_LEN = size;
+   ep(n).RX_CTRL ^= USBHS_UEP_R_TOG_DATA1;
+   hostUsbhs.INT_ST = static_cast<uint8_t>(USBHS_UIS_TOKEN_OUT | USBHS_UIS_TOG_OK | n);
+   hostUsbhs.INT_FG = USBHS_UIF_TRANSFER;
+   usb.handleInterrupt();
+}
+
+uint8_t rxResponse(uint8_t n) {
+   return ep(n).RX_CTRL & USBHS_UEP_R_RES_MASK;
+}
+
+void testDoubleBufferedOpen() {
+   UsbDevice usb;
+   begin(usb);
+   CHECK(usb.openEndpoint(0x01, EndpointType::Bulk, 512, true));
+   // Two buffers, in the pool one after the other. The IN register is buffer 1.
+   CHECK(validBuffer(usb, rxDma(1), 512) && validBuffer(usb, txDma(1), 512));
+   CHECK(txDma(1) == rxDma(1) + 512);
+   CHECK(hostUsbhs.UEP_BUF_MOD == USBHS_UEP_BUF_MOD(1));
+   CHECK((hostUsbhs.UEP_CONFIG & USBHS_UEP_R_EN(1)) != 0);
+   CHECK((hostUsbhs.UEP_CONFIG & USBHS_UEP_T_EN(1)) == 0);
+   CHECK(ep(1).RX_CTRL == RxOpen);
+   CHECK(hostUsbhs.UEP_MAX_LEN[1].MAX_LEN == 512);
+
+   // The IN direction of that number cannot open, and a double-buffered
+   // endpoint cannot open on a number with an open IN direction.
+   CHECK(!usb.openEndpoint(0x81, EndpointType::Bulk, 512));
+   CHECK(usb.openEndpoint(0x82, EndpointType::Bulk, 64));
+   CHECK(!usb.openEndpoint(0x02, EndpointType::Bulk, 64, true));
+   // Reopen with the same attributes keeps the buffers. Another mode fails.
+   const uint32_t dma = rxDma(1);
+   CHECK(usb.openEndpoint(0x01, EndpointType::Bulk, 512, true));
+   CHECK(!usb.openEndpoint(0x01, EndpointType::Bulk, 512, false));
+   CHECK(rxDma(1) == dma);
+
+   // The pool (2048 bytes) has 1024 + 64 bytes in use. Two 256-byte buffers
+   // fit, two 512-byte buffers do not.
+   CHECK(usb.openEndpoint(0x03, EndpointType::Bulk, 256, true));
+   CHECK(!usb.openEndpoint(0x04, EndpointType::Bulk, 512, true));
+   usb.closeAllEndpoints();
+   CHECK(hostUsbhs.UEP_BUF_MOD == 0);
+}
+
+void testDoubleBufferedReceive() {
+   UsbDevice usb;
+   resetFakes();
+   eventCount = 0;
+   usb.begin(&recordEvent, nullptr);
+   CHECK(usb.openEndpoint(0x01, EndpointType::Bulk, 64, true));
+   auto *buf0 = const_cast<uint8_t *>(bufferAt(usb, rxDma(1)));
+   auto *buf1 = const_cast<uint8_t *>(bufferAt(usb, txDma(1)));
+   std::array<uint8_t, 64> data{};
+   CHECK(usb.readOut(0x01, data) == 0); // nothing reported yet
+
+   // Not armed yet: the endpoint NAKs.
+   CHECK(rxResponse(1) == USBHS_UEP_R_RES_NAK);
+   CHECK(usb.armOut(0x01));
+   CHECK(rxResponse(1) == USBHS_UEP_R_RES_ACK);
+
+   // First packet goes to buffer 0 (toggle 0 before it). It is reported at
+   // once, and the endpoint stays ACK for the second buffer.
+   std::memset(buf0, 0xA0, 64);
+   receivePacket(usb, 1, 10);
+   CHECK(eventCount == 1 && events[0].first == 1 && events[0].second == 10);
+   CHECK(rxResponse(1) == USBHS_UEP_R_RES_ACK);
+   CHECK(usb.readOut(0x01, data) == 10 && data[0] == 0xA0);
+
+   // Second packet arrives while the software still reads buffer 0: it goes
+   // to buffer 1, waits, and the endpoint NAKs (both buffers busy).
+   std::memset(buf1, 0xB1, 64);
+   receivePacket(usb, 1, 20);
+   CHECK(eventCount == 1);
+   CHECK(rxResponse(1) == USBHS_UEP_R_RES_NAK);
+   CHECK(usb.readOut(0x01, data) == 10 && data[0] == 0xA0); // still the first one
+
+   // armOut() frees buffer 0, reports the waiting packet and arms the endpoint.
+   CHECK(usb.armOut(0x01));
+   CHECK(eventCount == 2 && events[1].second == 20);
+   CHECK(rxResponse(1) == USBHS_UEP_R_RES_ACK);
+   CHECK(usb.readOut(0x01, data) == 20 && data[0] == 0xB1);
+
+   // Third packet: buffer 0 again (the toggle is back at 0). It waits.
+   receivePacket(usb, 1, 30);
+   CHECK(eventCount == 2);
+   CHECK(rxResponse(1) == USBHS_UEP_R_RES_NAK);
+   CHECK(usb.armOut(0x01)); // frees buffer 1, reports the third packet from buffer 0
+   CHECK(eventCount == 3 && events[2].second == 30);
+   CHECK(usb.readOut(0x01, data) == 30 && data[0] == 0xA0);
+
+   // armOut() with nothing waiting frees the buffer and keeps ACK.
+   CHECK(usb.armOut(0x01));
+   CHECK(eventCount == 3 && rxResponse(1) == USBHS_UEP_R_RES_ACK);
+   CHECK(usb.readOut(0x01, data) == 0);
+
+   // A repeated packet (toggle mismatch) changes nothing.
+   hostUsbhs.RX_LEN = 5;
+   hostUsbhs.INT_ST = static_cast<uint8_t>(USBHS_UIS_TOKEN_OUT | 1); // no TOG_OK
+   hostUsbhs.INT_FG = USBHS_UIF_TRANSFER;
+   usb.handleInterrupt();
+   CHECK(eventCount == 3 && rxResponse(1) == USBHS_UEP_R_RES_ACK);
+}
+
+void testDoubleBufferedStallAndNak() {
+   UsbDevice usb;
+   resetFakes();
+   eventCount = 0;
+   usb.begin(&recordEvent, nullptr);
+   CHECK(usb.openEndpoint(0x01, EndpointType::Bulk, 64, true));
+   CHECK(usb.armOut(0x01));
+   receivePacket(usb, 1, 7); // reported, buffer 0 held
+   receivePacket(usb, 1, 8); // pending in buffer 1
+   CHECK(eventCount == 1);
+
+   // Clearing STALL drops both packets and returns to buffer 0 (DATA0).
+   usb.setStall(0x01, true);
+   CHECK(rxResponse(1) == USBHS_UEP_R_RES_STALL);
+   usb.setStall(0x01, false);
+   CHECK(ep(1).RX_CTRL == RxOpen);
+   std::array<uint8_t, 64> data{};
+   CHECK(usb.readOut(0x01, data) == 0);
+   CHECK(usb.armOut(0x01)); // nothing pending: no event
+   CHECK(eventCount == 1);
+   CHECK(rxResponse(1) == USBHS_UEP_R_RES_ACK);
+
+   // setNak() disarms. The next armOut() arms again.
+   usb.setNak(0x01);
+   CHECK(rxResponse(1) == USBHS_UEP_R_RES_NAK);
+   CHECK(usb.armOut(0x01));
+   CHECK(rxResponse(1) == USBHS_UEP_R_RES_ACK);
+}
+
+// An IN packet that the host acknowledged: the hardware flips T_TOG[0] and the handler runs.
+void completeIn(UsbDevice &usb, uint8_t n, bool hardwareFlips = true) {
+   if(hardwareFlips) {
+      ep(n).TX_CTRL ^= USBHS_UEP_T_TOG_DATA1;
+   }
+   hostUsbhs.INT_ST = static_cast<uint8_t>(USBHS_UIS_TOKEN_IN | n);
+   hostUsbhs.INT_FG = USBHS_UIF_TRANSFER;
+   usb.handleInterrupt();
+}
+
+void testReopenResetsDirections() {
+   UsbDevice usb;
+   resetFakes();
+   eventCount = 0;
+   usb.begin(&recordEvent, nullptr);
+   CHECK(usb.openEndpoint(0x01, EndpointType::Bulk, 64, true));
+   CHECK(usb.openEndpoint(0x02, EndpointType::Bulk, 64));
+   CHECK(usb.armOut(0x01));
+   receivePacket(usb, 1, 7);  // reported
+   receivePacket(usb, 1, 8);  // pending in buffer 1
+   CHECK(usb.armOut(0x02));
+   receivePacket(usb, 2, 3); // the toggle is DATA1 now
+   CHECK((ep(2).RX_CTRL & USBHS_UEP_R_TOG_DATA1) != 0);
+   const size_t events = eventCount;
+
+   // SET_INTERFACE: the controller layer closes and opens the endpoints again.
+   CHECK(usb.openEndpoint(0x01, EndpointType::Bulk, 64, true));
+   CHECK(usb.openEndpoint(0x02, EndpointType::Bulk, 64));
+   CHECK(ep(1).RX_CTRL == RxOpen);
+   CHECK(ep(2).RX_CTRL == RxOpen); // DATA0 again
+   // No packet from before: armOut() reports nothing, and readOut() has nothing.
+   CHECK(usb.armOut(0x01));
+   CHECK(eventCount == events);
+   std::array<uint8_t, 64> data{};
+   CHECK(usb.readOut(0x01, data) == 0);
+   // The next packet goes to buffer 0 again.
+   receivePacket(usb, 1, 9);
+   CHECK(eventCount == events + 1 && events + 1 > 0 && ::events[eventCount - 1].second == 9);
+}
+
+// The handler takes the data toggle from the software copy and writes it to the hardware, so a flip that
+// a read-modify-write of the main loop undid does not stay.
+void testLostToggleFlipIsRepaired() {
+   UsbDevice usb;
+   resetFakes();
+   eventCount = 0;
+   usb.begin(&recordEvent, nullptr);
+   CHECK(usb.openEndpoint(0x81, EndpointType::Bulk, 64));
+   CHECK(usb.openEndpoint(0x02, EndpointType::Bulk, 64, true));
+
+   // IN: the packet is taken (DATA0 -> DATA1), but setNak() wrote DATA0 back before the handler ran.
+   const std::array<uint8_t, 2> packet{ 1, 2 };
+   CHECK(usb.startIn(0x81, packet));
+   completeIn(usb, 1, false); // the flip is lost: T_TOG is still DATA0
+   CHECK(ep(1).TX_CTRL == (USBHS_UEP_T_TOG_AUTO | USBHS_UEP_T_TOG_DATA1 | USBHS_UEP_T_RES_NAK));
+   // The next packet is DATA0 again after the next completion.
+   CHECK(usb.startIn(0x81, packet));
+   completeIn(usb, 1, true);
+   CHECK((ep(1).TX_CTRL & USBHS_UEP_T_TOG_DATA1) == 0);
+
+   // Double-buffered OUT: a lost flip does not send the next packet into the buffer of the last one.
+   CHECK(usb.armOut(0x02));
+   hostUsbhs.RX_LEN = 4;
+   hostUsbhs.INT_ST = static_cast<uint8_t>(USBHS_UIS_TOKEN_OUT | USBHS_UIS_TOG_OK | 2);
+   hostUsbhs.INT_FG = USBHS_UIF_TRANSFER;
+   usb.handleInterrupt(); // the hardware flip is lost: RX_TOG[0] is still 0
+   CHECK((ep(2).RX_CTRL & USBHS_UEP_R_TOG_DATA1) != 0); // the handler wrote DATA1 = buffer 1 next
+   CHECK(eventCount == 1);
+}
+
+// A STALL that the main loop set after the packet completed stays.
+void testStallSurvivesHandler() {
+   UsbDevice usb;
+   resetFakes();
+   usb.begin(&onEvent, nullptr);
+   CHECK(usb.openEndpoint(0x81, EndpointType::Bulk, 64));
+   CHECK(usb.openEndpoint(0x02, EndpointType::Bulk, 64));
+   const std::array<uint8_t, 1> packet{ 1 };
+   CHECK(usb.startIn(0x81, packet));
+   usb.setStall(0x81, true);
+   completeIn(usb, 1);
+   CHECK(usb.isStalled(0x81));
+   CHECK(usb.armOut(0x02));
+   usb.setStall(0x02, true);
+   receivePacket(usb, 2, 1);
+   CHECK(usb.isStalled(0x02));
+}
+
+size_t inCompleteCount = 0;
+
+void countInComplete(void *, const hw::usb::Event &event) {
+   if(event.type == hw::usb::EventType::InComplete) {
+      ++inCompleteCount;
+   }
+}
+
+// A completion that waits for the handler is handled inside setNak(), setStall() and the reopen: no event
+// follows later, and the late handler cannot undo the DATA0 reset or a NAK.
+void testWaitingCompletionIsHandledBeforeReset() {
+   // IN, reopen (SET_INTERFACE): the old packet is reported at once, and DATA0 stays.
+   {
+      UsbDevice usb;
+      resetFakes();
+      inCompleteCount = 0;
+      usb.begin(&countInComplete, nullptr);
+      CHECK(usb.openEndpoint(0x81, EndpointType::Bulk, 64));
+      const std::array<uint8_t, 2> packet{ 1, 2 };
+      CHECK(usb.startIn(0x81, packet));
+      hostUsbhs.INT_ST = static_cast<uint8_t>(USBHS_UIS_TOKEN_IN | 1);
+      hostUsbhs.INT_FG = USBHS_UIF_TRANSFER;
+      CHECK(inCompleteCount == 0);
+      CHECK(usb.openEndpoint(0x81, EndpointType::Bulk, 64));
+      CHECK(inCompleteCount == 1); // reported inside the reopen
+      hostUsbhs.INT_FG = 0; // the fake has no write-1-to-clear: the driver wrote TRANSFER
+      usb.handleInterrupt();  // nothing left
+      CHECK(inCompleteCount == 1);
+      CHECK((ep(1).TX_CTRL & USBHS_UEP_T_TOG_DATA1) == 0);
+   }
+   // Double-buffered OUT: setNak() after a completion keeps NAK, and a clear-halt keeps DATA0.
+   {
+      UsbDevice usb;
+      resetFakes();
+      eventCount = 0;
+      usb.begin(&recordEvent, nullptr);
+      CHECK(usb.openEndpoint(0x02, EndpointType::Bulk, 64, true));
+      CHECK(usb.armOut(0x02));
+      hostUsbhs.RX_LEN = 4;
+      hostUsbhs.INT_ST = static_cast<uint8_t>(USBHS_UIS_TOKEN_OUT | USBHS_UIS_TOG_OK | 2);
+      hostUsbhs.INT_FG = USBHS_UIF_TRANSFER;
+      usb.setNak(0x02);
+      CHECK(eventCount == 1);
+      CHECK(rxResponse(2) == USBHS_UEP_R_RES_NAK);
+      hostUsbhs.INT_FG = 0;
+      usb.handleInterrupt();
+      CHECK(eventCount == 1);
+      CHECK(rxResponse(2) == USBHS_UEP_R_RES_NAK);
+      // armOut() reports the packet that waits and arms again. After setNak(), a packet that was in flight
+      // does not turn the NAK into ACK.
+      CHECK(usb.armOut(0x02));
+      CHECK(rxResponse(2) == USBHS_UEP_R_RES_ACK);
+      usb.setNak(0x02);
+      hostUsbhs.INT_ST = static_cast<uint8_t>(USBHS_UIS_TOKEN_OUT | USBHS_UIS_TOG_OK | 2);
+      hostUsbhs.INT_FG = USBHS_UIF_TRANSFER;
+      usb.handleInterrupt();
+      CHECK(rxResponse(2) == USBHS_UEP_R_RES_NAK);
+      CHECK(usb.armOut(0x02));
+      CHECK(rxResponse(2) == USBHS_UEP_R_RES_ACK);
+      // After armOut(), the IRQ handler leaves the endpoint double-buffered (ACK).
+      const size_t beforeArmed = eventCount;
+      hostUsbhs.INT_ST = static_cast<uint8_t>(USBHS_UIS_TOKEN_OUT | USBHS_UIS_TOG_OK | 2);
+      hostUsbhs.INT_FG = USBHS_UIF_TRANSFER;
+      usb.handleInterrupt();
+      CHECK(eventCount == beforeArmed + 1);
+      CHECK(rxResponse(2) == USBHS_UEP_R_RES_ACK);
+      hostUsbhs.INT_FG = 0;
+      CHECK(usb.armOut(0x02));
+
+      hostUsbhs.INT_ST = static_cast<uint8_t>(USBHS_UIS_TOKEN_OUT | USBHS_UIS_TOG_OK | 2);
+      hostUsbhs.INT_FG = USBHS_UIF_TRANSFER;
+      usb.setStall(0x02, false);
+      CHECK(eventCount == beforeArmed + 2); // reported inside the call
+      hostUsbhs.INT_FG = 0;
+      usb.handleInterrupt();
+      CHECK(ep(2).RX_CTRL == RxOpen);
+   }
+   // Not pending: a transfer of another endpoint or direction, a wrong toggle, or a handled flag.
+   {
+      UsbDevice usb;
+      resetFakes();
+      eventCount = 0;
+      usb.begin(&recordEvent, nullptr);
+      CHECK(usb.openEndpoint(0x81, EndpointType::Bulk, 64));
+      CHECK(usb.openEndpoint(0x02, EndpointType::Bulk, 64));
+      usb.setNak(0x03); // not open: no effect
+      hostUsbhs.INT_ST = static_cast<uint8_t>(USBHS_UIS_TOKEN_IN | 1);
+      hostUsbhs.INT_FG = USBHS_UIF_TRANSFER;
+      usb.setNak(0x02); // other direction
+      CHECK(eventCount == 0);
+      hostUsbhs.INT_ST = static_cast<uint8_t>(USBHS_UIS_TOKEN_OUT | 2); // wrong toggle
+      usb.setNak(0x02);
+      CHECK(eventCount == 0);
+      hostUsbhs.INT_FG = 0;
+      hostUsbhs.INT_ST = static_cast<uint8_t>(USBHS_UIS_TOKEN_IN | 1);
+      usb.setNak(0x81);
+      CHECK(eventCount == 0);
+   }
 }
 
 void testStallAndNak() {
@@ -490,6 +833,13 @@ int main() {
    testStartIn();
    testArmOutAndReadOut();
    testStallAndNak();
+   testReopenResetsDirections();
+   testLostToggleFlipIsRepaired();
+   testStallSurvivesHandler();
+   testWaitingCompletionIsHandledBeforeReset();
+   testDoubleBufferedOpen();
+   testDoubleBufferedReceive();
+   testDoubleBufferedStallAndNak();
    testEndpointCountLimit();
    if(failures == 0) {
       std::printf("usb-v307: all checks passed\n");
