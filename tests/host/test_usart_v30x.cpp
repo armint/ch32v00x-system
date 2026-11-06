@@ -11,8 +11,8 @@ USART_TypeDef hostUsart1;
 USART_TypeDef hostUsart2;
 
 int main() {
-   Usart u1(USART1);
-   Usart u2(USART2);
+   hw::Usart u1(USART1);
+   hw::Usart u2(USART2);
 
    // No prescaler: the bus clock is SystemCoreClock.
    hostRcc.CFGR0 = 0;
@@ -39,6 +39,35 @@ int main() {
    hostRcc.CFGR0 = 0xFFFFFFFFul;
    u1.setBaudRate(115200);
    CHECK(hostUsart1.BRR == (9000000 + 57600) / 115200);
+
+   // getClockFrequency() is the bus clock of the USART.
+   hostRcc.CFGR0 = 4ul << 11; // PPRE2 /2
+   CHECK(u1.getClockFrequency() == 72000000);
+   CHECK(u2.getClockFrequency() == 144000000);
+
+   // setFrameFormat(): 8 data bits with parity are a 9-bit word (M). Other bits of CTLR1 stay.
+   constexpr uint16_t te = 0x0008;
+   hostUsart1.CTLR1 = USART_CTLR1_UE | te;
+   hostUsart1.CTLR2 = 0; // no stop bits yet
+   CHECK(u1.setFrameFormat(hw::Usart::DataBits::Eight, hw::Usart::Parity::Even, hw::Usart::StopBits::StopBits_2));
+   CHECK(hostUsart1.CTLR1 == (USART_CTLR1_UE | te | USART_CTLR1_PCE | USART_CTLR1_M));
+   CHECK((hostUsart1.CTLR2 & USART_CTLR2_STOP) == USART_CTLR2_STOP_1);
+   // 7 data bits with odd parity are an 8-bit word: M is clear.
+   CHECK(u1.setFrameFormat(hw::Usart::DataBits::Seven, hw::Usart::Parity::Odd, hw::Usart::StopBits::StopBits_1));
+   CHECK(hostUsart1.CTLR1 == (USART_CTLR1_UE | te | USART_CTLR1_PCE | USART_CTLR1_PS));
+   CHECK((hostUsart1.CTLR2 & USART_CTLR2_STOP) == 0);
+   // 8 data bits without parity: no parity, no M.
+   CHECK(u1.setFrameFormat(hw::Usart::DataBits::Eight, hw::Usart::Parity::None, hw::Usart::StopBits::StopBits_1));
+   CHECK(hostUsart1.CTLR1 == (USART_CTLR1_UE | te));
+   // 7 data bits without parity cannot be made: false, and nothing changes.
+   hostUsart1.CTLR2 = USART_CTLR2_STOP_0;
+   CHECK(!u1.setFrameFormat(hw::Usart::DataBits::Seven, hw::Usart::Parity::None, hw::Usart::StopBits::StopBits_2));
+   CHECK(hostUsart1.CTLR1 == (USART_CTLR1_UE | te));
+   CHECK(hostUsart1.CTLR2 == USART_CTLR2_STOP_0);
+   // A USART that is off stays off.
+   hostUsart1.CTLR1 = 0;
+   CHECK(u1.setFrameFormat(hw::Usart::DataBits::Eight, hw::Usart::Parity::Even, hw::Usart::StopBits::StopBits_1));
+   CHECK((hostUsart1.CTLR1 & USART_CTLR1_UE) == 0);
 
    if(failures == 0) {
       std::printf("usart-v30x: all checks passed\n");
