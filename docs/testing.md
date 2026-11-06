@@ -122,6 +122,7 @@ CMake stops with an error when you set it for a family other than CH32V30X.
 The `build-v307-test-image` CI job checks the vector table.
 The flash starts at address `0x0`. `Reset_Handler` must be at `0x0`
 and `g_pfnVectors` at `0x4`. The job fails if an address is different.
+The job also fails if the image has a separate `.sbss` section, because the start-up code clears only the `.bss` range.
 
 The image does not test the USB driver.
 The USB hardware test is the [`usb-loopback`](https://gitlab.vandertogt.org/riscv/ch32v00x-examples/-/tree/main/examples/usb-loopback) example of ch32v00x-examples.
@@ -138,7 +139,7 @@ names. The image has the RISC-V toolchain. Each build job looks for
 | `build` | Builds the `ch32v00x-system` library at C++23 for CH32V003, CH32V006, CH32V20X and CH32V30X. The job fails if CMake fetches span-compat. |
 | `build-cpp17` | Builds the same four devices at C++17. The job fails if CMake does not use `span_compat::span`. |
 | `host-tests` | Runs the host tests from `tests/host` with the native compiler. |
-| `build-v307-test-image` | Links the [CH32V307 test image](#test-images) and checks the address of the vector table. |
+| `build-v307-test-image` | Links the [CH32V307 test image](#test-images) and checks the address of the vector table and that `.sbss` is inside `.bss`. |
 
 The build jobs use the device macro, `-march` and `-mabi` values of
 [Compiler flags per chip](building.md#compiler-flags-per-chip). The CH32V00X
