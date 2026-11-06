@@ -161,6 +161,9 @@ typedef enum IRQn {
 #define DMA1_BASE 0x40020000UL
 #define DMA2_BASE 0x40020400UL
 #define FLASH_R_BASE 0x40022000UL /* Flash controller (FPEC), RM chapter 32 */
+#define SPI1_BASE 0x40013000UL
+#define SPI2_BASE 0x40003800UL
+#define SPI3_BASE 0x40003C00UL
 
 typedef struct {
    volatile uint32_t CTLR;     /* 0x00 Clock control */
@@ -219,6 +222,7 @@ typedef struct {
 #define RCC_UART7EN (1ul << 7)
 #define RCC_UART8EN (1ul << 8)
 #define RCC_SPI2EN (1ul << 14)
+#define RCC_SPI3EN (1ul << 15)
 #define RCC_USART2EN (1ul << 17)
 #define RCC_USART3EN (1ul << 18)
 #define RCC_UART4EN (1ul << 19)
@@ -243,9 +247,11 @@ typedef struct {
 #define RCC_ADC2RST (1ul << 10)
 #define RCC_TIM1RST (1ul << 11)
 #define RCC_SPI1RST (1ul << 12)
+#define RCC_TIM10RST (1ul << 20)
 
 /* APB1 peripheral reset bits (RCC_APB1PRSTR) */
 #define RCC_TIM3RST (1ul << 1)
+#define RCC_SPI3RST (1ul << 15)
 
 /* RCC_CFGR2 fields */
 #define RCC_CFGR2_PREDIV1_MASK (0xFul << 0)
@@ -437,6 +443,70 @@ typedef struct {
 /* USART_CTLR3 bits */
 #define USART_CTLR3_DMAR ((uint16_t)0x0040)
 #define USART_CTLR3_DMAT ((uint16_t)0x0080)
+
+/* SPI, RM chapter 20. 16-bit registers, as in the CH32V20x header. SPI1 has no
+ * I2SPR (I2S is on SPI2 and SPI3 only). The I2S registers are not used here. */
+typedef struct {
+   volatile uint16_t CTLR1; /* 0x00 Control 1 */
+   uint16_t RESERVED0;
+   volatile uint16_t CTLR2; /* 0x04 Control 2 */
+   uint16_t RESERVED1;
+   volatile uint16_t STATR; /* 0x08 Status */
+   uint16_t RESERVED2;
+   volatile uint16_t DATAR; /* 0x0C Data */
+   uint16_t RESERVED3;
+   volatile uint16_t CRCR; /* 0x10 CRC polynomial */
+   uint16_t RESERVED4;
+   volatile uint16_t RCRCR; /* 0x14 Receive CRC */
+   uint16_t RESERVED5;
+   volatile uint16_t TCRCR; /* 0x18 Transmit CRC */
+   uint16_t RESERVED6;
+   volatile uint16_t I2SCFGR; /* 0x1C I2S configuration */
+   uint16_t RESERVED7;
+   volatile uint16_t I2SPR; /* 0x20 I2S prescaler */
+   uint16_t RESERVED8;
+   volatile uint16_t HSCR; /* 0x24 High-speed control */
+   uint16_t RESERVED9;
+} SPI_TypeDef;
+
+#define SPI1 ((SPI_TypeDef *)SPI1_BASE)
+#define SPI2 ((SPI_TypeDef *)SPI2_BASE)
+#define SPI3 ((SPI_TypeDef *)SPI3_BASE)
+
+/* SPI_CTLR1 bits */
+#define SPI_CTLR1_CPHA ((uint16_t)0x0001)
+#define SPI_CTLR1_CPOL ((uint16_t)0x0002)
+#define SPI_CTLR1_MSTR ((uint16_t)0x0004)
+#define SPI_CTLR1_BR ((uint16_t)0x0038) /* fPCLK / 2^(BR + 1) */
+#define SPI_CTLR1_BR_0 ((uint16_t)0x0008)
+#define SPI_CTLR1_BR_1 ((uint16_t)0x0010)
+#define SPI_CTLR1_BR_2 ((uint16_t)0x0020)
+#define SPI_CTLR1_SPE ((uint16_t)0x0040)
+#define SPI_CTLR1_LSBFIRST ((uint16_t)0x0080)
+#define SPI_CTLR1_SSI ((uint16_t)0x0100)
+#define SPI_CTLR1_SSM ((uint16_t)0x0200)
+#define SPI_CTLR1_RXONLY ((uint16_t)0x0400)
+#define SPI_CTLR1_DFF ((uint16_t)0x0800) /* 16-bit frame */
+#define SPI_CTLR1_CRCNEXT ((uint16_t)0x1000)
+#define SPI_CTLR1_CRCEN ((uint16_t)0x2000)
+#define SPI_CTLR1_BIDIOE ((uint16_t)0x4000)
+#define SPI_CTLR1_BIDIMODE ((uint16_t)0x8000)
+
+/* SPI_CTLR2 bits */
+#define SPI_CTLR2_RXDMAEN ((uint16_t)0x0001)
+#define SPI_CTLR2_TXDMAEN ((uint16_t)0x0002)
+#define SPI_CTLR2_SSOE ((uint16_t)0x0004)
+#define SPI_CTLR2_ERRIE ((uint16_t)0x0020)
+#define SPI_CTLR2_RXNEIE ((uint16_t)0x0040)
+#define SPI_CTLR2_TXEIE ((uint16_t)0x0080)
+
+/* SPI_STATR bits */
+#define SPI_STATR_RXNE ((uint16_t)0x0001)
+#define SPI_STATR_TXE ((uint16_t)0x0002)
+#define SPI_STATR_CRCERR ((uint16_t)0x0010)
+#define SPI_STATR_MODF ((uint16_t)0x0020)
+#define SPI_STATR_OVR ((uint16_t)0x0040)
+#define SPI_STATR_BSY ((uint16_t)0x0080)
 
 /* Timers. All timers have this layout. The SVD gives each register 32 bits,
  * so CH1CVR to CH4CVR are consecutive 32-bit words (Timer indexes them).
