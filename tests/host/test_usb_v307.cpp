@@ -457,36 +457,38 @@ void testDoubleBufferedReceive() {
    CHECK(rxResponse(1) == USBHS_UEP_R_RES_ACK);
 
    // First packet goes to buffer 0 (toggle 0 before it). It is reported at
-   // once, and the endpoint stays ACK for the second buffer.
+   // once, and the endpoint NAKs while the software holds it (issue #25).
    std::memset(buf0, 0xA0, 64);
    receivePacket(usb, 1, 10);
    CHECK(eventCount == 1 && events[0].first == 1 && events[0].second == 10);
-   CHECK(rxResponse(1) == USBHS_UEP_R_RES_ACK);
+   CHECK(rxResponse(1) == USBHS_UEP_R_RES_NAK);
    CHECK(usb.readOut(0x01, data) == 10 && data[0] == 0xA0);
 
-   // Second packet arrives while the software still reads buffer 0: it goes
-   // to buffer 1, waits, and the endpoint NAKs (both buffers busy).
+   // A second packet that the handler finds while the software still reads
+   // buffer 0 (it came in the INT_BUSY window): it is in buffer 1 and waits.
    std::memset(buf1, 0xB1, 64);
    receivePacket(usb, 1, 20);
    CHECK(eventCount == 1);
    CHECK(rxResponse(1) == USBHS_UEP_R_RES_NAK);
    CHECK(usb.readOut(0x01, data) == 10 && data[0] == 0xA0); // still the first one
 
-   // armOut() frees buffer 0, reports the waiting packet and arms the endpoint.
+   // armOut() frees buffer 0 and reports the waiting packet. The software
+   // holds that one now, so the endpoint stays NAK.
    CHECK(usb.armOut(0x01));
    CHECK(eventCount == 2 && events[1].second == 20);
-   CHECK(rxResponse(1) == USBHS_UEP_R_RES_ACK);
+   CHECK(rxResponse(1) == USBHS_UEP_R_RES_NAK);
    CHECK(usb.readOut(0x01, data) == 20 && data[0] == 0xB1);
 
-   // Third packet: buffer 0 again (the toggle is back at 0). It waits.
+   // Third packet, again in the window: buffer 0 (the toggle is back at 0). It waits.
    receivePacket(usb, 1, 30);
    CHECK(eventCount == 2);
    CHECK(rxResponse(1) == USBHS_UEP_R_RES_NAK);
    CHECK(usb.armOut(0x01)); // frees buffer 1, reports the third packet from buffer 0
    CHECK(eventCount == 3 && events[2].second == 30);
+   CHECK(rxResponse(1) == USBHS_UEP_R_RES_NAK);
    CHECK(usb.readOut(0x01, data) == 30 && data[0] == 0xA0);
 
-   // armOut() with nothing waiting frees the buffer and keeps ACK.
+   // armOut() with nothing waiting frees the buffer and sets ACK.
    CHECK(usb.armOut(0x01));
    CHECK(eventCount == 3 && rxResponse(1) == USBHS_UEP_R_RES_ACK);
    CHECK(usb.readOut(0x01, data) == 0);
@@ -526,6 +528,57 @@ void testDoubleBufferedStallAndNak() {
    CHECK(rxResponse(1) == USBHS_UEP_R_RES_NAK);
    CHECK(usb.armOut(0x01));
    CHECK(rxResponse(1) == USBHS_UEP_R_RES_ACK);
+}
+
+// The controller as the board test of issue #25 shows it: it accepts an OUT packet whenever RX_RES is ACK,
+// also while a TRANSFER interrupt waits (INT_BUSY does not NAK then). It writes the packet into the buffer
+// that RX_TOG[0] selects, sets RX_LEN, flips RX_TOG[0] and sets TRANSFER. The handler does not run (the
+// main loop masks the interrupt). Returns false if the endpoint answers NAK.
+bool controllerAccepts(UsbDevice &usb, uint8_t n, uint8_t fill, uint16_t size) {
+   if(rxResponse(n) != USBHS_UEP_R_RES_ACK) {
+      return false;
+   }
+   const bool second = (ep(n).RX_CTRL & USBHS_UEP_R_TOG_DATA1) != 0;
+   std::memset(const_cast<uint8_t *>(bufferAt(usb, second ? txDma(n) : rxDma(n))), fill, size);
+   hostUsbhs.RX_LEN = size;
+   ep(n).RX_CTRL ^= USBHS_UEP_R_TOG_DATA1;
+   hostUsbhs.INT_ST = static_cast<uint8_t>(USBHS_UIS_TOKEN_OUT | USBHS_UIS_TOG_OK | n);
+   hostUsbhs.INT_FG = USBHS_UIF_TRANSFER;
+   return true;
+}
+
+// Issue #25: the host sends back to back while the main loop reads a packet. While the software holds a
+// packet, the endpoint must answer NAK: else the controller overwrites both buffers before the handler
+// runs, and RX_LEN belongs to another packet.
+void testDoubleBufferedNakWhileHeld() {
+   UsbDevice usb;
+   resetFakes();
+   eventCount = 0;
+   usb.begin(&recordEvent, nullptr);
+   CHECK(usb.openEndpoint(0x01, EndpointType::Bulk, 64, true));
+   CHECK(usb.armOut(0x01));
+   std::array<uint8_t, 64> data{};
+
+   CHECK(controllerAccepts(usb, 1, 0xA0, 10));
+   usb.handleInterrupt();
+   CHECK(eventCount == 1 && events[0].second == 10);
+   // The main loop holds packet 0. The host keeps sending: the controller must not take a packet.
+   CHECK(!controllerAccepts(usb, 1, 0xB1, 20));
+   CHECK(!controllerAccepts(usb, 1, 0xC2, 30));
+   CHECK(usb.readOut(0x01, data) == 10 && data[0] == 0xA0 && data[9] == 0xA0);
+
+   // armOut() frees the buffer: the next packet goes to buffer 1, and the endpoint is NAK again.
+   CHECK(usb.armOut(0x01));
+   CHECK(controllerAccepts(usb, 1, 0xB1, 20));
+   usb.handleInterrupt();
+   CHECK(eventCount == 2 && events[1].second == 20);
+   CHECK(!controllerAccepts(usb, 1, 0xC2, 30));
+   CHECK(usb.readOut(0x01, data) == 20 && data[0] == 0xB1);
+   CHECK(usb.armOut(0x01));
+   CHECK(controllerAccepts(usb, 1, 0xC2, 30)); // buffer 0 again
+   usb.handleInterrupt();
+   CHECK(eventCount == 3 && events[2].second == 30);
+   CHECK(usb.readOut(0x01, data) == 30 && data[0] == 0xC2);
 }
 
 // An IN packet that the host acknowledged: the hardware flips T_TOG[0] and the handler runs.
@@ -675,13 +728,13 @@ void testWaitingCompletionIsHandledBeforeReset() {
       CHECK(rxResponse(2) == USBHS_UEP_R_RES_NAK);
       CHECK(usb.armOut(0x02));
       CHECK(rxResponse(2) == USBHS_UEP_R_RES_ACK);
-      // After armOut(), the IRQ handler leaves the endpoint double-buffered (ACK).
+      // After armOut(), the IRQ handler reports the packet and sets NAK (issue #25).
       const size_t beforeArmed = eventCount;
       hostUsbhs.INT_ST = static_cast<uint8_t>(USBHS_UIS_TOKEN_OUT | USBHS_UIS_TOG_OK | 2);
       hostUsbhs.INT_FG = USBHS_UIF_TRANSFER;
       usb.handleInterrupt();
       CHECK(eventCount == beforeArmed + 1);
-      CHECK(rxResponse(2) == USBHS_UEP_R_RES_ACK);
+      CHECK(rxResponse(2) == USBHS_UEP_R_RES_NAK);
       hostUsbhs.INT_FG = 0;
       CHECK(usb.armOut(0x02));
 
@@ -840,6 +893,7 @@ int main() {
    testDoubleBufferedOpen();
    testDoubleBufferedReceive();
    testDoubleBufferedStallAndNak();
+   testDoubleBufferedNakWhileHeld();
    testEndpointCountLimit();
    if(failures == 0) {
       std::printf("usb-v307: all checks passed\n");

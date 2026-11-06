@@ -58,14 +58,17 @@ namespace hw {
 // begin() and end() are for the main loop only.
 //
 // Double-buffered bulk OUT (RM 22.2.2.3, table 21-3): openEndpoint() with
-// doubleBuffered true gives an OUT endpoint two buffers. The hardware
-// receives the next packet into the second buffer while the software still
-// reads the first. The interface stays the same as in system-stm32: one Out
-// event per armOut(), and readOut() reads that packet. A packet that arrives
-// before armOut() waits in its buffer, and armOut() reports it. The
-// endpoint number then has no IN direction (the hardware uses the IN buffer
-// address register as the second OUT buffer). The hardware does not NAK when
-// both buffers are full, so the interrupt handler sets NAK then.
+// doubleBuffered true gives an OUT endpoint two buffers, and the hardware
+// fills them in turn. The interface stays the same as in system-stm32: one Out
+// event per armOut(), and readOut() reads that packet. The endpoint number
+// then has no IN direction (the hardware uses the IN buffer address register
+// as the second OUT buffer). The handler sets NAK after each packet, as for a
+// single buffer, so the second buffer does not take a packet while the
+// software holds one: the board test of issue #25 showed that the controller
+// keeps ACKing while a TRANSFER interrupt waits (INT_BUSY did not NAK), and
+// overwrote both buffers. Thus a double buffer gives no throughput gain now.
+// A packet that the handler finds while the software holds one (the INT_BUSY
+// window) waits in its buffer, and armOut() reports it.
 // setNak() and setStall() on an endpoint that answers ACK do a read-modify-write
 // of the control byte, and a packet that completes in between can lose its
 // toggle flip. The driver keeps the toggle in software and writes it back in
@@ -224,7 +227,6 @@ class UsbDevice {
       // double-buffered OUT endpoint it is also the buffer that receives the next packet.
       uint8_t toggle = 0;
       bool doubleBuffered = false;
-      bool nakHeld = false; // OUT: setNak() until the next armOut(); the handler does not set ACK then
       uint8_t reported = NoBuffer; // the buffer that the software reads (readOut())
       uint8_t pending = NoBuffer;  // a received packet that waits for armOut()
    };

@@ -263,15 +263,15 @@ bool UsbDevice::armOut(uint8_t address) {
    const uint8_t n = usb::endpointNumber(address);
    if(dir->doubleBuffered) {
       Direction &out = _endpoints[n].out;
-      out.nakHeld = false;
       out.reported = NoBuffer;
       if(out.pending != NoBuffer) {
+         // The software holds this packet now: the endpoint stays NAK until the next armOut().
          const uint8_t buffer = out.pending;
          out.pending = NoBuffer;
          reportDoubleBuffered(n, buffer);
+         return true;
       }
-      // The endpoint stays ACK after a packet while the buffer that the hardware fills next is free (the
-      // handler sets NAK when it is not). Write only when it is NAK: no packet is in flight then.
+      // Write only when it is not ACK: no packet is in flight then.
       if((ctrl(n).RX_CTRL & USBHS_UEP_R_RES_MASK) != USBHS_UEP_R_RES_ACK) {
          setRxResponse(n, USBHS_UEP_R_RES_ACK);
       }
@@ -376,9 +376,6 @@ void UsbDevice::setNak(uint8_t address) {
    if(dir == nullptr || !dir->open) {
       return;
    }
-   if(!usb::isInEndpoint(address)) {
-      dir->nakHeld = true; // before the drain: its handler run must not write ACK
-   }
    drainCompleted(address);
    uint8_t n = usb::endpointNumber(address);
    if(usb::isInEndpoint(address)) {
@@ -393,7 +390,6 @@ void UsbDevice::resetDirection(uint8_t address) {
    const uint8_t n = usb::endpointNumber(address);
    Direction &dir = usb::isInEndpoint(address) ? _endpoints[n].in : _endpoints[n].out;
    dir.toggle = 0;
-   dir.nakHeld = false;
    if(usb::isInEndpoint(address)) {
       ctrl(n).T_LEN = 0;
       ctrl(n).TX_CTRL = USBHS_UEP_T_TOG_AUTO | USBHS_UEP_T_RES_NAK;
@@ -460,20 +456,14 @@ void UsbDevice::handleTransfer(uint8_t status, bool setupPending) {
          out.toggle ^= 1;
          uint8_t response = (ctrl(n).RX_CTRL & USBHS_UEP_R_RES_MASK) == USBHS_UEP_R_RES_STALL ? USBHS_UEP_R_RES_STALL : USBHS_UEP_R_RES_NAK;
          if(out.doubleBuffered) {
+            // NAK after each packet, as single-buffered: the controller does not NAK while TRANSFER waits
+            // (issue #25), so an ACK while the software holds a packet lets it overwrite both buffers.
             (buffer == 0 ? out.received : out.received1) = size;
+            ctrl(n).RX_CTRL = controlByte(out.toggle, response);
             if(out.reported == NoBuffer) {
-               // The software has no packet: report this one. The hardware fills the other buffer next, so the
-               // endpoint stays ACK.
-               if(response == USBHS_UEP_R_RES_NAK && !out.nakHeld) {
-                  response = USBHS_UEP_R_RES_ACK;
-               }
-               ctrl(n).RX_CTRL = controlByte(out.toggle, response);
                reportDoubleBuffered(n, buffer);
             } else {
-               // The software reads the other buffer, which the hardware would fill next: NAK until armOut()
-               // reports this packet.
-               out.pending = buffer;
-               ctrl(n).RX_CTRL = controlByte(out.toggle, response);
+               out.pending = buffer; // armOut() reports it
             }
             break;
          }
