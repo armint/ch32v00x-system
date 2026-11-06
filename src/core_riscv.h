@@ -334,8 +334,14 @@ __attribute__((always_inline)) RV_STATIC_INLINE void __WFE(void) {
 /*********************************************************************
  * @fn      __WFI
  *
- * @brief   Wait for Interrupt. Clears SCTLR.WFITOWFE and runs one wfi, so
- *          a pending interrupt ends the wait also when MIE is 0.
+ * @brief   Wait for Interrupt. Clears SCTLR.WFITOWFE and runs one wfi.
+ *          Call it with interrupts enabled (mstatus.MIE = 1). Measured on
+ *          a CH32V307 (QingKe V4F): with MIE = 0 a pending interrupt does
+ *          NOT end the wfi, whether WFITOWFE is set or not. Thus the
+ *          "__disable_irq(); check; __WFI(); __enable_irq();" pattern
+ *          sleeps for good. With MIE = 1 an interrupt that arrives between
+ *          the check and the wfi runs its handler first, and the core then
+ *          sleeps until the next interrupt (for example the next tick).
  *          __WFE sets WFITOWFE and leaves it set: this function clears it
  *          each time, so the call order of the two does not matter.
  *          The WCH SDK does the same on CH32V20x and CH32V30x. Its CH32V00x
