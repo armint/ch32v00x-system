@@ -675,10 +675,20 @@ void testWaitingCompletionIsHandledBeforeReset() {
       CHECK(rxResponse(2) == USBHS_UEP_R_RES_NAK);
       CHECK(usb.armOut(0x02));
       CHECK(rxResponse(2) == USBHS_UEP_R_RES_ACK);
+      // After armOut(), the IRQ handler leaves the endpoint double-buffered (ACK).
+      const size_t beforeArmed = eventCount;
+      hostUsbhs.INT_ST = static_cast<uint8_t>(USBHS_UIS_TOKEN_OUT | USBHS_UIS_TOG_OK | 2);
+      hostUsbhs.INT_FG = USBHS_UIF_TRANSFER;
+      usb.handleInterrupt();
+      CHECK(eventCount == beforeArmed + 1);
+      CHECK(rxResponse(2) == USBHS_UEP_R_RES_ACK);
+      hostUsbhs.INT_FG = 0;
+      CHECK(usb.armOut(0x02));
 
       hostUsbhs.INT_ST = static_cast<uint8_t>(USBHS_UIS_TOKEN_OUT | USBHS_UIS_TOG_OK | 2);
       hostUsbhs.INT_FG = USBHS_UIF_TRANSFER;
       usb.setStall(0x02, false);
+      CHECK(eventCount == beforeArmed + 2); // reported inside the call
       hostUsbhs.INT_FG = 0;
       usb.handleInterrupt();
       CHECK(ep(2).RX_CTRL == RxOpen);

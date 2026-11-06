@@ -376,12 +376,14 @@ void UsbDevice::setNak(uint8_t address) {
    if(dir == nullptr || !dir->open) {
       return;
    }
+   if(!usb::isInEndpoint(address)) {
+      dir->nakHeld = true; // before the drain: its handler run must not write ACK
+   }
    drainCompleted(address);
    uint8_t n = usb::endpointNumber(address);
    if(usb::isInEndpoint(address)) {
       setTxResponse(n, USBHS_UEP_T_RES_NAK);
    } else {
-      dir->nakHeld = true;
       setRxResponse(n, USBHS_UEP_R_RES_NAK);
    }
 }
