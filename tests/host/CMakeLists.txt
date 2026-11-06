@@ -33,6 +33,20 @@ foreach(_family v00x v20x v30x)
     add_test(NAME gpio-${_family} COMMAND test-gpio-${_family})
 endforeach()
 
+# hw::Timer once per family. The stubs-<family> directory gives <wch_device.h>
+# with the TIM register layout of that family.
+foreach(_family v00x v20x v30x)
+    add_executable(test-timer-${_family}
+            test_timer.cpp
+            ${_src}/peripherals/Timer.cpp)
+    target_include_directories(test-timer-${_family} PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}/stubs-${_family}
+            ${CMAKE_CURRENT_SOURCE_DIR}
+            ${_src})
+    target_compile_options(test-timer-${_family} PRIVATE -Wall -Wextra -Werror)
+    add_test(NAME timer-${_family} COMMAND test-timer-${_family})
+endforeach()
+
 # The CH32V307 USBHS device driver. The stubs-usb-v307 directory gives
 # <wch_device.h> with the USBHS and RCC registers as host variables.
 add_executable(test-usb-v307
