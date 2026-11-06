@@ -109,26 +109,43 @@ endpoint. Its README gives the build and test steps.
 
 ## Known limits
 
-- The hardware test is not done. Enumeration on a host and a bulk loopback
-  are not confirmed.
+- The board tests of issue #25 (YD-CH32V307, the `usb-double-buffer`
+  example) confirmed enumeration and bulk OUT. Bulk IN with data was not
+  part of these tests.
 - The reference manual does not say if EP0 accepts a SETUP packet while
   EP0 answers NAK or STALL. The driver expects this behavior. The driver
   ends a STALL on EP0 only when the next SETUP packet arrives. The hardware
   test must confirm both cases.
 - The `INT_ST` and `RX_LEN` registers are global for all endpoints.
   `INT_ST` holds the token and the endpoint of the last transfer. `RX_LEN`
-  holds the length of the last received packet. A SETUP packet can change
-  both registers before the interrupt handler reads them for a transfer of
-  endpoints 1 to 15. The time window is the interrupt entry time. These are
-  the effects:
-  - The handler sees a SETUP token, and the IN or OUT event is lost.
-  - After a lost IN event, the IN endpoint stays ready. It sends the same
-    packet again, and the driver reports no `InComplete` event. A USB stack
-    that waits for this event stops.
-  - A wrong `RX_LEN` value gives a wrong length for an OUT packet.
+  holds the length of the last received packet. While a transfer interrupt
+  waits, `INT_BUSY` makes the controller NAK the next tokens. The board
+  tests showed these effects on a waiting EP2 OUT transfer:
+  - Each NAKed token sets `IS_NAK` in `INT_ST` (`0xC2` for EP2 OUT). This
+    is also true for a NAK of another endpoint (EP1 IN). The endpoint and
+    token bits do not change. `RX_LEN` keeps the length of the received
+    packet, also when the retries have a different length.
+  - A SETUP packet that completes clears `TOG_OK` in `INT_ST` (`INT_FG`
+    `0x22`, `INT_ST` `0x02` for a good EP2 packet). The endpoint and token
+    bits do not change.
 
-  The reference manual does not say if the controller holds these
-  registers while a transfer interrupt waits. The hardware test does not
-  prove it either, because the window is small.
+  The driver handles these effects as follows:
+  - `DEV_NAK` is off, thus `TRANSFER` comes only from a completed
+    transfer. The driver ignores `IS_NAK`.
+  - When `SETUP_ACT` is also set, the driver compares the RX toggle in
+    `UEPn_RX_CTRL` with its software copy. A changed toggle means that the
+    hardware accepted the packet. Without a SETUP, the driver uses
+    `TOG_OK`, because a read-modify-write in `setNak()` or `setStall()` can
+    undo the toggle change of the hardware.
+  - The SETUP can complete after the handler reads `INT_FG` at entry. Thus
+    the driver reads `INT_ST` first, and then reads `INT_FG` again to find
+    `SETUP_ACT`.
+
+  These cases are not tested:
+  - A SETUP that completes while an IN transfer waits.
+  - A device with more than one active OUT endpoint.
+  - A SETUP and a read-modify-write of `setNak()` or `setStall()` on the
+    same packet. The toggle comparison then does not see the packet, and
+    the driver drops it.
 - The vendor SVD file names bits 5 to 7 of `USB_INT_EN` differently from
   the reference manual. The header follows the reference manual.
