@@ -12,6 +12,7 @@
 #include "utils/Timekeeping.h"
 
 #include <cstring>
+#include <unistd.h>
 
 SysTick_Type hostSysTick;
 
@@ -141,6 +142,7 @@ extern "C" void sysTickUpdateHook(timestamp_t sysTick) {
 }
 
 int main() {
+   alarm(20); // a handler loop that does not end (a broken compare write) fails the test and does not hang it
    testConfig();
    testTickEveryPeriod();
    testLateInterrupt();
