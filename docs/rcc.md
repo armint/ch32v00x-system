@@ -29,6 +29,7 @@ CH32FV2x_V3xRM, chapter 3 ("RM" below), and the WCH device headers.
 | `enableTIM1Clock()`, `resetTIM1()` | yes | yes | yes |
 | `enableTIM3Clock()`, `resetTIM3()` | CH32V002, CH32V006 | yes | yes |
 | `enableDMA1Clock()` | yes | yes | yes |
+| `enableDMA2Clock()` | no | no | yes |
 | `resetSPI1()` | yes | yes | yes |
 | `getAHBClock()`, `getAPBClock()`, `getAPB2Clock()` | yes | yes | yes |
 

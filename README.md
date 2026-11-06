@@ -39,7 +39,7 @@ The `hw::Usart` driver builds for USART1 to USART3 and UART4 to UART8. A loopbac
 The baud rate uses the APB prescaler (`Rcc::getAPB2Clock()` and `Rcc::getAPBClock()`): USART1 follows PPRE2, the other USARTs follow PPRE1. This also applies to CH32V20X. Call `setBaudRate()` again after a prescaler change.
 The USB device driver `hw::UsbDevice` builds for the USBHS controller. A test on a host is not done yet.
 The `Adc` driver builds for ADC1 and ADC2. Include `<Adc.h>`. It has the names of the STM32F1 `Adc` in `system-stm32` (see [ADC](docs/adc.md)).
-The `Dma` driver builds for DMA1 and the `Timer` driver for TIM1 to TIM10.
+The `Dma` driver builds for DMA1 and, on CH32V30X, DMA2 (see [DMA driver](docs/dma.md)). The `Timer` driver for TIM1 to TIM10.
 On the YD-CH32V307VCT6 board, the `adc-dma` and `timer` examples of [ch32v00x-examples](https://gitlab.vandertogt.org/riscv/ch32v00x-examples) work.
 `adc-dma` uses ADC1 with DMA1 channel 1. `timer` uses TIM2 channel 1 on PA15 and TIM3 channel 1 on PB4, through the AFIO remaps.
 The `Flash` driver builds. Its hardware test is the `flash` example. See [Flash driver](docs/flash.md).
@@ -96,6 +96,7 @@ toolchain file `cmake/gcc_riscv.cmake`. For all options, see
 | [Chip families](docs/families.md) | `CH32_FAMILY`, family directories, device-specific code, adding a family |
 | [ADC](docs/adc.md) | Calibration on CH32V002 and CH32V006. The ADC of CH32V30X |
 | [RCC driver](docs/rcc.md) | `Rcc`: peripheral clock enables, peripheral resets, bus clocks, per family |
+| [DMA driver](docs/dma.md) | `Dma::Channel`: names, DMA2 channels 8 to 11, interrupt flags |
 | [Flash driver](docs/flash.md) | `Flash` on CH32V30X: erase size, half-word programming, erased value, clock limit |
 | [GPIO, AFIO and EXTI](docs/gpio.md) | Which GPIO API each family has, `hw::Afio`, `Exti`, `GpioInterrupt` |
 | [Testing](docs/testing.md) | Host tests: how to run them, what they check and what they do not check |
