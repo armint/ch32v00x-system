@@ -773,6 +773,7 @@ typedef struct {
 
 /* Peripheral memory map */
 #define FLASH_BASE ((uint32_t)0x08000000)  /* FLASH base address in the alias region */
+#define UID_BASE 0x1FFFF7E8UL /* 96-bit unique ID, ESIG UNIID1..3 in the vendor SVD */
 #define SRAM_BASE ((uint32_t)0x20000000)   /* SRAM base address in the alias region */
 #define PERIPH_BASE ((uint32_t)0x40000000) /* Peripheral base address in the alias region */
 
