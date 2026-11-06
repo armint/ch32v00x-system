@@ -129,3 +129,15 @@ target_include_directories(test-rcc-v30x PRIVATE
         ${_src})
 target_compile_options(test-rcc-v30x PRIVATE -Wall -Wextra -Werror)
 add_test(NAME rcc-v30x COMMAND test-rcc-v30x)
+
+# The Dma driver with the CH32V30x registers: channel addresses and interrupt flags of DMA1 and DMA2.
+# The stubs-dma-v30x directory gives <wch_device.h> with the DMA types.
+add_executable(test-dma-v30x
+        test_dma_v30x.cpp
+        ${_src}/peripherals/Dma.cpp)
+target_include_directories(test-dma-v30x PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/stubs-dma-v30x
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${_src}/peripherals)
+target_compile_options(test-dma-v30x PRIVATE -Wall -Wextra -Werror)
+add_test(NAME dma-v30x COMMAND test-dma-v30x)

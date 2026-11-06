@@ -39,6 +39,9 @@ inline void enableTIM3Clock() {
 inline void enableDMA1Clock() {
    detail::enableClock(RCC->AHBPCENR, RCC_DMA1EN);
 }
+inline void enableDMA2Clock() {
+   detail::enableClock(RCC->AHBPCENR, RCC_DMA2EN);
+}
 
 inline void resetSPI1() {
    detail::resetPeripheral(RCC->APB2PRSTR, RCC_SPI1RST);
