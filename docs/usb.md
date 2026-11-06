@@ -61,9 +61,11 @@ process it in the main loop.
 - `openEndpoint()` on a direction that is open with the same attributes
   (the open of SET_INTERFACE) sets DATA0 and NAK, and drops a packet that
   waits. EP0 is not touched.
-- `setNak()` returns true when the hardware has completed a transfer of that
-  direction that the handler has not reported yet. The controller layer uses
-  it to decide if a cancelled IN packet was taken.
+- `setNak()`, `setStall()` and `openEndpoint()` on an open direction first
+  report a transfer that the hardware has completed and the handler has not
+  reported yet. The callback runs inside the call, with the USB interrupt
+  masked. Thus no event of that direction comes later and undoes the reset or
+  the NAK.
 - After a SETUP packet, both directions of EP0 answer NAK.
 - The hardware sets the data toggle of endpoints 1 to 15. EP0 has no
   automatic toggle, thus the driver sets it for EP0.

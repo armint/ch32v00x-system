@@ -616,31 +616,94 @@ void testStallSurvivesHandler() {
    CHECK(usb.isStalled(0x02));
 }
 
-void testSetNakReportsPendingTransfer() {
-   UsbDevice usb;
-   resetFakes();
-   usb.begin(&onEvent, nullptr);
-   CHECK(usb.openEndpoint(0x81, EndpointType::Bulk, 64));
-   CHECK(usb.openEndpoint(0x02, EndpointType::Bulk, 64));
-   CHECK(!usb.setNak(0x81)); // nothing pending
-   CHECK(!usb.setNak(0x03)); // not open
+size_t inCompleteCount = 0;
 
-   // The hardware has completed an IN transfer on EP1 and an OUT transfer on EP2, and the interrupt is masked
-   // (INT_FG.TRANSFER is set, the handler has not run).
-   hostUsbhs.INT_ST = static_cast<uint8_t>(USBHS_UIS_TOKEN_IN | 1);
-   hostUsbhs.INT_FG = USBHS_UIF_TRANSFER;
-   CHECK(usb.setNak(0x81));
-   CHECK(!usb.setNak(0x82 & 0x7F)); // wrong direction and endpoint
-   hostUsbhs.INT_ST = static_cast<uint8_t>(USBHS_UIS_TOKEN_OUT | USBHS_UIS_TOG_OK | 2);
-   CHECK(usb.setNak(0x02));
-   CHECK(!usb.setNak(0x81));
-   // An OUT packet with the wrong toggle makes no event.
-   hostUsbhs.INT_ST = static_cast<uint8_t>(USBHS_UIS_TOKEN_OUT | 2);
-   CHECK(!usb.setNak(0x02));
-   // A flag that was handled (INT_FG clear) is not pending.
-   hostUsbhs.INT_ST = static_cast<uint8_t>(USBHS_UIS_TOKEN_IN | 1);
-   hostUsbhs.INT_FG = 0;
-   CHECK(!usb.setNak(0x81));
+void countInComplete(void *, const hw::usb::Event &event) {
+   if(event.type == hw::usb::EventType::InComplete) {
+      ++inCompleteCount;
+   }
+}
+
+// A completion that waits for the handler is handled inside setNak(), setStall() and the reopen: no event
+// follows later, and the late handler cannot undo the DATA0 reset or a NAK.
+void testWaitingCompletionIsHandledBeforeReset() {
+   // IN, reopen (SET_INTERFACE): the old packet is reported at once, and DATA0 stays.
+   {
+      UsbDevice usb;
+      resetFakes();
+      inCompleteCount = 0;
+      usb.begin(&countInComplete, nullptr);
+      CHECK(usb.openEndpoint(0x81, EndpointType::Bulk, 64));
+      const std::array<uint8_t, 2> packet{ 1, 2 };
+      CHECK(usb.startIn(0x81, packet));
+      hostUsbhs.INT_ST = static_cast<uint8_t>(USBHS_UIS_TOKEN_IN | 1);
+      hostUsbhs.INT_FG = USBHS_UIF_TRANSFER;
+      CHECK(inCompleteCount == 0);
+      CHECK(usb.openEndpoint(0x81, EndpointType::Bulk, 64));
+      CHECK(inCompleteCount == 1); // reported inside the reopen
+      hostUsbhs.INT_FG = 0; // the fake has no write-1-to-clear: the driver wrote TRANSFER
+      usb.handleInterrupt();  // nothing left
+      CHECK(inCompleteCount == 1);
+      CHECK((ep(1).TX_CTRL & USBHS_UEP_T_TOG_DATA1) == 0);
+   }
+   // Double-buffered OUT: setNak() after a completion keeps NAK, and a clear-halt keeps DATA0.
+   {
+      UsbDevice usb;
+      resetFakes();
+      eventCount = 0;
+      usb.begin(&recordEvent, nullptr);
+      CHECK(usb.openEndpoint(0x02, EndpointType::Bulk, 64, true));
+      CHECK(usb.armOut(0x02));
+      hostUsbhs.RX_LEN = 4;
+      hostUsbhs.INT_ST = static_cast<uint8_t>(USBHS_UIS_TOKEN_OUT | USBHS_UIS_TOG_OK | 2);
+      hostUsbhs.INT_FG = USBHS_UIF_TRANSFER;
+      usb.setNak(0x02);
+      CHECK(eventCount == 1);
+      CHECK(rxResponse(2) == USBHS_UEP_R_RES_NAK);
+      hostUsbhs.INT_FG = 0;
+      usb.handleInterrupt();
+      CHECK(eventCount == 1);
+      CHECK(rxResponse(2) == USBHS_UEP_R_RES_NAK);
+      // armOut() reports the packet that waits and arms again. After setNak(), a packet that was in flight
+      // does not turn the NAK into ACK.
+      CHECK(usb.armOut(0x02));
+      CHECK(rxResponse(2) == USBHS_UEP_R_RES_ACK);
+      usb.setNak(0x02);
+      hostUsbhs.INT_ST = static_cast<uint8_t>(USBHS_UIS_TOKEN_OUT | USBHS_UIS_TOG_OK | 2);
+      hostUsbhs.INT_FG = USBHS_UIF_TRANSFER;
+      usb.handleInterrupt();
+      CHECK(rxResponse(2) == USBHS_UEP_R_RES_NAK);
+      CHECK(usb.armOut(0x02));
+      CHECK(rxResponse(2) == USBHS_UEP_R_RES_ACK);
+
+      hostUsbhs.INT_ST = static_cast<uint8_t>(USBHS_UIS_TOKEN_OUT | USBHS_UIS_TOG_OK | 2);
+      hostUsbhs.INT_FG = USBHS_UIF_TRANSFER;
+      usb.setStall(0x02, false);
+      hostUsbhs.INT_FG = 0;
+      usb.handleInterrupt();
+      CHECK(ep(2).RX_CTRL == RxOpen);
+   }
+   // Not pending: a transfer of another endpoint or direction, a wrong toggle, or a handled flag.
+   {
+      UsbDevice usb;
+      resetFakes();
+      eventCount = 0;
+      usb.begin(&recordEvent, nullptr);
+      CHECK(usb.openEndpoint(0x81, EndpointType::Bulk, 64));
+      CHECK(usb.openEndpoint(0x02, EndpointType::Bulk, 64));
+      usb.setNak(0x03); // not open: no effect
+      hostUsbhs.INT_ST = static_cast<uint8_t>(USBHS_UIS_TOKEN_IN | 1);
+      hostUsbhs.INT_FG = USBHS_UIF_TRANSFER;
+      usb.setNak(0x02); // other direction
+      CHECK(eventCount == 0);
+      hostUsbhs.INT_ST = static_cast<uint8_t>(USBHS_UIS_TOKEN_OUT | 2); // wrong toggle
+      usb.setNak(0x02);
+      CHECK(eventCount == 0);
+      hostUsbhs.INT_FG = 0;
+      hostUsbhs.INT_ST = static_cast<uint8_t>(USBHS_UIS_TOKEN_IN | 1);
+      usb.setNak(0x81);
+      CHECK(eventCount == 0);
+   }
 }
 
 void testStallAndNak() {
@@ -763,7 +826,7 @@ int main() {
    testReopenResetsDirections();
    testLostToggleFlipIsRepaired();
    testStallSurvivesHandler();
-   testSetNakReportsPendingTransfer();
+   testWaitingCompletionIsHandledBeforeReset();
    testDoubleBufferedOpen();
    testDoubleBufferedReceive();
    testDoubleBufferedStallAndNak();
