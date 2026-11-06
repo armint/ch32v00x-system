@@ -6,7 +6,7 @@ Host tests run on the build machine. They do not need a board or the RISC-V tool
 They compile library sources with the native compiler (C++23).
 A stub `wch_device.h` replaces the device header.
 The stub gives the registers of one family as plain variables in memory.
-The GPIO tests use `stubs-<family>/`. The USB test uses `stubs-usb-v307/`. The SysTick test uses `stubs-systick-v30x/`. The Usart test uses `stubs-usart-v30x/`. The ADC test uses `stubs-adc-v30x/`. The AFIO and EXTI test uses `stubs-exti-v30x/`.
+The GPIO tests use `stubs-<family>/`. The USB test uses `stubs-usb-v307/`. The SysTick test uses `stubs-systick-v30x/`. The Usart test uses `stubs-usart-v30x/`. The ADC test uses `stubs-adc-v30x/`. The AFIO and EXTI test uses `stubs-exti-v30x/`. The Flash test uses `stubs-flash-v30x/`.
 
 Run the tests:
 
@@ -26,6 +26,7 @@ The build uses `-Wall -Wextra -Werror`. Each test program returns a non-zero exi
 | `test-gpio-v20x` | The same checks on CH32V20X, pins 0 to 15. Pins 0 to 7 use `CFGLR`. Pins 8 to 15 use `CFGHR`. |
 | `test-gpio-v30x` | The same checks on CH32V30X, pins 0 to 15. |
 | `test-usart-v30x` | The baud rate of `hw::Usart` on CH32V30X: USART1 uses PPRE2 and the other USARTs use PPRE1. It also checks `getClockFrequency()` and `setFrameFormat()` (the M, PCE and PS bits, the stop bits, the refusal of 7 data bits without parity, and that a USART that is off stays off). |
+| `test-flash-v30x` | The shared `Flash` driver with the CH32V30X registers. Models of `FLASH_KEYR`, `FLASH_MODEKEYR`, `FLASH_CTLR` and `FLASH_STATR` check the unlock and lock sequence (no key write while unlocked, a second unlock after a lock), HCLK = SYSCLK / 2 during an operation above 120 MHz and the old `RCC_CFGR0` after it, `program_halfword()` (odd address, write protection error), `erase_page()` and the padding of `write_buffer()`. It does not check the timing, the erased value or the read-back on hardware. |
 | `test-adc-v30x` | The CH32V30X `Adc` driver: the sequence registers, the sample time registers, the prescaler, the clock and reset bits of ADC1 and ADC2, and the trigger. It does not test `calibrate()`. |
 
 Each test starts with a known pattern in the configuration registers.
