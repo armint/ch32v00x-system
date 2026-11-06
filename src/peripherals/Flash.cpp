@@ -6,7 +6,7 @@
 
 namespace Flash {
 
-#if defined(CH32V20x_D8W) || defined(CH32V20x_D8) || defined(CH32V20x_D6)
+#if defined(CH32V20x_D8W) || defined(CH32V20x_D8) || defined(CH32V20x_D6) || defined(CH32V30x_D8C)
 constexpr uint32_t PAGE_SIZE = 256;
 #else
 constexpr uint32_t PAGE_SIZE = 64;
@@ -20,6 +20,29 @@ constexpr uint32_t FAST_LOCK = FLASH_CTLR_FAST_LOCK;
 #endif
 
 namespace {
+#if defined(CH32V30x_D8C)
+// RM 32.1, note 2: the flash access clock must not exceed 60 MHz. It is HCLK / 2, so above
+// 120 MHz HCLK runs at SYSCLK / 2 for the time of one erase or program operation. The
+// peripheral clocks are also halved for that time. The CH32V20x has the same rule: not done yet.
+class SlowClock {
+   public:
+   SlowClock()
+      : _saved(RCC->CFGR0) {
+      if(SystemCoreClock > 120000000u) {
+         RCC->CFGR0 = (_saved & ~RCC_CFGR0_HPRE_MASK) | RCC_CFGR0_HPRE_DIV2;
+      }
+   }
+   ~SlowClock() {
+      RCC->CFGR0 = _saved;
+   }
+
+   private:
+   uint32_t _saved;
+};
+#else
+struct SlowClock {};
+#endif
+
 void wait_ready() {
    while(FLASH->STATR & FLASH_STATR_BSY) {
    }
@@ -52,6 +75,7 @@ writable_section::~writable_section() {
 
 
 void erase_page(void *address) {
+   [[maybe_unused]] SlowClock slow_clock;
 
    // 1. Ensure no flash operation ongoing (BSY cleared)
    while(FLASH->STATR & FLASH_STATR_BSY) {
@@ -77,6 +101,7 @@ bool write_buffer(void *address, hw::span<uint8_t> data) {
       return false;
    }
 
+   [[maybe_unused]] SlowClock slow_clock;
    uintptr_t addr = reinterpret_cast<uintptr_t>(address);
    const uint8_t *data_ptr = data.data();
    size_t remaining = data.size();
@@ -109,6 +134,10 @@ bool write_buffer(void *address, hw::span<uint8_t> data) {
 
       // 3. Load word into buffer
       *reinterpret_cast<volatile uint32_t *>(addr) = word;
+#ifdef FLASH_STATR_WRBSY
+      while(FLASH->STATR & FLASH_STATR_WRBSY) {
+      }
+#endif
 #ifdef FLASH_CTLR_BUF_LOAD
       FLASH->CTLR = FLASH_CTLR_PAGE_PG | FLASH_CTLR_BUF_LOAD;
       while(FLASH->STATR & FLASH_STATR_BSY) {
