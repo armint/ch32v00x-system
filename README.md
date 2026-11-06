@@ -36,7 +36,7 @@ library are in [ch32v00x-art](https://gitlab.vandertogt.org/riscv/ch32v00x-art).
 On CH32V30X, the start-up, the clock, SysTick, the delays, `Interrupt` and
 `GpioPin` build. `GpioPin` sets pins 0 to 7 in `CFGLR` and pins 8 to 15 in `CFGHR`.
 The `hw::Usart` driver builds for USART1 to USART3 and UART4 to UART8. A loopback test on hardware is not done yet.
-The baud rate uses the APB prescaler: USART1 follows PPRE2, the other USARTs follow PPRE1. Call `setBaudRate()` again after a prescaler change.
+The baud rate uses the APB prescaler (`Rcc::getAPB2Clock()` and `Rcc::getAPBClock()`): USART1 follows PPRE2, the other USARTs follow PPRE1. This also applies to CH32V20X. Call `setBaudRate()` again after a prescaler change.
 The USB device driver `hw::UsbDevice` builds for the USBHS controller. A test on a host is not done yet.
 The `Adc` driver builds for ADC1 and ADC2.
 The `Dma` driver builds for DMA1 and the `Timer` driver for TIM1 to TIM10.
@@ -56,6 +56,7 @@ in [Chip families](docs/families.md).
 | Communication | `hw::Usart`, `I2c`, `hw::UsbDevice` (CH32V30X only, USB device on USBHS) |
 | Chip ID | `hw::Uid` in `peripherals/Uid.h`: the 96-bit unique ID (CH32V00X, CH32V20X, CH32V30X) |
 | Analog and timing | `Adc` (CH32V00X and CH32V30X), `Timer`, `Dma` |
+| Clocks and resets | `Rcc` in `peripherals/Rcc.h`: peripheral clock enables, peripheral resets and the bus clocks (the names of `system-stm32`). See [RCC driver](docs/rcc.md). |
 | Other | `Flash`, `Interrupt` (connects C++ member functions as interrupt handlers) |
 
 ## Quick start
@@ -94,6 +95,7 @@ toolchain file `cmake/gcc_riscv.cmake`. For all options, see
 | [Building and using ch32v00x-system](docs/building.md) | Requirements, CMake variables, C++ standard, `hw::span`, compiler flags, installed package |
 | [Chip families](docs/families.md) | `CH32_FAMILY`, family directories, device-specific code, adding a family |
 | [ADC](docs/adc.md) | Calibration on CH32V002 and CH32V006. The ADC of CH32V30X |
+| [RCC driver](docs/rcc.md) | `Rcc`: peripheral clock enables, peripheral resets, bus clocks, per family |
 | [Flash driver](docs/flash.md) | `Flash` on CH32V30X: erase size, half-word programming, erased value, clock limit |
 | [GPIO, AFIO and EXTI](docs/gpio.md) | Which GPIO API each family has, `hw::Afio`, `Exti`, `GpioInterrupt` |
 | [Testing](docs/testing.md) | Host tests: how to run them, what they check and what they do not check |

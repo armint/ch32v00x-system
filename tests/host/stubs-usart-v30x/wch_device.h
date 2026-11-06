@@ -2,23 +2,13 @@
 
 // Host stand-in for <wch_device.h> of CH32V30X for the baud rate code of the
 // Usart driver (src/peripherals/Usart.cpp). It has the bits of
-// src/families/ch32v30x/ch32v30x.h that Usart.h uses, RCC_CFGR0 and the USART
+// src/families/ch32v30x/ch32v30x.h that Usart.h uses, the RCC and USART
 // registers as host variables, and SystemCoreClock.
 
 #include <stdint.h>
 
-extern uint32_t SystemCoreClock;
-
-typedef struct {
-   volatile uint32_t CTLR;
-   volatile uint32_t CFGR0;
-} RCC_TypeDef;
-
-extern RCC_TypeDef hostRcc;
-#define RCC (&hostRcc)
-
-#define RCC_CFGR0_PPRE1_MASK (7ul << 8)
-#define RCC_CFGR0_PPRE2_MASK (7ul << 11)
+// RCC registers, RCC bits and SystemCoreClock: the same stub as the Rcc test (Usart.cpp uses Rcc).
+#include "../stubs-rcc-v30x/wch_device.h"
 
 typedef struct {
    volatile uint16_t STATR;
