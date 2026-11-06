@@ -56,6 +56,7 @@ in [Chip families](docs/families.md).
 | Communication | `hw::Usart`, `I2c`, `hw::UsbDevice` (CH32V30X only, USB device on USBHS) |
 | Chip ID | `hw::Uid` in `peripherals/Uid.h`: the 96-bit unique ID (CH32V00X, CH32V20X, CH32V30X) |
 | Analog and timing | `Adc` (CH32V00X and CH32V30X), `Timer`, `Dma` |
+| Clocks and resets | `Rcc` in `peripherals/Rcc.h`: peripheral clock enables, peripheral resets and the bus clocks (the names of `system-stm32`). See [RCC driver](docs/rcc.md). |
 | Other | `Flash`, `Interrupt` (connects C++ member functions as interrupt handlers) |
 
 ## Quick start
@@ -94,6 +95,7 @@ toolchain file `cmake/gcc_riscv.cmake`. For all options, see
 | [Building and using ch32v00x-system](docs/building.md) | Requirements, CMake variables, C++ standard, `hw::span`, compiler flags, installed package |
 | [Chip families](docs/families.md) | `CH32_FAMILY`, family directories, device-specific code, adding a family |
 | [ADC](docs/adc.md) | Calibration on CH32V002 and CH32V006. The ADC of CH32V30X |
+| [RCC driver](docs/rcc.md) | `Rcc`: peripheral clock enables, peripheral resets, bus clocks, per family |
 | [Flash driver](docs/flash.md) | `Flash` on CH32V30X: erase size, half-word programming, erased value, clock limit |
 | [GPIO, AFIO and EXTI](docs/gpio.md) | Which GPIO API each family has, `hw::Afio`, `Exti`, `GpioInterrupt` |
 | [Testing](docs/testing.md) | Host tests: how to run them, what they check and what they do not check |
