@@ -145,7 +145,9 @@ endpoint. Its README gives the build and test steps.
   `UEPn_RX_CTRL` with its software copy. A changed toggle means that the
   hardware accepted the packet. Without a SETUP, the driver uses `TOG_OK`.
   The reason is that a read-modify-write in `setNak()` or `setStall()` can
-  undo the toggle change of the hardware. The board test did not check if
+  undo the toggle change of the hardware. The SETUP can also complete after
+  the handler reads `INT_FG` at entry. Thus the driver reads `INT_ST` first
+  and then reads `INT_FG` again to find `SETUP_ACT`. The board test did not check if
   a SETUP changes the status of an IN transfer.
 - The vendor SVD file names bits 5 to 7 of `USB_INT_EN` differently from
   the reference manual. The header follows the reference manual.

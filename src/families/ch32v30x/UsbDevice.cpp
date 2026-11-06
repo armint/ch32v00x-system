@@ -39,6 +39,20 @@ uint8_t controlByte(uint8_t toggle, uint8_t response) {
    return static_cast<uint8_t>(USBHS_UEP_T_TOG_AUTO | (toggle != 0 ? USBHS_UEP_T_TOG_DATA1 : 0) | response);
 }
 
+// INT_ST of a waiting transfer, and whether a SETUP completed too. INT_ST is read first: a SETUP that completes
+// before that read (and clears TOG_OK, see outToggleOk()) then shows in INT_FG. A SETUP after it cannot change
+// the value read. Two statements, because the order of evaluation of function arguments is unspecified.
+struct TransferStatus {
+   uint8_t status;
+   bool setupPending;
+};
+
+TransferStatus readTransferStatus() {
+   const uint8_t status = USBHS->INT_ST;
+   const bool setupPending = (USBHS->INT_FG & USBHS_UIF_SETUP_ACT) != 0;
+   return { status, setupPending };
+}
+
 // DMA addresses are 32-bit RAM addresses.
 uint32_t dmaAddress(const uint8_t *buffer) {
    return static_cast<uint32_t>(reinterpret_cast<uintptr_t>(buffer));
@@ -347,18 +361,14 @@ bool UsbDevice::isStalled(uint8_t address) const {
    return (ctrl(n).RX_CTRL & USBHS_UEP_R_RES_MASK) == USBHS_UEP_R_RES_STALL;
 }
 
-bool UsbDevice::transferPending(uint8_t address) const {
-   if((USBHS->INT_FG & USBHS_UIF_TRANSFER) == 0) {
-      return false;
-   }
-   const uint8_t status = USBHS->INT_ST;
+bool UsbDevice::transferPending(uint8_t address, uint8_t status, bool setupPending) const {
    if((status & USBHS_UIS_ENDP_MASK) != usb::endpointNumber(address)) { // IS_NAK: see handleTransfer()
       return false;
    }
    // An OUT packet with the wrong toggle is dropped by the handler: it makes no event.
    return usb::isInEndpoint(address) ? (status & USBHS_UIS_TOKEN_MASK) == USBHS_UIS_TOKEN_IN
                                      : (status & USBHS_UIS_TOKEN_MASK) == USBHS_UIS_TOKEN_OUT &&
-                                          outToggleOk(status, (USBHS->INT_FG & USBHS_UIF_SETUP_ACT) != 0);
+                                          outToggleOk(status, setupPending);
 }
 
 // A SETUP that completes while an OUT transfer waits clears TOG_OK in INT_ST (board measurement, issue #25:
@@ -378,8 +388,12 @@ bool UsbDevice::outToggleOk(uint8_t status, bool setupPending) const {
 // interrupt masked (the caller holds the BlockingSection). Then no completion of this direction comes later
 // and undoes a reset or a NAK of the main loop.
 void UsbDevice::drainCompleted(uint8_t address) {
-   if((USBHS->INT_FG & USBHS_UIF_BUS_RST) == 0 && transferPending(address)) {
-      handleTransfer(USBHS->INT_ST, (USBHS->INT_FG & USBHS_UIF_SETUP_ACT) != 0);
+   if((USBHS->INT_FG & (USBHS_UIF_BUS_RST | USBHS_UIF_TRANSFER)) != USBHS_UIF_TRANSFER) {
+      return;
+   }
+   const TransferStatus t = readTransferStatus(); // one read for the check and the handler
+   if(transferPending(address, t.status, t.setupPending)) {
+      handleTransfer(t.status, t.setupPending);
       USBHS->INT_FG = USBHS_UIF_TRANSFER;
    }
 }
@@ -531,9 +545,12 @@ void UsbDevice::handleInterrupt() {
    // The transfer before the SETUP: with INT_BUSY no other token completes
    // while TRANSFER is set, but a SETUP does. The layer above sees
    // InComplete or Out first, then Setup. NAKed retries in this time set
-   // IS_NAK in INT_ST (see handleTransfer()).
+   // IS_NAK in INT_ST (see handleTransfer()). A SETUP can also complete
+   // after the INT_FG read at entry: readTransferStatus() reads INT_FG again.
+   // That SETUP is handled in the next interrupt.
    if(flags & USBHS_UIF_TRANSFER) {
-      handleTransfer(USBHS->INT_ST, (flags & USBHS_UIF_SETUP_ACT) != 0);
+      const TransferStatus t = readTransferStatus();
+      handleTransfer(t.status, t.setupPending);
       USBHS->INT_FG = USBHS_UIF_TRANSFER;
    }
 
