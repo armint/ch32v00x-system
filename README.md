@@ -38,7 +38,7 @@ On CH32V30X, the start-up, the clock, SysTick, the delays, `Interrupt` and
 The `hw::Usart` driver builds for USART1 to USART3 and UART4 to UART8. A loopback test on hardware is not done yet.
 The baud rate uses the APB prescaler (`Rcc::getAPB2Clock()` and `Rcc::getAPBClock()`): USART1 follows PPRE2, the other USARTs follow PPRE1. This also applies to CH32V20X. Call `setBaudRate()` again after a prescaler change.
 The USB device driver `hw::UsbDevice` builds for the USBHS controller. A test on a host is not done yet.
-The `Adc` driver builds for ADC1 and ADC2.
+The `Adc` driver builds for ADC1 and ADC2. Include `<Adc.h>`. It has the names of the STM32F1 `Adc` in `system-stm32` (see [ADC](docs/adc.md)).
 The `Dma` driver builds for DMA1 and the `Timer` driver for TIM1 to TIM10.
 On the YD-CH32V307VCT6 board, the `adc-dma` and `timer` examples of [ch32v00x-examples](https://gitlab.vandertogt.org/riscv/ch32v00x-examples) work.
 `adc-dma` uses ADC1 with DMA1 channel 1. `timer` uses TIM2 channel 1 on PA15 and TIM3 channel 1 on PB4, through the AFIO remaps.
