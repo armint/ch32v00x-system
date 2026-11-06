@@ -4,6 +4,10 @@
 has the names of `hw::Timer` in `system-stm32`. All families use the same
 driver.
 
+Do not use `hw::Timer` with TIM3 of CH32V006. That timer has another
+register layout. The driver then writes the wrong registers, and no error
+occurs.
+
 ## Use
 
 1. Enable the timer clock in RCC. On CH32V30X, TIM1 and TIM8 to TIM10 are on
