@@ -352,7 +352,7 @@ bool UsbDevice::transferPending(uint8_t address) const {
       return false;
    }
    const uint8_t status = USBHS->INT_ST;
-   if((status & USBHS_UIS_IS_NAK) != 0 || (status & USBHS_UIS_ENDP_MASK) != usb::endpointNumber(address)) {
+   if((status & USBHS_UIS_ENDP_MASK) != usb::endpointNumber(address)) { // IS_NAK: see handleTransfer()
       return false;
    }
    // An OUT packet with the wrong toggle is dropped by the handler: it makes no event.
@@ -425,10 +425,9 @@ void UsbDevice::report(EventType type, uint8_t endpoint, uint16_t size) {
 }
 
 void UsbDevice::handleTransfer(uint8_t status, bool setupPending) {
+   // IS_NAK is not checked: DEV_NAK is off, so TRANSFER is set only by a completed transaction. A NAKed retry
+   // while TRANSFER waits (INT_BUSY) sets IS_NAK in INT_ST, but the transaction is still to be handled.
    uint8_t n = status & USBHS_UIS_ENDP_MASK;
-   if(status & USBHS_UIS_IS_NAK) {
-      return; // the endpoint answered NAK: no data moved (DEV_NAK is off, so this is a guard only)
-   }
    switch(status & USBHS_UIS_TOKEN_MASK) {
    case USBHS_UIS_TOKEN_IN:
       // NAK first: the buffer is free for the next startIn(), and a second
@@ -517,7 +516,8 @@ void UsbDevice::handleInterrupt() {
 
    // The transfer before the SETUP: with INT_BUSY no other token completes
    // while TRANSFER is set, but a SETUP does. The layer above sees
-   // InComplete or Out first, then Setup.
+   // InComplete or Out first, then Setup. NAKed retries in this time set
+   // IS_NAK in INT_ST (see handleTransfer()).
    if(flags & USBHS_UIF_TRANSFER) {
       handleTransfer(USBHS->INT_ST, (flags & USBHS_UIF_SETUP_ACT) != 0);
       USBHS->INT_FG = USBHS_UIF_TRANSFER;

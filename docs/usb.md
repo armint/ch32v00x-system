@@ -130,5 +130,13 @@ endpoint. Its README gives the build and test steps.
   The reference manual does not say if the controller holds these
   registers while a transfer interrupt waits. The hardware test does not
   prove it either, because the window is small.
+- While a transfer interrupt waits, `INT_BUSY` makes the controller NAK
+  the next tokens. Each NAKed token sets `IS_NAK` in `INT_ST` (board
+  measurement: `0xC2` for EP2 OUT). `RX_LEN` keeps the length of the
+  received packet. `DEV_NAK` is off, thus `TRANSFER` comes only from a
+  completed transfer. The driver ignores `IS_NAK` for this reason. If it
+  did not, it would lose the packet. The board test checked NAKed OUT
+  retries on the same endpoint only. The effect of a NAK on another
+  endpoint is not known.
 - The vendor SVD file names bits 5 to 7 of `USB_INT_EN` differently from
   the reference manual. The header follows the reference manual.

@@ -616,6 +616,45 @@ void testStallSurvivesHandler() {
    CHECK(usb.isStalled(0x02));
 }
 
+// The board shows that each NAKed retry while TRANSFER waits (INT_BUSY) rewrites INT_ST to IS_NAK | TOG_OK |
+// token | endpoint. The packet that set TRANSFER is still received: the handler must report it and set NAK.
+void testNakRetryKeepsTransfer() {
+   constexpr uint8_t NakRetry = USBHS_UIS_IS_NAK | USBHS_UIS_TOG_OK | USBHS_UIS_TOKEN_OUT;
+   // Single-buffered: the handler reports the packet and NAKs the endpoint.
+   {
+      UsbDevice usb;
+      resetFakes();
+      eventCount = 0;
+      usb.begin(&recordEvent, nullptr);
+      CHECK(usb.openEndpoint(0x02, EndpointType::Bulk, 512));
+      CHECK(usb.armOut(0x02));
+      hostUsbhs.RX_LEN = 512;
+      ep(2).RX_CTRL ^= USBHS_UEP_R_TOG_DATA1;
+      hostUsbhs.INT_ST = static_cast<uint8_t>(NakRetry | 2);
+      hostUsbhs.INT_FG = USBHS_UIF_TRANSFER;
+      usb.handleInterrupt();
+      CHECK(eventCount == 1);
+      CHECK(events[0].first == 2 && events[0].second == 512);
+      CHECK(rxResponse(2) == USBHS_UEP_R_RES_NAK);
+   }
+   // Double-buffered, drained inside setNak(): the packet is reported at once.
+   {
+      UsbDevice usb;
+      resetFakes();
+      eventCount = 0;
+      usb.begin(&recordEvent, nullptr);
+      CHECK(usb.openEndpoint(0x02, EndpointType::Bulk, 64, true));
+      CHECK(usb.armOut(0x02));
+      hostUsbhs.RX_LEN = 64;
+      hostUsbhs.INT_ST = static_cast<uint8_t>(NakRetry | 2);
+      hostUsbhs.INT_FG = USBHS_UIF_TRANSFER;
+      usb.setNak(0x02);
+      CHECK(eventCount == 1);
+      CHECK(events[0].second == 64);
+      CHECK(rxResponse(2) == USBHS_UEP_R_RES_NAK);
+   }
+}
+
 size_t inCompleteCount = 0;
 
 void countInComplete(void *, const hw::usb::Event &event) {
@@ -836,6 +875,7 @@ int main() {
    testReopenResetsDirections();
    testLostToggleFlipIsRepaired();
    testStallSurvivesHandler();
+   testNakRetryKeepsTransfer();
    testWaitingCompletionIsHandledBeforeReset();
    testDoubleBufferedOpen();
    testDoubleBufferedReceive();
