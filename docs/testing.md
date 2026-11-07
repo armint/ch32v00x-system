@@ -27,11 +27,11 @@ The build uses `-Wall -Wextra -Werror`. Each test program returns a non-zero exi
 | `test-gpio-v30x` | The same checks on CH32V30X, pins 0 to 15. |
 | `test-timer-v00x`, `test-timer-v20x`, `test-timer-v30x` | `hw::Timer` with the TIM layout of each family: the register and the bit that each function writes, `CH1CVR` to `CH4CVR` 4 bytes apart, the preload bit of channels 2 and 4, and a flag clear that writes the inverted mask and does not read `INTFR`. It does not test the counter or a DMA request. |
 | `test-usart-v30x` | The baud rate of `hw::Usart` on CH32V30X: USART1 uses PPRE2 and the other USARTs use PPRE1. It also checks `getClockFrequency()` and `setFrameFormat()` (the M, PCE and PS bits, the stop bits, the refusal of 7 data bits without parity, and that a USART that is off stays off). |
-| `test-flash-v30x` | The shared `Flash` driver with the CH32V30X registers. Models of `FLASH_KEYR`, `FLASH_MODEKEYR`, `FLASH_CTLR` and `FLASH_STATR` check the unlock and lock sequence (no key write while unlocked, a second unlock after a lock), HCLK = SYSCLK / 2 during an operation above 120 MHz and the old `RCC_CFGR0` after it, `program_halfword()` (odd address, write protection error), `erase_page()` and the padding of `write_buffer()`. It does not check the timing, the erased value or the read-back on hardware. |
+| `test-flash-v30x` | The shared `Flash` driver with the CH32V30X registers. Models of `FLASH_KEYR`, `FLASH_MODEKEYR`, `FLASH_CTLR` and `FLASH_STATR` check the unlock and lock sequence (no key write while unlocked, a second unlock after a lock), HCLK = SYSCLK / 2 during an operation above 120 MHz and the old `RCC_CFGR0` after it, `program_halfword()` (odd address, write protection error), `erase_page()` and the padding of `write_buffer()`. It does not check the timing, the erased value or the read-back. |
 | `test-dma-v30x` | `Dma::Channel` with the CH32V30X registers. The channel registers of channels 1 to 11 have the offsets of the RM. The interrupt flags of channels 1 to 7 are in `INTFR` and `INTFCR`. The flags of channels 8 to 11 are in the extend registers. It does not test a transfer. |
 | `test-adc-v30x` | The CH32V30X `Adc` driver: the sequence registers, the sample time registers, the prescaler, the clock and reset bits of ADC1 and ADC2, and the trigger. It does not test `calibrate()`. |
 | `test-rcc-v30x` | The CH32V30X `Rcc` driver: each clock enable sets its bit in the register of the correct bus and changes no other bit. Each reset function leaves its reset bit clear and changes no other bit. `getAPBClock()` and `getAPB2Clock()` follow PPRE1 and PPRE2. The test sees only the end state of a register: it does not check that a reset function sets the bit before it clears it. |
-| `test-spi-v30x` | `hw::Spi` with the CH32V30X bits: the `CTLR1` and `CTLR2` values of `configure()` (the settings of the JTAG fast path of the firmware), `SSI` for a master and a slave with `NssMode::Soft`, the other NSS modes, the prescaler field, the timeouts of `transfer()` and `waitUntilIdle()`, and the bus clock of SPI1 (PCLK2) and SPI3 (PCLK1). It does not test a transfer on hardware. |
+| `test-spi-v30x` | `hw::Spi` with the CH32V30X bits: the `CTLR1` and `CTLR2` values of `configure()` (the settings of the JTAG fast path of the firmware), `SSI` for a master and a slave with `NssMode::Soft`, the other NSS modes, the prescaler field, the timeouts of `transfer()` and `waitUntilIdle()`, and the bus clock of SPI1 (PCLK2) and SPI3 (PCLK1). It does not test a transfer. |
 
 Each test starts with a known pattern in the configuration registers.
 It checks the field of the selected pin.
@@ -64,7 +64,7 @@ The test also does not check the PFIC priority or the vector entry.
 - The tick count and the compare value stay right across the carry of the low word at 2^32 cycles.
 - `hw::CycleCounter`: `count()` returns the low word of the counter, and a difference of two counts is correct across the wrap. `start()` does not change a counter that `SysTick_Config()` started. `start()` sets STCLK and STE on a stopped counter.
 
-The test does not check that the hardware counts past the compare value without auto reload, or the compare rule (equal, or greater or equal). The `clock-time` example of `ch32v00x-examples` checks them on the board.
+The test does not check that the hardware counts past the compare value without auto reload, or the compare rule (equal, or greater or equal). The `clock-time` example of `ch32v00x-examples` checks them.
 
 `test-usb-v307` tests the USBHS device driver of CH32V307
 (`src/families/ch32v30x/UsbDevice.cpp`, see [USB device driver](usb.md)).
@@ -103,7 +103,7 @@ The test uses the offset of the buffer in the `UsbDevice` object.
   Thus the test does not check the `Setup`, `Out` and `InComplete` events, or the EP0 toggle after a transfer.
   It also does not check the data that `readOut()` copies after a received packet.
 - USB interrupt timing: `INT_BUSY`, and the shared `INT_ST` and `RX_LEN` registers (see [USB known limits](usb.md#known-limits)).
-  The USB hardware test, the [`usb-loopback`](https://gitlab.vandertogt.org/riscv/ch32v00x-examples/-/tree/main/examples/usb-loopback) example of ch32v00x-examples, checks the interrupt handler on a board. This test is not done yet.
+  The [`usb-loopback`](https://gitlab.vandertogt.org/riscv/ch32v00x-examples/-/tree/main/examples/usb-loopback) example of ch32v00x-examples uses the interrupt handler.
   No test proves the `INT_ST` and `RX_LEN` race, because the time window is small.
 
 ### Add a test
@@ -144,7 +144,6 @@ and `g_pfnVectors` at `0x4`. The job fails if an address is different.
 The job also fails if the image has a separate `.sbss` section, because the start-up code clears only the `.bss` range.
 
 The image does not test the USB driver.
-The USB hardware test is the [`usb-loopback`](https://gitlab.vandertogt.org/riscv/ch32v00x-examples/-/tree/main/examples/usb-loopback) example of ch32v00x-examples.
 
 ## Continuous integration
 

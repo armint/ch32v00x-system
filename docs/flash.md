@@ -73,13 +73,11 @@ CH32V20X yet.
 - The flash enhanced read mode (`EHMOD`) must be off for an erase or a
   program operation. The driver does not set `EHMOD`, and a reset clears it.
 - `program_halfword()` compiles for each chip header that defines
-  `FLASH_CTLR_PG` (CH32V003, CH32V20X and CH32V30X). It is tested only on
-  CH32V30X.
+  `FLASH_CTLR_PG` (CH32V003, CH32V20X and CH32V30X).
 
 ## Tests
 
 - The host test `test-flash-v30x` checks the register sequence. See
   [Testing](testing.md).
-- The `flash` example of ch32v00x-examples runs on the YD-CH32V307VCT6
-  board. It checks the erase, the two program modes, the read-back and the
-  values after a reset.
+- The `flash` example of ch32v00x-examples checks the erase, the two
+  program modes, the read-back and the values after a reset.

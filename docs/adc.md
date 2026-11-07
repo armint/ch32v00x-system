@@ -33,20 +33,18 @@ The CH32V307 has two ADCs, ADC1 and ADC2. Each has 16 external channels
 the temperature sensor on channel 16 and Vrefint (internal reference
 voltage) on channel 17. Include `<Adc.h>`.
 
-The names are the names of the STM32F1 `Adc` in `system-stm32` for the same
-job: `Channel` (`PA0`, `PB0`, `TempSensor`, `Vrefint`),
+The class has `Channel` (`PA0`, `PB0`, `TempSensor`, `Vrefint`),
 `SamplingCycles::Cycles239_5`, the static `enableClock()`, `disableClock()`,
 `reset()` and `configureClock()`, and `enable()`, `disable()`, `calibrate()`,
-`setSamplingTime()` and `convert()`. These names are also the names of the
-CH32V00X class where the job is the same, for example `Cycles241` and
-`Vrefint`. The other functions of the class (`configureRegularChannel()`,
-`start()`, `value()`, the trigger and interrupt functions) have no
-equivalent in the `system-stm32` F1 class.
+`setSamplingTime()` and `convert()`. For sequences and DMA, it has
+`configureRegularChannel()`, `start()`, `value()` and the trigger and
+interrupt functions. The names are the names of the CH32V00X class where the
+job is the same, for example `Cycles241` and `Vrefint`.
 
-## Differences from STM32F1 and from CH32V00X
+## Differences from CH32V00X
 
 - `enableClock()`, `disableClock()` and `reset()` are static. They take the
-  ADC as an optional argument. The default is ADC1, like in `system-stm32`.
+  ADC as an optional argument. The default is ADC1.
   Use `Adc::enableClock(ADC2)` for ADC2.
 - `configureClock()` sets the smallest PCLK2 divider (2, 4, 6 or 8) that
   keeps the ADC clock at or below 14 MHz. It returns the ADC clock in Hz.
@@ -79,6 +77,6 @@ equivalent in the `system-stm32` F1 class.
    and `setRegularConversionTrigger(RegularTrigger::SWSTART)`. Call
    `start()`. Wait for `isConversionComplete()`. Read `value()`.
 
-The old names worked on the YD-CH32V307 board in the `adc-dma` example. The
-new names need a new run on the board. The host test checks the register
-values, `configureClock()` and the refusal of `calibrate()` on an ADC that is off.
+The `adc-dma` example of ch32v00x-examples uses the driver. The host test
+checks the register values, `configureClock()` and the refusal of
+`calibrate()` on an ADC that is off.
