@@ -16,9 +16,9 @@
 // makes after a transfer. Thus the test does not run the interrupt handler,
 // and it checks no toggle state after a transfer. It also does not check
 // interrupt timing (INT_BUSY, the INT_ST and RX_LEN race of docs/usb.md).
-// The usb-loopback example of ch32v00x-examples is the place for the
-// interrupt handler and the toggle; it is not done yet. No test proves the
-// INT_ST and RX_LEN race: the window is too small (docs/usb.md, Known limits).
+// The usb-loopback example of ch32v00x-examples uses the interrupt handler and
+// the toggle. No test proves the INT_ST and RX_LEN race: the window is too small
+// (docs/usb.md, Known limits).
 //
 // The driver writes 32-bit DMA addresses. On a 64-bit host this is the low
 // half of the pointer. The buffers are in the UsbDevice object, so the test
