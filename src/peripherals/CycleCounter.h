@@ -3,10 +3,10 @@
 #include <cstdint>
 #include <wch_device.h>
 
-// A 32-bit core clock cycle counter. The QingKe V4 core has no mcycle CSR, so the counter is SysTick->CNT, the
-// low word of the 64-bit SysTick counter. SysTick_Config() runs that counter free at the core
-// clock (utils/Timekeeping.h). The count wraps every 2^32 cycles (29.8 s at 144 MHz): use it for
-// differences only. See docs/cycle-counter.md.
+// A 32-bit core clock cycle counter. The QingKe V4 core has no mcycle CSR, so the counter is
+// SysTick->CNT, the low word of the 64-bit SysTick counter. SysTick_Config() runs that counter free
+// at the core clock (utils/Timekeeping.h). The count wraps every 2^32 cycles (29.8 s at 144 MHz):
+// use it for differences only. See docs/cycle-counter.md.
 //
 // CH32V00X has no cycle counter: the QingKe V2 core has no mcycle CSR, and its 32-bit SysTick
 // counter starts again from 0 at each tick.

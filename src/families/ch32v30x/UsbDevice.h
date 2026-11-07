@@ -13,9 +13,9 @@ namespace hw {
 // maximum speed in the constructor, speed(), and no pull-up callback (the
 // D+ pull-up is internal). See docs/usb.md.
 //
-// There is no shared packet memory: each endpoint has a DMA buffer in RAM
-// and its own TX_CTRL/RX_CTRL register (response and data toggle). This driver keeps the buffers in the object: EP0 has one 64-byte
-// buffer for both directions, endpoints 1..15 take theirs from a pool of
+// There is no shared packet memory: each endpoint has a DMA buffer in RAM and its own
+// TX_CTRL/RX_CTRL register (response and data toggle). This driver keeps the buffers in the object:
+// EP0 has one 64-byte buffer for both directions, endpoints 1..15 take theirs from a pool of
 // PacketMemorySize bytes.
 //
 // Packet level only: one call moves at most one packet. Control transfers,
@@ -54,18 +54,16 @@ namespace hw {
 // mask the USBHS interrupt while they run (Interrupt::BlockingSection).
 // begin() and end() are for the main loop only.
 //
-// Double-buffered bulk OUT (RM 22.2.2.3, table 21-3): openEndpoint() with
-// doubleBuffered true gives an OUT endpoint two buffers. The hardware
-// receives the next packet into the second buffer while the software still
-// reads the first. There is one Out event per armOut(), and readOut()
-// reads that packet. A packet that arrives before armOut() waits in its buffer, and armOut() reports it. The
-// endpoint number then has no IN direction (the hardware uses the IN buffer
-// address register as the second OUT buffer). The hardware does not NAK when
-// both buffers are full, so the interrupt handler sets NAK then.
-// setNak() and setStall() on an endpoint that answers ACK do a read-modify-write
-// of the control byte, and a packet that completes in between can lose its
-// toggle flip. The driver keeps the toggle in software and writes it back in
-// the handler, so the loss does not stay (Direction::toggle).
+// Double-buffered bulk OUT (RM 22.2.2.3, table 21-3): openEndpoint() with doubleBuffered true gives
+// an OUT endpoint two buffers. The hardware receives the next packet into the second buffer while
+// the software still reads the first. There is one Out event per armOut(), and readOut() reads that
+// packet. A packet that arrives before armOut() waits in its buffer, and armOut() reports it. The
+// endpoint number then has no IN direction (the hardware uses the IN buffer address register as the
+// second OUT buffer). The hardware does not NAK when both buffers are full, so the interrupt
+// handler sets NAK then. setNak() and setStall() on an endpoint that answers ACK do a
+// read-modify-write of the control byte, and a packet that completes in between can lose its toggle
+// flip. The driver keeps the toggle in software and writes it back in the handler, so the loss does
+// not stay (Direction::toggle).
 //
 // Limits: no isochronous endpoints, no double-buffered IN endpoints, no
 // remote wake-up, no test modes. INT_ST (token and endpoint of the last
