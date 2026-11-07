@@ -71,6 +71,12 @@ not time. The default is `defaultTimeoutLoops` (100000).
 sets `SSI` from the `MSTR` bit (RM 20.2.3). Call `setNssMode()` after `setMode()`.
 `configure()` uses this order.
 
+**Mode fault on a master with `Soft`.** A master with `SSM` = 0 reads the NSS
+pin. A low or floating pin causes a mode fault, and the mode fault clears
+`MSTR`. While `MODF` is set, the SPI ignores a write to `MSTR`. Thus
+`configure()` sets `SSM` and `SSI` before `MSTR` for a master with `Soft`. It
+also reads `STATR` first, so that its `CTLR1` writes clear an old `MODF`.
+
 ## Limits
 
 - The driver does not set the high-speed read mode (`HSCR`) of CH32V30X.
