@@ -1,7 +1,6 @@
 #pragma once
 
-// Clock enables, peripheral resets and bus clocks of the RCC. The names are the
-// names of system-stm32 (peripherals/Rcc.h) for the same job. The family header
+// Clock enables, peripheral resets and bus clocks of the RCC. The family header
 // (Rcc_V00x.h, Rcc_V20x.h or Rcc_V30x.h) gives the bus of each peripheral.
 
 #include <cstdint>

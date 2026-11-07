@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-// System tick count, with the names of system-stm32. SysTick_Config()
+// System tick count. SysTick_Config()
 // (core_riscv.h) starts the tick; the application chooses the tick rate,
 // e.g. SysTick_Config(SystemCoreClock / 1000) for 1 ms.
 //

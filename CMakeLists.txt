@@ -91,14 +91,14 @@ endif ()
 
 add_library(ch32v00x-system OBJECT ${PROJECT_SOURCES})
 
-# Device macro of the chip, for example CH32V003 or CH32V30x_D8C. Same job as
-# STM32_DEVICE in system-stm32. Empty: the consumer sets the macro itself.
+# Device macro of the chip, for example CH32V003 or CH32V30x_D8C.
+# Empty: the consumer sets the macro itself.
 set(CH32_DEVICE "" CACHE STRING "CH32 device macro, for example CH32V003 or CH32V30x_D8C")
 if (CH32_DEVICE)
     target_compile_definitions(ch32v00x-system PUBLIC ${CH32_DEVICE})
 endif ()
 
-# HSE crystal in Hz. Same job as SYSTEM_STM32_HSE_VALUE in system-stm32.
+# HSE crystal in Hz.
 # Empty: the device header default.
 set(CH32V00X_SYSTEM_HSE_VALUE "" CACHE STRING "HSE crystal frequency in Hz (empty: device header default)")
 if (CH32V00X_SYSTEM_HSE_VALUE)

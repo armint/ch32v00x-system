@@ -52,7 +52,7 @@ family header has a name that is unique across the families, for example
 `Adc_V00x.h`. A header can select the family header with a preprocessor
 test. For example, `src/families/ch32v00x/Adc.h` includes `Adc_V003.h` when
 `CH32V003` is defined, and `Adc_V00x.h` when `CH32V006` or `CH32V002` is
-defined. Include `<Adc.h>`, like in `system-stm32`. On CH32V30X, `Adc.h` in
+defined. Include `<Adc.h>`. On CH32V30X, `Adc.h` in
 `src/families/ch32v30x/` is the driver itself.
 
 The installed package has the same include layout. Its include directory

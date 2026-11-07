@@ -3,8 +3,7 @@
 #include <stdint.h>
 #include <wch_device.h>
 
-// Alternate-function remap and debug port of CH32V30X, with the API of
-// hw::Afio in system-stm32 (STM32F1). A peripheral has a default pin set
+// Alternate-function remap and debug port of CH32V30X. A peripheral has a default pin set
 // and one or more remapped pin sets, selected in AFIO_PCFR1. All functions
 // enable the AFIO clock themselves.
 //

@@ -1,9 +1,8 @@
 # Cycle counter
 
 `hw::CycleCounter` in `peripherals/CycleCounter.h` gives a 32-bit counter of
-core clock cycles. It has the names of `hw::CycleCounter` in `system-stm32`,
-which reads the DWT (data watchpoint and trace) counter `CYCCNT`. Thus code
-that measures short times compiles for both libraries without a change.
+core clock cycles. Use it to measure short times, for example in bit-bang
+timing loops.
 
 | Function | Effect |
 |---|---|
@@ -51,9 +50,8 @@ SysTick counter has 32 bits and starts again from 0 at each tick (auto
 reload, STRE). A free-running SysTick on CH32V00X would change the tick of
 all applications, so the library does not do this.
 
-## Hardware test
+## Example
 
 The `cycle-counter` example of
 [ch32v00x-examples](https://gitlab.vandertogt.org/riscv/ch32v00x-examples)
-compares `count()` with `delaymS()` on the YD-CH32V307VCT6 board. It prints
-the measured core clock and PASS or FAIL.
+compares `count()` with `delaymS()`. It prints the measured core clock.

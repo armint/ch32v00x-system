@@ -1,8 +1,7 @@
 # Timer driver
 
-`hw::Timer` in `peripherals/Timer.h` controls one timer (TIM1 to TIM10). It
-has the names of `hw::Timer` in `system-stm32`. All families use the same
-driver.
+`hw::Timer` in `peripherals/Timer.h` controls one timer (TIM1 to TIM10). All
+families use the same driver.
 
 Do not use `hw::Timer` with TIM3 of CH32V006. That timer has another
 register layout. The driver then writes the wrong registers, and no error
@@ -87,8 +86,7 @@ CH32V20X. `tests/check-svd-offsets.py` checks the bits against the SVD.
 - **Register width.** The manual gives 16-bit registers (`R16`). The
   exceptions are `CNT`, `ATRLR` and `CH1CVR` to `CH4CVR` of TIM2 to TIM4
   (`R32`). Each register is 4 bytes from the next. The CH32V30X header
-  declares 32-bit fields. The hardware test of PR #9 shows that 32-bit
-  access works.
+  declares 32-bit fields. A 32-bit access works.
 - **Counter width.** All counters are 16 bits. The 32-bit TIM5 is only on
   CH32V20x_D8 and D8W. `setAutoReload()` and `setCounter()` write 16 bits
   there, because the CH32V20X header declares 16-bit fields.

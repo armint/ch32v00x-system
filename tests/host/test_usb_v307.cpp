@@ -7,8 +7,7 @@
 //
 // The double-buffered OUT tests call the interrupt handler with the INT_FG,
 // INT_ST, RX_LEN and RX_CTRL values that the hardware would leave (the
-// test flips RX_TOG[0] as the auto toggle does). Whether the real USBHS
-// selects the buffer as the RM table 21-3 says is for the hardware test.
+// test flips RX_TOG[0] as the auto toggle does).
 //
 // The USBHS and RCC registers are plain host memory (stub <wch_device.h> in
 // stubs-usb-v307/), so a register holds the value of the last write. The
@@ -17,9 +16,9 @@
 // makes after a transfer. Thus the test does not run the interrupt handler,
 // and it checks no toggle state after a transfer. It also does not check
 // interrupt timing (INT_BUSY, the INT_ST and RX_LEN race of docs/usb.md).
-// The usb-loopback example of ch32v00x-examples is the place for the
-// interrupt handler and the toggle; it is not done yet. No test proves the
-// INT_ST and RX_LEN race: the window is too small (docs/usb.md, Known limits).
+// The usb-loopback example of ch32v00x-examples uses the interrupt handler and
+// the toggle. No test proves the INT_ST and RX_LEN race: the window is too small
+// (docs/usb.md, Known limits).
 //
 // The driver writes 32-bit DMA addresses. On a 64-bit host this is the low
 // half of the pointer. The buffers are in the UsbDevice object, so the test
@@ -308,7 +307,7 @@ void testOpenEndpointRejects() {
    ep(3).TX_CTRL = USBHS_UEP_T_RES_ACK | USBHS_UEP_T_TOG_DATA1; // a packet waits, toggle DATA1
    ep(3).T_LEN = 5;
    CHECK(usb.openEndpoint(0x83, EndpointType::Bulk, 64)); // same size: keeps the buffer
-   // A reopen is SET_INTERFACE: DATA0, NAK, and the waiting packet is gone (as in the system-stm32 driver).
+   // A reopen is SET_INTERFACE: DATA0, NAK, and the waiting packet is gone.
    CHECK(ep(3).TX_CTRL == TxOpen);
    CHECK(ep(3).T_LEN == 0);
    CHECK(txDma(3) == dma);

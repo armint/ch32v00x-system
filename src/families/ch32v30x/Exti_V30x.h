@@ -5,8 +5,7 @@
 #include <stdint.h>
 #include <wch_device.h>
 
-// EXTI of CH32V30X with the API of Exti in system-stm32, so code such as
-// GpioInterrupt builds for both libraries. Exti.h includes this file.
+// EXTI of CH32V30X, used by GpioInterrupt. Exti.h includes this file.
 // Only the GPIO lines 0 to 15 are here. Lines 16 and up (PVD, RTC alarm,
 // USB wake-up, Ethernet wake-up) have no port routing and no name yet.
 
@@ -132,7 +131,7 @@ inline Port getPortFromGPIO(GPIO_TypeDef *const gpio) {
 
 constexpr IRQn_Type getExtiIRQnForGPIOLine(uint8_t line) {
    if(line > 15) {
-      return static_cast<IRQn_Type>(-15); // undefined IRQn, as in system-stm32
+      return static_cast<IRQn_Type>(-15); // undefined IRQn
    }
    return gpioIRQs[line];
 }

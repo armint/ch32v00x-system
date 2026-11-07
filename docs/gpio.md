@@ -1,7 +1,6 @@
 # GPIO, AFIO and EXTI
 
 This page lists the GPIO APIs of the library and the families that have them.
-Each API has the name and the signature of the same API in `system-stm32`.
 
 ## API per family
 
@@ -10,16 +9,13 @@ Each API has the name and the signature of the same API in `system-stm32`.
 | `hw::GpioPin` | `peripherals/GpioPin.h` | yes | yes | yes |
 | `hw::FastPin` | `peripherals/FastPin.h` | yes (pins 0 to 7) | yes | yes |
 | `Exti` (short API: `enableInterrupt()`, `setRisingEdge()`, ...) | `peripherals/Exti.h` | yes | yes | no |
-| `Exti` (API of `system-stm32`: `TriggerEdge`, `Port`, `setPortForExtiLine()`, `configureExtiInterrupt()`, `isInterruptPending()`, ...) | `peripherals/Exti.h` | no | no | yes |
+| `Exti` (full API: `TriggerEdge`, `Port`, `setPortForExtiLine()`, `configureExtiInterrupt()`, `isInterruptPending()`, ...) | `peripherals/Exti.h` | no | no | yes |
 | `GpioInterrupt` | `utils/GpioInterrupt.h` | no | no | yes |
 | `hw::Afio` | `Afio.h` | no | no | yes |
 
-`system-stm32` has `hw::Afio` for STM32F1 only. It has `Exti` and
-`GpioInterrupt` for the other STM32 families, not for STM32F1.
-
 ## GpioPin and FastPin
 
-The CH32 GPIO is the STM32F1 GPIO. Each pin has one 4-bit field in `CFGLR`
+Each pin has one 4-bit field in `CFGLR`
 (pins 0 to 7) or `CFGHR` (pins 8 to 15). The encoding is in
 `peripherals/GpioConfig.h`. CH32V00X ports have pins 0 to 7 only.
 

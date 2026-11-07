@@ -1,7 +1,6 @@
 # DMA driver
 
-`Dma::Channel` in `peripherals/Dma.h` controls one DMA channel. It has the
-names of `Dma::Channel` in `system-stm32`.
+`Dma::Channel` in `peripherals/Dma.h` controls one DMA channel.
 
 ## Use
 

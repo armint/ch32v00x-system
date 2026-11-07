@@ -5,7 +5,7 @@
 
 namespace hw {
 
-/// Timer driver with the public names of `hw::Timer` in system-stm32. See docs/timer.md.
+/// Timer driver. See docs/timer.md.
 /// The header fields are 16 bits wide (CH32V00X, CH32V20X) or 32 bits wide (CH32V30X).
 /// Not for the CH32V006 TIM3: that timer has another register layout.
 class Timer {

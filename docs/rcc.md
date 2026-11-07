@@ -2,8 +2,7 @@
 
 The `Rcc` namespace in `src/peripherals/Rcc.h` enables peripheral clocks,
 resets peripherals and gives the bus clocks. RCC is the reset and clock
-control unit. The function names are the names of `system-stm32` for the
-same job (name parity, see `AGENTS.md`). The source is the reference manual
+control unit. The source is the reference manual
 CH32FV2x_V3xRM, chapter 3 ("RM" below), and the WCH device headers.
 
 ## Structure
@@ -57,8 +56,7 @@ The reset functions (`resetSPI1()`, `resetSPI3()`, `resetTIM1()`,
 `resetTIM3()` and `resetTIM10()`) set the reset bit of the peripheral in
 `APB2PRSTR` or `APB1PRSTR` and then clear it. After the
 call, all registers of the peripheral have their reset values. The clock
-enable bit does not change. `system-stm32` has no reset function yet.
-These names are the proposal for it.
+enable bit does not change.
 
 ### Bus clocks
 
@@ -84,5 +82,6 @@ the time of an erase or a program operation (see [Flash driver](flash.md)).
 ## Tests
 
 The host test `test-rcc-v30x` checks the CH32V30X family header and the bus
-clocks. Refer to [Testing](testing.md). The hardware test is the `rcc`
-example of [ch32v00x-examples](https://gitlab.vandertogt.org/riscv/ch32v00x-examples).
+clocks. Refer to [Testing](testing.md). The `rcc` example of
+[ch32v00x-examples](https://gitlab.vandertogt.org/riscv/ch32v00x-examples)
+uses the driver.

@@ -5,8 +5,8 @@
 #include <stdint.h>
 
 // CH32 pin configuration encoding, shared by GpioPin and the FastPin
-// direction switch. It is the STM32F1 encoding (RM0008 9.2.1), so the
-// namespace has the name that system-stm32 uses: hw::gpio_f1.
+// direction switch. It is the STM32F1 encoding (RM0008 9.2.1), hence the
+// namespace name hw::gpio_f1.
 //
 // Each pin has one 4-bit field in CFGLR (pins 0-7) or CFGHR (pins 8-15):
 // CNF[1:0] in the upper two bits and MODE[1:0] in the lower two bits.

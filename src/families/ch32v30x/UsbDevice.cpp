@@ -172,7 +172,7 @@ bool UsbDevice::openEndpoint(uint8_t address, EndpointType type, uint16_t maxPac
          return false;
       }
       if(n != 0) {
-         // As the system-stm32 driver: DATA0 and NAK, and no packet that was received before (SET_INTERFACE
+         // DATA0 and NAK, and no packet that was received before (SET_INTERFACE
          // resets the data toggle of its endpoints).
          drainCompleted(address);
          resetDirection(address);
@@ -234,8 +234,8 @@ void UsbDevice::resetEndpoints() {
    USBHS->UEP_BUF_MOD = 0;
 
    // EP0: one buffer for both directions. OUT answers ACK, so the first
-   // control transfer after the reset finds EP0 ready, as on the STM32
-   // driver. IN answers NAK until startIn().
+   // control transfer after the reset finds EP0 ready. IN answers NAK
+   // until startIn().
    USBHS->UEP0_DMA = dmaAddress(_ep0Buffer);
    USBHS->UEP_MAX_LEN[0].MAX_LEN = Ep0MaxPacketSize;
    ctrl(0).T_LEN = 0;

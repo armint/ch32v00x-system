@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <wch_device.h>
 
-// The 96-bit unique ID of the chip, with the interface of hw::Uid in system-stm32. The ID is in the
+// The 96-bit unique ID of the chip. The ID is in the
 // electronic signature area (RM 31.2), at the same address on CH32V00X, CH32V20X and CH32V30X.
 #if !defined(UID_BASE)
 #error "hw::Uid: this family has no UID_BASE"

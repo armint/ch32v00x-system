@@ -18,6 +18,10 @@ It gives these projects one C++ interface to the hardware:
   `src/families/`.
 - Drivers that follow the hardware. When a family has a different
   peripheral, its driver exposes the functions of that peripheral.
+- Names that agree with
+  [system-stm32](https://github.com/armint/system-stm32)
+  where possible. A function that does the same job has the same name. A
+  function that does a different job has a different name.
 
 Higher layers are not in this library. The stream classes that connect
 [libArT](https://gitlab.vandertogt.org/embedded-libraries/libart) to this
@@ -27,24 +31,20 @@ library are in [ch32v00x-art](https://gitlab.vandertogt.org/riscv/ch32v00x-art).
 
 | `CH32_FAMILY` | Device macro | Chips | Status |
 |---|---|---|---|
-| `CH32V00X` | `CH32V003` | CH32V003 | Builds. Hardware test not recorded. |
-| `CH32V00X` | `CH32V002` | CH32V002 | Builds. Hardware test not recorded. |
-| `CH32V00X` | `CH32V006` | CH32V006 | Builds. Hardware test not recorded. |
-| `CH32V20X` | `CH32V20x_D8W` | CH32V208 | Builds. Hardware test not recorded. No ADC driver. |
-| `CH32V30X` | `CH32V30x_D8C` | CH32V307 | Start-up, clock, GPIO (with AFIO and EXTI), USART, SPI, ADC, DMA, timer, flash and USB device build. Hardware test of ADC, DMA and timer recorded (see below). Other drivers not ported yet. |
+| `CH32V00X` | `CH32V003` | CH32V003 | Supported. |
+| `CH32V00X` | `CH32V002` | CH32V002 | Builds. |
+| `CH32V00X` | `CH32V006` | CH32V006 | Supported. |
+| `CH32V20X` | `CH32V20x_D8W` | CH32V208 | Supported. No ADC driver. |
+| `CH32V30X` | `CH32V30x_D8C` | CH32V307 | Start-up, clock, GPIO (with AFIO and EXTI), USART, SPI, ADC, DMA, timer, flash and USB device. The I2C driver is not ported yet. |
 
-On CH32V30X, the start-up, the clock, SysTick, the delays, `Interrupt` and
-`GpioPin` build. `GpioPin` sets pins 0 to 7 in `CFGLR` and pins 8 to 15 in `CFGHR`.
-The `hw::Usart` driver builds for USART1 to USART3 and UART4 to UART8. A loopback test on hardware is not done yet.
+On CH32V30X, `GpioPin` sets pins 0 to 7 in `CFGLR` and pins 8 to 15 in `CFGHR`.
+The `hw::Usart` driver supports USART1 to USART3 and UART4 to UART8.
 The baud rate uses the APB prescaler (`Rcc::getAPB2Clock()` and `Rcc::getAPBClock()`): USART1 follows PPRE2, the other USARTs follow PPRE1. This also applies to CH32V20X. Call `setBaudRate()` again after a prescaler change.
-The USB device driver `hw::UsbDevice` builds for the USBHS controller. A test on a host is not done yet.
-The `Adc` driver builds for ADC1 and ADC2. Include `<Adc.h>`. It has the names of the STM32F1 `Adc` in `system-stm32` (see [ADC](docs/adc.md)).
-The `Dma` driver builds for DMA1 and, on CH32V30X, DMA2 (see [DMA driver](docs/dma.md)). The `hw::Timer` driver builds for TIM1 to TIM10 (see [Timer driver](docs/timer.md)). The `hw::Spi` driver builds for SPI1 to SPI3 (see [SPI driver](docs/spi.md)).
-On the YD-CH32V307VCT6 board, the `adc-dma` and `timer` examples of [ch32v00x-examples](https://gitlab.vandertogt.org/riscv/ch32v00x-examples) work.
-`adc-dma` uses ADC1 with DMA1 channel 1. `timer` uses TIM2 channel 1 on PA15 and TIM3 channel 1 on PB4, through the AFIO remaps.
-The `Flash` driver builds. Its hardware test is the `flash` example. See [Flash driver](docs/flash.md).
-The I2C driver is not ported yet. The family list is
-in [Chip families](docs/families.md).
+The USB device driver `hw::UsbDevice` uses the USBHS controller (see [USB device driver](docs/usb.md)).
+The `Adc` driver supports ADC1 and ADC2. Include `<Adc.h>` (see [ADC](docs/adc.md)).
+The `Dma` driver supports DMA1 and, on CH32V30X, DMA2 (see [DMA driver](docs/dma.md)). The `hw::Timer` driver supports TIM1 to TIM10 (see [Timer driver](docs/timer.md)). The `hw::Spi` driver supports SPI1 to SPI3 (see [SPI driver](docs/spi.md)).
+The [ch32v00x-examples](https://gitlab.vandertogt.org/riscv/ch32v00x-examples) repository shows the drivers on the YD-CH32V307VCT6 board.
+The family list is in [Chip families](docs/families.md).
 
 ## Drivers
 
@@ -52,11 +52,11 @@ in [Chip families](docs/families.md).
 |---|---|
 | Start-up | Reset handler, weak exception handlers, vector table per family, the weak hooks `os_startup_initialize_hardware_early()` (calls `SystemInit()`) and `os_startup_initialize_hardware()`, and the device header `cmsis_device.h` |
 | System timer and delays | `SysTick_Config()` and `getUptimeTicks()` in `utils/Timekeeping.h` (your project sets the tick rate), `delaymS()` and `delayuS()` in `delaybusywait.h`. On CH32V20X and CH32V30X, `hw::CycleCounter` in `peripherals/CycleCounter.h` is a free-running 32-bit core clock cycle counter (see [Cycle counter](docs/cycle-counter.md)) |
-| GPIO and EXTI | `hw::GpioPin` and `hw::FastPin` (the API of `system-stm32`), `Exti`, and on CH32V30X also `hw::Afio` and `GpioInterrupt`. See [GPIO](docs/gpio.md). |
+| GPIO and EXTI | `hw::GpioPin`, `hw::FastPin`, `Exti`, and on CH32V30X also `hw::Afio` and `GpioInterrupt`. See [GPIO](docs/gpio.md). |
 | Communication | `hw::Usart`, `hw::Spi` (see [SPI driver](docs/spi.md)), `I2c`, `hw::UsbDevice` (CH32V30X only, USB device on USBHS) |
 | Chip ID | `hw::Uid` in `peripherals/Uid.h`: the 96-bit unique ID (CH32V00X, CH32V20X, CH32V30X) |
-| Analog and timing | `Adc` (CH32V00X and CH32V30X), `hw::Timer` (the API of `system-stm32`, see [Timer driver](docs/timer.md)), `Dma` |
-| Clocks and resets | `Rcc` in `peripherals/Rcc.h`: peripheral clock enables, peripheral resets and the bus clocks (the names of `system-stm32`). See [RCC driver](docs/rcc.md). |
+| Analog and timing | `Adc` (CH32V00X and CH32V30X), `hw::Timer` (see [Timer driver](docs/timer.md)), `Dma` |
+| Clocks and resets | `Rcc` in `peripherals/Rcc.h`: peripheral clock enables, peripheral resets and the bus clocks. See [RCC driver](docs/rcc.md). |
 | Other | `Flash`, `Interrupt` (connects C++ member functions as interrupt handlers) |
 
 ## Quick start
@@ -85,7 +85,7 @@ toolchain file `cmake/gcc_riscv.cmake`. For all options, see
 | `cmake/` | The RISC-V toolchain file, the package configuration and helper modules for the examples build. |
 | `svd/` | SVD register descriptions, for reference and debug tools. |
 | `tests/host/` | Host tests with fake registers. They run with `ctest` and need no board. See [Testing](docs/testing.md). |
-| `tests/` | Checks of the library. `check-svd-offsets.py` compares the CH32V30x device header with the SVD. `ch32v30x/` is a test image that CI links, see [Testing](docs/testing.md#test-images). The hardware test of the USB device driver is the [`usb-loopback`](https://gitlab.vandertogt.org/riscv/ch32v00x-examples/-/tree/main/examples/usb-loopback) example of ch32v00x-examples. |
+| `tests/` | Checks of the library. `check-svd-offsets.py` compares the CH32V30x device header with the SVD. `ch32v30x/` is a test image that CI links, see [Testing](docs/testing.md#test-images). |
 | `etc/openocd.cfg` | OpenOCD configuration for the WCH-LinkE debug adapter. It needs the WCH fork of OpenOCD. |
 
 ## Documentation

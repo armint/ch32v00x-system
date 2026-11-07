@@ -8,17 +8,14 @@
 namespace hw {
 
 // USB device on the USBHS controller of the CH32V307 (RM chapter 22),
-// high speed (480 Mbit/s) or full speed (12 Mbit/s). The public interface
-// is the one of hw::UsbDevice in system-stm32, so a controller port above it
-// (for example libart-stm32 on the libArT USB stack) needs few changes.
-// Differences: 16 endpoint numbers, packets up to 512 bytes (bulk) or 1024
-// bytes (interrupt), a maximum speed in the constructor, speed(), and no
-// pull-up callback (the D+ pull-up is internal). See docs/usb.md.
+// high speed (480 Mbit/s) or full speed (12 Mbit/s). It has 16 endpoint
+// numbers, packets up to 512 bytes (bulk) or 1024 bytes (interrupt), a
+// maximum speed in the constructor, speed(), and no pull-up callback (the
+// D+ pull-up is internal). See docs/usb.md.
 //
-// The hardware is not the STM32 packet-memory block: each endpoint has a
-// DMA buffer in RAM and its own TX_CTRL/RX_CTRL register (response and data
-// toggle). This driver keeps the buffers in the object: EP0 has one 64-byte
-// buffer for both directions, endpoints 1..15 take theirs from a pool of
+// There is no shared packet memory: each endpoint has a DMA buffer in RAM and its own
+// TX_CTRL/RX_CTRL register (response and data toggle). This driver keeps the buffers in the object:
+// EP0 has one 64-byte buffer for both directions, endpoints 1..15 take theirs from a pool of
 // PacketMemorySize bytes.
 //
 // Packet level only: one call moves at most one packet. Control transfers,
@@ -57,19 +54,16 @@ namespace hw {
 // mask the USBHS interrupt while they run (Interrupt::BlockingSection).
 // begin() and end() are for the main loop only.
 //
-// Double-buffered bulk OUT (RM 22.2.2.3, table 21-3): openEndpoint() with
-// doubleBuffered true gives an OUT endpoint two buffers. The hardware
-// receives the next packet into the second buffer while the software still
-// reads the first. The interface stays the same as in system-stm32: one Out
-// event per armOut(), and readOut() reads that packet. A packet that arrives
-// before armOut() waits in its buffer, and armOut() reports it. The
-// endpoint number then has no IN direction (the hardware uses the IN buffer
-// address register as the second OUT buffer). The hardware does not NAK when
-// both buffers are full, so the interrupt handler sets NAK then.
-// setNak() and setStall() on an endpoint that answers ACK do a read-modify-write
-// of the control byte, and a packet that completes in between can lose its
-// toggle flip. The driver keeps the toggle in software and writes it back in
-// the handler, so the loss does not stay (Direction::toggle).
+// Double-buffered bulk OUT (RM 22.2.2.3, table 21-3): openEndpoint() with doubleBuffered true gives
+// an OUT endpoint two buffers. The hardware receives the next packet into the second buffer while
+// the software still reads the first. There is one Out event per armOut(), and readOut() reads that
+// packet. A packet that arrives before armOut() waits in its buffer, and armOut() reports it. The
+// endpoint number then has no IN direction (the hardware uses the IN buffer address register as the
+// second OUT buffer). The hardware does not NAK when both buffers are full, so the interrupt
+// handler sets NAK then. setNak() and setStall() on an endpoint that answers ACK do a
+// read-modify-write of the control byte, and a packet that completes in between can lose its toggle
+// flip. The driver keeps the toggle in software and writes it back in the handler, so the loss does
+// not stay (Direction::toggle).
 //
 // Limits: no isochronous endpoints, no double-buffered IN endpoints, no
 // remote wake-up, no test modes. INT_ST (token and endpoint of the last
@@ -78,8 +72,7 @@ namespace hw {
 // the handler can overwrite both. Then the handler sees a SETUP token, and
 // the IN or OUT event is lost: an IN endpoint stays ACK and sends the same
 // packet again, with no InComplete. A wrong RX_LEN gives a wrong OUT length.
-// The window is the interrupt entry time. The hardware test must show if
-// the controller holds INT_ST and RX_LEN for a pending TRANSFER.
+// The window is the interrupt entry time.
 class UsbDevice {
    public:
    static constexpr uint8_t EndpointCount = 16;

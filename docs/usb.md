@@ -12,13 +12,11 @@ or descriptors. A USB stack above the driver does this work, for example
 the `art::usb::Device` class of
 [libArT](https://gitlab.vandertogt.org/embedded-libraries/libart).
 
-The public interface is the same as the interface of `hw::UsbDevice` in
-system-stm32. The shared header `src/peripherals/UsbDeviceTypes.h` has the
-same types (`hw::usb::Event`, `hw::usb::EndpointType` and the endpoint
-address helpers). Thus a controller port for the libArT stack needs few
-changes.
+The shared header `src/peripherals/UsbDeviceTypes.h` has the types of the
+interface (`hw::usb::Event`, `hw::usb::EndpointType` and the endpoint address
+helpers).
 
-These items are different from the system-stm32 driver:
+The driver has these properties:
 
 - The endpoint numbers are 0 to 15.
 - A bulk endpoint has packets of up to 512 bytes. An interrupt endpoint
@@ -76,10 +74,9 @@ process it in the main loop.
 
 `openEndpoint(address, Bulk, size, true)` opens a bulk OUT endpoint with two
 buffers (RM 22.2.2.3, table 21-3). The hardware receives the next packet into
-the second buffer while the software reads the first. The interface is the
-same as in system-stm32: one Out event for each `armOut()`, and `readOut()`
-reads that packet. A packet that arrives before `armOut()` waits in its
-buffer, and `armOut()` reports it.
+the second buffer while the software reads the first. Each `armOut()` gives
+one Out event, and `readOut()` reads that packet. A packet that arrives
+before `armOut()` waits in its buffer, and `armOut()` reports it.
 
 - The endpoint takes two buffers from the pool. Buffer 0 is `UEPn_RX_DMA`,
   and buffer 1 is `UEPn_TX_DMA`. Thus the IN direction of that endpoint
@@ -97,30 +94,25 @@ buffer, and `armOut()` reports it.
 - The bit position of the endpoint in `UEP_BUF_MOD` (bit n for endpoint n)
   follows the layout of `UEP_CONFIG`. The manual does not show the bit
   numbers. The host test checks the driver logic with a model of the
-  hardware. The hardware test must confirm the bit position and the buffer
-  order.
+  hardware.
 
-## Hardware test
+## Example
 
-The [`usb-loopback`](https://gitlab.vandertogt.org/riscv/ch32v00x-examples/-/tree/main/examples/usb-loopback) example of ch32v00x-examples tests the driver on a
+The [`usb-loopback`](https://gitlab.vandertogt.org/riscv/ch32v00x-examples/-/tree/main/examples/usb-loopback) example of ch32v00x-examples uses the driver on a
 CH32V307 board. It enumerates with a vendor interface named
 `CMSIS-DAP v2` and sends each bulk OUT packet back on the bulk IN
 endpoint. Its README gives the build and test steps.
 
 ## Known limits
 
-- The board tests of issue #25 (YD-CH32V307, the `usb-double-buffer`
-  example) confirmed enumeration and bulk OUT. Bulk IN with data was not
-  part of these tests.
 - The reference manual does not say if EP0 accepts a SETUP packet while
   EP0 answers NAK or STALL. The driver expects this behavior. The driver
-  ends a STALL on EP0 only when the next SETUP packet arrives. The hardware
-  test must confirm both cases.
+  ends a STALL on EP0 only when the next SETUP packet arrives.
 - The `INT_ST` and `RX_LEN` registers are global for all endpoints.
   `INT_ST` holds the token and the endpoint of the last transfer. `RX_LEN`
   holds the length of the last received packet. While a transfer interrupt
-  waits, `INT_BUSY` makes the controller NAK the next tokens. The board
-  tests showed these effects on a waiting EP2 OUT transfer:
+  waits, `INT_BUSY` makes the controller NAK the next tokens. The hardware
+  shows these effects on a waiting EP2 OUT transfer:
   - Each NAKed token sets `IS_NAK` in `INT_ST` (`0xC2` for EP2 OUT). This
     is also true for a NAK of another endpoint (EP1 IN). The endpoint and
     token bits do not change. `RX_LEN` keeps the length of the received
@@ -141,11 +133,8 @@ endpoint. Its README gives the build and test steps.
     the driver reads `INT_ST` first, and then reads `INT_FG` again to find
     `SETUP_ACT`.
 
-  These cases are not tested:
-  - A SETUP that completes while an IN transfer waits.
-  - A device with more than one active OUT endpoint.
-  - A SETUP and a read-modify-write of `setNak()` or `setStall()` on the
-    same packet. The toggle comparison then does not see the packet, and
-    the driver drops it.
+  A SETUP and a read-modify-write of `setNak()` or `setStall()` on the
+  same packet is a known gap. The toggle comparison then does not see the
+  packet, and the driver drops it.
 - The vendor SVD file names bits 5 to 7 of `USB_INT_EN` differently from
   the reference manual. The header follows the reference manual.

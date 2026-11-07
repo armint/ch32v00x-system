@@ -1,8 +1,7 @@
 # SPI driver
 
 `hw::Spi` in `peripherals/Spi.h` controls one SPI (serial peripheral
-interface). It has the names of `hw::Spi` in `system-stm32` (the SPI v1
-driver of STM32F1). All families use the same driver. The source is the
+interface). All families use the same driver. The source is the
 reference manual CH32FV2x_V3xRM, chapter 20 ("RM" below).
 
 | Family | SPI blocks | Bus clock |
@@ -58,8 +57,7 @@ and 11-3).
 | `getClockFrequency()` | The bus clock of the SPI (see the table above) |
 
 The timeouts of `transfer()` and `waitUntilIdle()` count loop iterations,
-not time. The default is `defaultTimeoutLoops` (100000), the same value as
-in `system-stm32`.
+not time. The default is `defaultTimeoutLoops` (100000).
 
 ## NSS modes
 
@@ -69,10 +67,8 @@ in `system-stm32`.
 | `HardInput` | `SSM` = 0. A low NSS pin causes a mode fault. | `SSM` = 0. A low NSS pin selects the slave. |
 | `HardOutput` | `SSM` = 0, `SSOE` = 1. The master drives NSS low while it is enabled. | Do not use. |
 
-**Difference from `system-stm32`.** In `system-stm32`, `Soft` always sets
-`SSI`. A slave with `SSI` = 1 is not selected. Thus the firmware clears
-`SSI` after `configure()` on STM32. In this driver, `Soft` sets `SSI` from
-the `MSTR` bit (RM 20.2.3). Call `setNssMode()` after `setMode()`.
+**`SSI` with `Soft`.** A slave with `SSI` = 1 is not selected. Thus `Soft`
+sets `SSI` from the `MSTR` bit (RM 20.2.3). Call `setNssMode()` after `setMode()`.
 `configure()` uses this order.
 
 ## Limits
@@ -87,5 +83,6 @@ the `MSTR` bit (RM 20.2.3). Call `setNssMode()` after `setMode()`.
 
 The host test `test-spi-v30x` checks the register values of `configure()`,
 the NSS modes, the timeouts of `transfer()` and the bus clock of each SPI.
-Refer to [Testing](testing.md). The hardware test is the `spi` example of
-[ch32v00x-examples](https://gitlab.vandertogt.org/riscv/ch32v00x-examples).
+Refer to [Testing](testing.md). The `spi` example of
+[ch32v00x-examples](https://gitlab.vandertogt.org/riscv/ch32v00x-examples)
+uses the driver.
