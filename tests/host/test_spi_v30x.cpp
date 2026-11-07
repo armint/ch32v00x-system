@@ -1,11 +1,9 @@
 // Host test of hw::Spi (src/peripherals/Spi.cpp) with the CH32V30X bits: the CTLR1 and CTLR2
-// values of configure(), the NSS modes, the transfer() timeouts and the bus clock of each SPI.
+// values of configure(), the NSS modes and the mode fault, the transfer() timeouts and the bus clock of each SPI.
 // Registers are host memory (stub <wch_device.h> in stubs-spi-v30x/).
 
 #include "check.h"
 #include "peripherals/Spi.h"
-
-#include <cstring>
 
 uint32_t SystemCoreClock = 144000000;
 RCC_TypeDef hostRcc;
@@ -14,8 +12,8 @@ SPI_TypeDef hostSpi3;
 
 namespace {
 void clear() {
-   std::memset(const_cast<SPI_TypeDef *>(&hostSpi1), 0, sizeof(hostSpi1));
-   std::memset(const_cast<SPI_TypeDef *>(&hostSpi3), 0, sizeof(hostSpi3));
+   hostSpi1.reset();
+   hostSpi3.reset();
 }
 } // namespace
 
@@ -32,6 +30,24 @@ int main() {
    CHECK(hostSpi1.CTLR1 == (0x0010 | 0x0004 | 0x0002 | 0x0001 | 0x0080 | 0x0200 | 0x0100));
    CHECK(hostSpi1.CTLR2 == 0);
    CHECK(!master.isEnabled());
+
+   // Soft NSS on a master with a low (floating) NSS pin: configure() sets SSM and SSI before MSTR,
+   // so that the master never sees the pin. MSTR first is a mode fault, and MODF blocks MSTR.
+   clear();
+   hostSpi1.nssPinLow = true;
+   master.configure(S::BaudRatePrescaler::Div8, S::Mode::Master, S::ClockPolarity::High, S::ClockPhase::TwoEdge,
+                    S::DataSize::Bits8, S::FirstBit::Lsb, S::NssMode::Soft);
+   CHECK(hostSpi1.CTLR1 == (0x0010 | 0x0004 | 0x0002 | 0x0001 | 0x0080 | 0x0200 | 0x0100));
+   CHECK(!master.isModeFault());
+
+   // An old MODF with SSI = 0 (the state after a fault): configure() clears MODF and sets MSTR.
+   clear();
+   hostSpi1.CTLR1 = SPI_CTLR1_SSM;
+   hostSpi1.STATR = SPI_STATR_MODF;
+   master.configure(S::BaudRatePrescaler::Div8, S::Mode::Master, S::ClockPolarity::High, S::ClockPhase::TwoEdge,
+                    S::DataSize::Bits8, S::FirstBit::Lsb, S::NssMode::Soft);
+   CHECK(hostSpi1.CTLR1 == (0x0010 | 0x0004 | 0x0002 | 0x0001 | 0x0080 | 0x0200 | 0x0100));
+   CHECK(!master.isModeFault());
 
    // Soft NSS on a slave clears SSI: the slave is selected without an NSS pin (RM 20.2.3).
    hostSpi3.CTLR1 = SPI_CTLR1_SSI;
