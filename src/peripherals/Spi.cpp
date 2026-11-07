@@ -18,6 +18,14 @@ void Spi::configure(BaudRatePrescaler prescaler,
       disable();
    }
 
+   // A read of STATR and the CTLR1 writes below clear a pending MODF. MODF blocks MSTR (RM 20.2.7).
+   [[maybe_unused]] const uint32_t status = spi_.STATR;
+   // Soft NSS: set SSM and SSI before MSTR. Else the master reads the NSS pin, and a low pin is a
+   // mode fault that clears MSTR.
+   if(nss == NssMode::Soft && mode == Mode::Master) {
+      setCtlr1(SPI_CTLR1_SSM | SPI_CTLR1_SSI, SPI_CTLR1_SSM | SPI_CTLR1_SSI);
+   }
+
    setBaudRatePrescaler(prescaler);
    setMode(mode);
    setDirection(direction);
