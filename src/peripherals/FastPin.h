@@ -8,8 +8,7 @@
 namespace hw {
 
 /**
- * @brief GPIO pin with the port and pin fixed at compile time, with the API
- * of hw::FastPin in system-stm32 (STM32F1 branch).
+ * @brief GPIO pin with the port and pin fixed at compile time.
  *
  * For tight bit-bang loops (e.g. JTAG/SWD). Each access is one store to
  * BSHR or one load from INDR, with a constant address and mask, and no

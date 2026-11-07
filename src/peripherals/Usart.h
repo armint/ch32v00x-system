@@ -4,8 +4,7 @@
 
 namespace hw {
 
-// Same names as hw::Usart in system-stm32 (enums, setFrameFormat(), getClockFrequency(), returnStatusFlag()).
-// Not all of its functions exist here: the half-duplex, CTS/RTS, idle-line and error-interrupt functions are
+// USART driver. The half-duplex, CTS/RTS, idle-line and error-interrupt functions are
 // missing, because no code of this project uses them.
 class Usart {
    public:
@@ -170,7 +169,7 @@ class Usart {
       return usart.STATR;
    }
 
-   // The whole status register, as returnStatusFlag() of system-stm32.
+   // The whole status register.
    inline uint32_t returnStatusFlag() const {
       return usart.STATR;
    }

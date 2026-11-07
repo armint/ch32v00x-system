@@ -5,9 +5,7 @@
 
 // Family-neutral types of the USB device drivers (hw::UsbDevice). Each family
 // with a USB device peripheral has its own hw::UsbDevice in
-// src/families/<family>/UsbDevice.h. The types and the public interface are
-// the same as in system-stm32, so a controller port above the driver (for
-// example the libart-stm32 one) needs few changes.
+// src/families/<family>/UsbDevice.h.
 namespace hw::usb {
 
 // Bit 7 of an endpoint address is the direction (USB 2.0 section 9.6.6).

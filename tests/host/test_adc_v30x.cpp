@@ -59,7 +59,7 @@ int main() {
    CHECK(hostRcc.CFGR0 == (2u << 14));
 
    // ADC1 and ADC2 have their own clock and reset bit.
-   // The default argument is ADC1, like system-stm32.
+   // The default argument is ADC1.
    Adc::enableClock();
    CHECK(hostRcc.APB2PCENR == RCC_ADC1EN);
    Adc::enableClock(ADC2);

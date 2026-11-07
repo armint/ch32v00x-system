@@ -2,7 +2,7 @@
 #pragma once
 #include <wch_device.h>
 
-// CH32V30X has the API of Exti in system-stm32 (TriggerEdge, Port, ...). Its
+// CH32V30X has the full Exti API (TriggerEdge, Port, ...). Its
 // family directory holds Exti_V30x.h. The other families have the short
 // API below.
 #if __has_include("Exti_V30x.h")

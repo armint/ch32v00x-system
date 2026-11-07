@@ -37,7 +37,7 @@ bool write_buffer(void *address, hw::span<uint8_t> data);
 
 /**
    Program one half-word in standard mode. Defined when the chip header defines
-   FLASH_CTLR_PG (CH32V003, CH32V20x, CH32V30x). Tested on CH32V30x only.
+   FLASH_CTLR_PG (CH32V003, CH32V20x, CH32V30x).
    The half-word must be erased. Returns false for an odd address, a write
    protection error, or when the value does not read back.
    Preconditions: Flash must be unlocked (e.g., via Flash::writable_section lifetime)

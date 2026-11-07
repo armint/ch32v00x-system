@@ -4,7 +4,7 @@
 #include "Interrupt.h"
 #include <wch_device.h>
 
-// Pin interrupts, with the API of GpioInterrupt in system-stm32. Only
+// Pin interrupts. Only
 // CH32V30X has the implementation (src/families/ch32v30x/GpioInterrupt.cpp).
 
 namespace GpioInterrupt {

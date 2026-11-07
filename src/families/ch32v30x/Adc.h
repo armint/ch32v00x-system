@@ -6,8 +6,7 @@
 /**
  * ADC of the CH32V30x. ADC1 and ADC2 have the same registers. The internal
  * channels (temperature sensor on 16, Vrefint on 17) belong to ADC1.
- * The names are the names of the STM32F1 ADC in system-stm32 (Adc.h) for the
- * same job. Include <Adc.h>.
+ * Include <Adc.h>.
  *
  * Usage:
  *   Adc::enableClock();
@@ -84,7 +83,7 @@ class Adc {
       RCC->CFGR0 = (RCC->CFGR0 & ~RCC_ADCPRE) | (static_cast<uint32_t>(div) << 14);
    }
 
-   /// Enable the bus clock of an ADC (APB2). The default is ADC1, like system-stm32.
+   /// Enable the bus clock of an ADC (APB2). The default is ADC1.
    static void enableClock(const ADC_TypeDef *adc = ADC1) {
       RCC->APB2PCENR |= (adc == ADC2) ? RCC_ADC2EN : RCC_ADC1EN;
    }
@@ -93,7 +92,7 @@ class Adc {
       RCC->APB2PCENR &= ~((adc == ADC2) ? RCC_ADC2EN : RCC_ADC1EN);
    }
 
-   /// Reset an ADC through RCC. The default is ADC1, like system-stm32.
+   /// Reset an ADC through RCC. The default is ADC1.
    static void reset(const ADC_TypeDef *adc = ADC1) {
       const uint32_t bit = (adc == ADC2) ? RCC_ADC2RST : RCC_ADC1RST;
       RCC->APB2PRSTR |= bit;

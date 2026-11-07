@@ -1,5 +1,4 @@
 #pragma once
 
-// The device header of the selected chip, with the name that system-stm32
-// uses for the same job. Code for both libraries includes <cmsis_device.h>.
+// The device header of the selected chip, under the usual CMSIS name.
 #include "wch_device.h"

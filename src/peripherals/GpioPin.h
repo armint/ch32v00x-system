@@ -3,9 +3,7 @@
 #include <stdint.h>
 #include <wch_device.h>
 
-// GPIO pin with the API of hw::GpioPin in system-stm32, so code that uses
-// a GPIO pin builds for both libraries. The CH32 GPIO is the STM32F1 GPIO:
-// one 4-bit CNF/MODE field per pin, in CFGLR (pins 0-7) or CFGHR (pins
+// GPIO pin. The CH32 GPIO has one 4-bit CNF/MODE field per pin, in CFGLR (pins 0-7) or CFGHR (pins
 // 8-15). The encoding is in GpioConfig.h.
 
 namespace hw {
@@ -16,7 +14,7 @@ class GpioPin {
 
    enum class OutputType : bool { PushPull = false, OpenDrain = true };
 
-   // The names of system-stm32. GpioConfig.h maps each one to the nearest
+   // Generic speed levels. GpioConfig.h maps each one to the nearest
    // CH32 rate that is not slower (2, 10 or 50 MHz).
    enum class Speed : uint8_t {
       Low = 0,     // ~400 kHz
@@ -28,7 +26,7 @@ class GpioPin {
    enum class Pull : uint8_t { None = 0, Up = 1, Down = 2 };
 
    // The CH32 has no AF number per pin: the AFIO remap selects the
-   // peripheral. The enum is here for the API of system-stm32.
+   // peripheral, so this enum has no effect on the pin.
    enum class AlternateFunction : uint8_t {
       AF0 = 0,
       AF1 = 1,

@@ -6,7 +6,7 @@
 
 namespace hw {
 
-/// SPI driver with the public names of `hw::Spi` in system-stm32 (SPI v1, STM32F1). See docs/spi.md.
+/// SPI driver. See docs/spi.md.
 /// All families have SPI1. CH32V20X and CH32V30X also have SPI2, CH32V30X also SPI3.
 /// The CH32 SPI has no FIFO: a frame is 8 or 16 bits (CTLR1.DFF).
 struct Spi {
@@ -128,8 +128,8 @@ struct Spi {
       return static_cast<uint16_t>(spi_.DATAR);
    }
 
-   /// Default bound on the poll loops of transfer() and waitUntilIdle(), in loop iterations (the
-   /// same value as system-stm32). Loops, not time: it works before SysTick runs.
+   /// Default bound on the poll loops of transfer() and waitUntilIdle(), in loop iterations.
+   /// Loops, not time: it works before SysTick runs.
    static constexpr uint32_t defaultTimeoutLoops = 100'000u;
 
    /// Blocking full-duplex transfer of one frame. Waits for TXE, writes, then waits for RXNE.
