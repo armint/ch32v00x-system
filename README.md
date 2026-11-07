@@ -32,7 +32,7 @@ library are in [ch32v00x-art](https://gitlab.vandertogt.org/riscv/ch32v00x-art).
 | `CH32_FAMILY` | Device macro | Chips | Status |
 |---|---|---|---|
 | `CH32V00X` | `CH32V003` | CH32V003 | Supported. |
-| `CH32V00X` | `CH32V002` | CH32V002 | Supported. |
+| `CH32V00X` | `CH32V002` | CH32V002 | Builds. |
 | `CH32V00X` | `CH32V006` | CH32V006 | Supported. |
 | `CH32V20X` | `CH32V20x_D8W` | CH32V208 | Supported. No ADC driver. |
 | `CH32V30X` | `CH32V30x_D8C` | CH32V307 | Start-up, clock, GPIO (with AFIO and EXTI), USART, SPI, ADC, DMA, timer, flash and USB device. The I2C driver is not ported yet. |
