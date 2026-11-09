@@ -76,7 +76,7 @@ namespace hw {
 class UsbDevice {
    public:
    static constexpr uint8_t EndpointCount = 16;
-   static constexpr uint16_t PacketMemorySize = 2048;
+   static constexpr uint16_t PacketMemorySize = 4096;
    static constexpr uint16_t Ep0MaxPacketSize = 64;
    static constexpr uint16_t BulkMaxPacketSize = 512;
    static constexpr uint16_t InterruptMaxPacketSize = 1024;

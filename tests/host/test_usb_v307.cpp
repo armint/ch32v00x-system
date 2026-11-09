@@ -252,15 +252,19 @@ void testPoolAllocation() {
 void testPoolFull() {
    UsbDevice usb;
    begin(usb);
-   // 2048 bytes: four 512-byte buffers fill the pool.
+   // 4096 bytes: eight 512-byte buffers fill the pool.
    CHECK(usb.openEndpoint(0x81, EndpointType::Bulk, 512));
    CHECK(usb.openEndpoint(0x01, EndpointType::Bulk, 512));
    CHECK(usb.openEndpoint(0x82, EndpointType::Bulk, 512));
-   CHECK(usb.openEndpoint(0x02, EndpointType::Bulk, 509)); // takes 512
+   CHECK(usb.openEndpoint(0x02, EndpointType::Bulk, 512));
+   CHECK(usb.openEndpoint(0x83, EndpointType::Bulk, 512));
+   CHECK(usb.openEndpoint(0x03, EndpointType::Bulk, 512));
+   CHECK(usb.openEndpoint(0x84, EndpointType::Bulk, 512));
+   CHECK(usb.openEndpoint(0x04, EndpointType::Bulk, 509)); // takes 512
    const uint32_t first = offsetOf(usb, txDma(1));
-   CHECK(offsetOf(usb, rxDma(2)) == first + 3 * 512);
+   CHECK(offsetOf(usb, rxDma(4)) == first + 7 * 512);
    auto before = snapshot();
-   CHECK(!usb.openEndpoint(0x83, EndpointType::Interrupt, 1));
+   CHECK(!usb.openEndpoint(0x85, EndpointType::Interrupt, 1));
    CHECK(snapshot() == before);
 
    // closeAllEndpoints() frees the pool and disables endpoints 1 to 15.
@@ -276,7 +280,9 @@ void testPoolFull() {
    CHECK(usb.openEndpoint(0x83, EndpointType::Interrupt, 1024));
    CHECK(offsetOf(usb, txDma(3)) == first);
    CHECK(usb.openEndpoint(0x03, EndpointType::Interrupt, 1024));
-   CHECK(!usb.openEndpoint(0x84, EndpointType::Interrupt, 1));
+   CHECK(usb.openEndpoint(0x84, EndpointType::Interrupt, 1024));
+   CHECK(usb.openEndpoint(0x04, EndpointType::Interrupt, 1024)); // 4096: full
+   CHECK(!usb.openEndpoint(0x85, EndpointType::Interrupt, 1));
 }
 
 void testOpenEndpointRejects() {
@@ -431,10 +437,13 @@ void testDoubleBufferedOpen() {
    CHECK(!usb.openEndpoint(0x01, EndpointType::Bulk, 512, false));
    CHECK(rxDma(1) == dma);
 
-   // The pool (2048 bytes) has 1024 + 64 bytes in use. Two 256-byte buffers
-   // fit, two 512-byte buffers do not.
-   CHECK(usb.openEndpoint(0x03, EndpointType::Bulk, 256, true));
-   CHECK(!usb.openEndpoint(0x04, EndpointType::Bulk, 512, true));
+   // The pool (4096 bytes) has 1024 + 64 bytes in use. Two double-buffered
+   // 512-byte endpoints take 2048 more. Then 960 bytes are free: a third
+   // one does not fit, two 256-byte buffers do.
+   CHECK(usb.openEndpoint(0x03, EndpointType::Bulk, 512, true));
+   CHECK(usb.openEndpoint(0x04, EndpointType::Bulk, 512, true));
+   CHECK(!usb.openEndpoint(0x05, EndpointType::Bulk, 512, true));
+   CHECK(usb.openEndpoint(0x05, EndpointType::Bulk, 256, true));
    usb.closeAllEndpoints();
    CHECK(hostUsbhs.UEP_BUF_MOD == 0);
 }

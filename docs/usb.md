@@ -37,7 +37,7 @@ The driver has these properties:
 | Clock | `begin()` starts the USB PHY PLL from HSE. The PLL input is 4 MHz, thus `HSE_VALUE` must be a multiple of 4 MHz, from 4 MHz to 32 MHz. HSE must run. |
 | Pins | PB6 (D-) and PB7 (D+). They need no GPIO configuration. |
 | Interrupt | `USBHS_IRQn`. `begin()` connects the handler with `Interrupt::connectMemberHandler`. |
-| RAM | The object holds the endpoint buffers: 64 bytes for EP0 and a pool of 2048 bytes for endpoints 1 to 15. Each buffer takes the packet size, rounded up to 4 bytes. |
+| RAM | The object holds the endpoint buffers: 64 bytes for EP0 and a pool of 4096 bytes for endpoints 1 to 15. This is enough for a high-speed CMSIS-DAP probe: a double-buffered 512-byte OUT endpoint, a 512-byte IN endpoint and a CDC-ACM port with two 512-byte endpoints. Each buffer takes the packet size, rounded up to 4 bytes. |
 
 ## Sequence
 
