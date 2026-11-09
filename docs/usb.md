@@ -22,8 +22,10 @@ The driver has these properties:
 - A bulk endpoint has packets of up to 512 bytes. An interrupt endpoint
   has packets of up to 1024 bytes.
 - The constructor takes the maximum speed, `Speed::High` or `Speed::Full`.
-- `speed()` gives the speed that the host selected. Read it after the first
-  bus reset. The descriptors must agree with it. At high speed, a bulk
+- `speed()` gives the speed that the host selected. The Reset event comes
+  before the chirp handshake ends, so the speed is not valid yet in that
+  event. Read it from the first SETUP packet after the reset. The
+  descriptors must agree with it. At high speed, a bulk
   endpoint must have 512-byte packets.
 - The D+ pull-up is internal. The driver has no pull-up callback.
 - `openEndpoint()` refuses isochronous endpoints and double-buffered IN
