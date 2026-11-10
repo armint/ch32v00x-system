@@ -76,7 +76,7 @@ namespace hw {
 class UsbDevice {
    public:
    static constexpr uint8_t EndpointCount = 16;
-   static constexpr uint16_t PacketMemorySize = 2048;
+   static constexpr uint16_t PacketMemorySize = 4096;
    static constexpr uint16_t Ep0MaxPacketSize = 64;
    static constexpr uint16_t BulkMaxPacketSize = 512;
    static constexpr uint16_t InterruptMaxPacketSize = 1024;
@@ -117,8 +117,9 @@ class UsbDevice {
    bool isConnected() const;
 
    /**
-    * @brief The speed that the host selected. Valid after the first bus
-    * reset. The layer above uses it for the descriptors: a high-speed bulk
+    * @brief The speed that the host selected. The Reset event comes before
+    * the chirp handshake ends, so read it from the first SETUP packet after
+    * the reset (it reads SPEED_TYPE directly). The layer above uses it for the descriptors: a high-speed bulk
     * endpoint has 512-byte packets, a full-speed one 64 or fewer.
     */
    Speed speed() const;

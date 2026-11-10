@@ -22,8 +22,10 @@ The driver has these properties:
 - A bulk endpoint has packets of up to 512 bytes. An interrupt endpoint
   has packets of up to 1024 bytes.
 - The constructor takes the maximum speed, `Speed::High` or `Speed::Full`.
-- `speed()` gives the speed that the host selected. Read it after the first
-  bus reset. The descriptors must agree with it. At high speed, a bulk
+- `speed()` gives the speed that the host selected. The Reset event comes
+  before the chirp handshake ends, so the speed is not valid yet in that
+  event. Read it from the first SETUP packet after the reset. The
+  descriptors must agree with it. At high speed, a bulk
   endpoint must have 512-byte packets.
 - The D+ pull-up is internal. The driver has no pull-up callback.
 - `openEndpoint()` refuses isochronous endpoints and double-buffered IN
@@ -37,7 +39,7 @@ The driver has these properties:
 | Clock | `begin()` starts the USB PHY PLL from HSE. The PLL input is 4 MHz, thus `HSE_VALUE` must be a multiple of 4 MHz, from 4 MHz to 32 MHz. HSE must run. |
 | Pins | PB6 (D-) and PB7 (D+). They need no GPIO configuration. |
 | Interrupt | `USBHS_IRQn`. `begin()` connects the handler with `Interrupt::connectMemberHandler`. |
-| RAM | The object holds the endpoint buffers: 64 bytes for EP0 and a pool of 2048 bytes for endpoints 1 to 15. Each buffer takes the packet size, rounded up to 4 bytes. |
+| RAM | The object holds the endpoint buffers: 64 bytes for EP0 and a pool of 4096 bytes for endpoints 1 to 15. This is enough for a high-speed CMSIS-DAP probe: a double-buffered 512-byte OUT endpoint, a 512-byte IN endpoint and a CDC-ACM port with two 512-byte endpoints. Each buffer takes the packet size, rounded up to 4 bytes. |
 
 ## Sequence
 
