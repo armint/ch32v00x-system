@@ -69,6 +69,17 @@ int main() {
    CHECK(u1.setFrameFormat(hw::Usart::DataBits::Eight, hw::Usart::Parity::Even, hw::Usart::StopBits::StopBits_1));
    CHECK((hostUsart1.CTLR1 & USART_CTLR1_UE) == 0);
 
+   // getData(): with 7 data bits and parity, bit 7 of DATAR is the parity bit.
+   hostUsart1.DATAR = 0x18B;
+   hostUsart1.CTLR1 = USART_CTLR1_UE | USART_CTLR1_PCE;
+   CHECK(u1.getData() == 0x0B);
+   // 8 data bits with parity (9-bit word): bit 8 is the parity bit.
+   hostUsart1.CTLR1 = USART_CTLR1_UE | USART_CTLR1_PCE | USART_CTLR1_M;
+   CHECK(u1.getData() == 0x8B);
+   // 8 data bits without parity: all 8 bits are data.
+   hostUsart1.CTLR1 = USART_CTLR1_UE;
+   CHECK(u1.getData() == 0x8B);
+
    if(failures == 0) {
       std::printf("usart-v30x: all checks passed\n");
    }
