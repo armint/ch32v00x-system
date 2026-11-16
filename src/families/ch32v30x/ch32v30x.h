@@ -346,6 +346,9 @@ typedef struct {
 #define AFIO_PCFR1_SW_CFG_DISABLE (4ul << 24) /* 0xx: SWD on PA13 and PA14, 100: both GPIO */
 #define AFIO_PCFR1_SPI3_RM (1ul << 28)
 
+/* AFIO_PCFR2 fields */
+#define AFIO_PCFR2_USART7_RM_MASK (3ul << 22)
+
 typedef struct {
    uint32_t RESERVED0;         /* 0x00 */
    volatile uint32_t KEYR;     /* 0x04 FPEC key */

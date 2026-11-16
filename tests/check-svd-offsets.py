@@ -151,14 +151,16 @@ DMA_FIELDS = {
     "DMA_CFGR1_PL_1": ("CFGR1", "PL", 1), "DMA_CFGR1_MEM2MEM": ("CFGR1", "MEM2MEM"),
 }
 
-# Same, for the bits of the AFIO_PCFR1 register. The SW_CFG value of the
-# header (100) is a value of the field, not a mask, so it is not checked.
+# Same, for the bits of the AFIO_PCFR1 and AFIO_PCFR2 registers. The SW_CFG
+# value of the header (100) is a value of the field, not a mask, so it is not
+# checked.
 AFIO_FIELDS = {
     "AFIO_PCFR1_SPI1_RM": ("PCFR1", "SPI1_RM"), "AFIO_PCFR1_I2C1_RM": ("PCFR1", "I2C1_RM"),
     "AFIO_PCFR1_USART1_RM": ("PCFR1", "USART1_RM"), "AFIO_PCFR1_USART2_RM": ("PCFR1", "USART2_RM"),
     "AFIO_PCFR1_USART3_RM_MASK": ("PCFR1", "USART3_RM"), "AFIO_PCFR1_SW_CFG_MASK": ("PCFR1", "SW_CFG"),
     "AFIO_PCFR1_SPI3_RM": ("PCFR1", "SPI3_RM"),
     "AFIO_PCFR1_TIM2_RM_MASK": ("PCFR1", "TIM2_RM"), "AFIO_PCFR1_TIM3_RM_MASK": ("PCFR1", "TIM3_RM"),
+    "AFIO_PCFR2_USART7_RM_MASK": ("PCFR2", "UART7_RM"),
 }
 
 # Same, for the bits of the FLASH registers.

@@ -4,11 +4,12 @@
 #include <wch_device.h>
 
 // Alternate-function remap and debug port of CH32V30X. A peripheral has a default pin set
-// and one or more remapped pin sets, selected in AFIO_PCFR1. All functions
-// enable the AFIO clock themselves.
+// and one or more remapped pin sets, selected in AFIO_PCFR1 and AFIO_PCFR2. All
+// functions enable the AFIO clock themselves.
 //
 // Some remaps need a larger package, and some remaps exist on some chips of
-// the family only (see the notes of AFIO_PCFR1 in the reference manual).
+// the family only (see the notes of AFIO_PCFR1 and AFIO_PCFR2 in the reference
+// manual).
 
 namespace hw::Afio {
 
@@ -31,6 +32,13 @@ void setSwjConfig(SwjConfig config);
  */
 void setRemap(uint32_t mask, uint32_t value);
 
+/**
+ * @brief Writes remap bits in AFIO_PCFR2.
+ * @param mask the remap field(s) to change, e.g. AFIO_PCFR2_USART7_RM_MASK.
+ * @param value the new field value(s), within mask.
+ */
+void setRemap2(uint32_t mask, uint32_t value);
+
 // SPI1: NSS/SCK/MISO/MOSI on PA4/PA5/PA6/PA7 (default) or PA15/PB3/PB4/PB5.
 inline void remapSpi1(bool remap) {
    setRemap(AFIO_PCFR1_SPI1_RM, remap ? AFIO_PCFR1_SPI1_RM : 0);
@@ -47,7 +55,8 @@ inline void remapI2c1(bool remap) {
 }
 
 // USART1: TX/RX on PA9/PA10 (default) or PB6/PB7. The chip has more USART1
-// maps (AFIO_PCFR2.USART1_RM1). This function keeps that bit at 0.
+// maps (AFIO_PCFR2.USART1_RM1). This function does not change that bit
+// (reset value 0).
 inline void remapUsart1(bool remap) {
    setRemap(AFIO_PCFR1_USART1_RM, remap ? AFIO_PCFR1_USART1_RM : 0);
 }
@@ -97,6 +106,21 @@ enum class Tim3Remap : uint32_t {
 
 inline void remapTim3(Tim3Remap remap) {
    setRemap(AFIO_PCFR1_TIM3_RM_MASK, static_cast<uint32_t>(remap));
+}
+
+// UART7 (AFIO_PCFR2.USART7_RM). Packages with fewer than 64 pins have no
+// UART7 remap.
+enum class Usart7Remap : uint32_t {
+   // TX/RX on PC2/PC3
+   None = 0,
+   // TX/RX on PA6/PA7
+   Remap1 = 1ul << 22,
+   // TX/RX on PE12/PE13 (100-pin package only)
+   Remap2 = 2ul << 22,
+};
+
+inline void remapUsart7(Usart7Remap remap) {
+   setRemap2(AFIO_PCFR2_USART7_RM_MASK, static_cast<uint32_t>(remap));
 }
 
 } // namespace hw::Afio

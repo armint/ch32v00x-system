@@ -21,18 +21,19 @@ Each pin has one 4-bit field in `CFGLR`
 
 ## Afio (CH32V30X)
 
-`hw::Afio` selects the remapped pin sets in `AFIO_PCFR1`. All functions turn on
-the AFIO clock. The functions are `remapSpi1()`, `remapSpi3()`,
-`remapI2c1()`, `remapUsart1()`, `remapUsart2()`, `remapUsart3()`,
-`remapTim2()` and `remapTim3()`. Use
-`setRemap()` for other fields.
+`hw::Afio` selects the remapped pin sets in `AFIO_PCFR1` and `AFIO_PCFR2`. All
+functions turn on the AFIO clock. The functions are `remapSpi1()`,
+`remapSpi3()`, `remapI2c1()`, `remapUsart1()`, `remapUsart2()`,
+`remapUsart3()`, `remapTim2()`, `remapTim3()` and `remapUsart7()`. Use
+`setRemap()` for other fields of `AFIO_PCFR1`, and `setRemap2()` for other
+fields of `AFIO_PCFR2`.
 
 `setSwjConfig()` sets the debug port. `SwjConfig::Disabled` turns SWD off and
 frees PA13 and PA14. A debugger cannot connect then. The chip has no JTAG port:
 PA15, PB3 and PB4 are GPIO after reset.
 
-`remapUsart1()` keeps `AFIO_PCFR2.USART1_RM1` at 0. The chip has more
-USART1 pin sets than the two that this function selects.
+`remapUsart1()` does not change `AFIO_PCFR2.USART1_RM1` (reset value 0). The
+chip has more USART1 pin sets than the two that this function selects.
 
 ## Exti and GpioInterrupt (CH32V30X)
 

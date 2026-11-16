@@ -94,6 +94,18 @@ void testAfio() {
    hw::Afio::remapTim3(hw::Afio::Tim3Remap::None);
    CHECK(hostAfio.PCFR1 == 0xFu);
    CHECK(hostAfio.PCFR2 == 0);
+
+   // PCFR2: only the USART7 field changes
+   hostRcc = {};
+   hostAfio.PCFR2 = 0xFF3F00FF; // the USART7 field (bits 23:22) is 0
+   hw::Afio::remapUsart7(hw::Afio::Usart7Remap::Remap1);
+   CHECK(hostAfio.PCFR2 == 0xFF7F00FFu);
+   CHECK((hostRcc.APB2PCENR & RCC_AFIOEN) != 0);
+   hw::Afio::remapUsart7(hw::Afio::Usart7Remap::Remap2);
+   CHECK(hostAfio.PCFR2 == 0xFFBF00FFu);
+   hw::Afio::remapUsart7(hw::Afio::Usart7Remap::None);
+   CHECK(hostAfio.PCFR2 == 0xFF3F00FFu);
+   CHECK(hostAfio.PCFR1 == 0xFu);
 }
 
 void testExtiPort() {

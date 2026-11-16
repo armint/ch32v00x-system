@@ -80,6 +80,9 @@ extern AFIO_TypeDef hostAfio;
 #define AFIO_PCFR1_SW_CFG_DISABLE (4ul << 24)
 #define AFIO_PCFR1_SPI3_RM (1ul << 28)
 
+/* AFIO_PCFR2 fields */
+#define AFIO_PCFR2_USART7_RM_MASK (3ul << 22)
+
 typedef struct {
    volatile uint32_t INTENR;
    volatile uint32_t EVENR;
