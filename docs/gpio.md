@@ -32,8 +32,8 @@ fields of `AFIO_PCFR2`.
 frees PA13 and PA14. A debugger cannot connect then. The chip has no JTAG port:
 PA15, PB3 and PB4 are GPIO after reset.
 
-`remapUsart1()` keeps `AFIO_PCFR2.USART1_RM1` at 0. The chip has more
-USART1 pin sets than the two that this function selects.
+`remapUsart1()` does not change `AFIO_PCFR2.USART1_RM1` (reset value 0). The
+chip has more USART1 pin sets than the two that this function selects.
 
 ## Exti and GpioInterrupt (CH32V30X)
 
