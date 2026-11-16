@@ -65,8 +65,14 @@ class Usart {
       usart.CTLR3 &= ~USART_CTLR3_DMAR;
    }
 
+   // With parity in an 8-bit word (7 data bits), DATAR bit 7 is the received
+   // parity bit, so it is masked off. In a 9-bit word (M) the cast drops it.
    inline uint8_t getData() const {
-      return usart.DATAR;
+      const uint32_t data = usart.DATAR;
+      if((usart.CTLR1 & (USART_CTLR1_PCE | USART_CTLR1_M)) == USART_CTLR1_PCE) {
+         return static_cast<uint8_t>(data & 0x7FU);
+      }
+      return static_cast<uint8_t>(data);
    }
 
    inline void setData(uint8_t data) const {
