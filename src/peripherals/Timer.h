@@ -6,7 +6,7 @@
 namespace hw {
 
 /// Timer driver. See docs/timer.md.
-/// The header fields are 16 bits wide (CH32V00X, CH32V20X) or 32 bits wide (CH32V30X).
+/// The header fields are 16 bits wide in each family (CH32V00X, CH32V20X, CH32V30X).
 /// Not for the CH32V006 TIM3: that timer has another register layout.
 class Timer {
    public:
@@ -95,7 +95,7 @@ class Timer {
    }
 
    // The counters are 16 bits wide. The 32-bit TIM5 of CH32V20x_D8 and D8W gets only the low
-   // 16 bits, because the CH32V20X header declares ATRLR and CNT as 16-bit fields.
+   // 16 bits, because the CH32V20X and CH32V30X headers declare ATRLR and CNT as 16-bit fields.
    void setAutoReload(uint32_t arr) const {
       tim.ATRLR = arr;
    }
@@ -207,8 +207,8 @@ class Timer {
       setBit(tim.CCER, TIM_CC1P << (static_cast<uint8_t>(channel) * 4), polarity == Polarity::Low);
    }
 
-   /// CH1CVR to CH4CVR are 4 bytes apart in every family. The CH32V20X header declares them
-   /// as 16-bit fields, so the index uses a 32-bit pointer.
+   /// CH1CVR to CH4CVR are 4 bytes apart in every family. The CH32V20X and CH32V30X headers
+   /// declare them as 16-bit fields, so the index uses a 32-bit pointer.
    void setCompare(Channel channel, uint32_t value) const {
       compareRegisters()[static_cast<uint8_t>(channel)] = value;
    }
@@ -241,7 +241,8 @@ class Timer {
       }
    }
 
-   // A 32-bit pointer: the CH32V20X header has CH1CVR_R32 for a 32-bit access.
+   // A 32-bit pointer: the registers are 4 bytes apart, and the CH32V20X and CH32V30X headers
+   // declare 16-bit fields.
    volatile uint32_t *compareRegisters() const {
       return reinterpret_cast<volatile uint32_t *>(&tim.CH1CVR);
    }
