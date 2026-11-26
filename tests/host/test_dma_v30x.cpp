@@ -61,5 +61,5 @@ int main() {
    CHECK(dma->INTFCR == 0);
    ch8.clearTransferCompleteInterruptFlag();
    CHECK(exten->INTFCR == DMA_TCIF1);
-   return 0;
+   return failures;
 }
