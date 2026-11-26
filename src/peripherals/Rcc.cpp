@@ -2,7 +2,7 @@
 
 namespace Rcc {
 namespace {
-#if defined(RCC_CFGR0_PPRE1_MASK) || defined(RCC_PPRE1)
+#if defined(RCC_PPRE1)
 // CH32V20X and CH32V30X: PPRE1 is CFGR0 bits 10:8, PPRE2 is bits 13:11.
 constexpr uint32_t ppre1Shift = 8;
 constexpr uint32_t ppre2Shift = 11;
@@ -19,7 +19,7 @@ uint32_t getAHBClock() {
    return SystemCoreClock;
 }
 
-#if defined(RCC_CFGR0_PPRE1_MASK) || defined(RCC_PPRE1)
+#if defined(RCC_PPRE1)
 uint32_t getAPBClock() {
    return apbClock(ppre1Shift);
 }

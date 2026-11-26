@@ -15,28 +15,51 @@ typedef struct {
    volatile uint32_t LCKR;  /* 0x18 Configuration lock */
 } GPIO_TypeDef;
 
-/* TIM: the layout of the CH32V30X device header (32-bit fields). */
+/* TIM: TIM_TypeDef of src/families/ch32v30x/ch32v30x.h (the WCH header): 16-bit
+ * fields, each with a 16-bit reserved half-word. */
 typedef struct {
-   volatile uint32_t CTLR1;
-   volatile uint32_t CTLR2;
-   volatile uint32_t SMCFGR;
-   volatile uint32_t DMAINTENR;
-   volatile uint32_t INTFR;
-   volatile uint32_t SWEVGR;
-   volatile uint32_t CHCTLR1;
-   volatile uint32_t CHCTLR2;
-   volatile uint32_t CCER;
-   volatile uint32_t CNT;
-   volatile uint32_t PSC;
-   volatile uint32_t ATRLR;
-   volatile uint32_t RPTCR;
-   volatile uint32_t CH1CVR;
-   volatile uint32_t CH2CVR;
-   volatile uint32_t CH3CVR;
-   volatile uint32_t CH4CVR;
-   volatile uint32_t BDTR;
-   volatile uint32_t DMACFGR;
-   volatile uint32_t DMAADR;
+   volatile uint16_t CTLR1;
+   uint16_t RESERVED0;
+   volatile uint16_t CTLR2;
+   uint16_t RESERVED1;
+   volatile uint16_t SMCFGR;
+   uint16_t RESERVED2;
+   volatile uint16_t DMAINTENR;
+   uint16_t RESERVED3;
+   volatile uint16_t INTFR;
+   uint16_t RESERVED4;
+   volatile uint16_t SWEVGR;
+   uint16_t RESERVED5;
+   volatile uint16_t CHCTLR1;
+   uint16_t RESERVED6;
+   volatile uint16_t CHCTLR2;
+   uint16_t RESERVED7;
+   volatile uint16_t CCER;
+   uint16_t RESERVED8;
+   volatile uint16_t CNT;
+   uint16_t RESERVED9;
+   volatile uint16_t PSC;
+   uint16_t RESERVED10;
+   volatile uint16_t ATRLR;
+   uint16_t RESERVED11;
+   volatile uint16_t RPTCR;
+   uint16_t RESERVED12;
+   volatile uint16_t CH1CVR;
+   uint16_t RESERVED13;
+   volatile uint16_t CH2CVR;
+   uint16_t RESERVED14;
+   volatile uint16_t CH3CVR;
+   uint16_t RESERVED15;
+   volatile uint16_t CH4CVR;
+   uint16_t RESERVED16;
+   volatile uint16_t BDTR;
+   uint16_t RESERVED17;
+   volatile uint16_t DMACFGR;
+   uint16_t RESERVED18;
+   volatile uint16_t DMAADR;
+   uint16_t RESERVED19;
+   volatile uint16_t AUX;
+   uint16_t RESERVED20;
 } TIM_TypeDef;
 
 #define TIM_BIT(value) ((value) * 1ul)

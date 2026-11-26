@@ -19,51 +19,51 @@ enum class SwjConfig : uint32_t {
    // SWD on PA13 and PA14 (reset state).
    SwdOnly = 0,
    // SWD off. PA13 and PA14 are GPIO. A debugger cannot connect any more.
-   Disabled = AFIO_PCFR1_SW_CFG_DISABLE,
+   Disabled = AFIO_PCFR1_SWJ_CFG_DISABLE,
 };
 
 void setSwjConfig(SwjConfig config);
 
 /**
  * @brief Writes remap bits in AFIO_PCFR1.
- * @param mask the remap field(s) to change, e.g. AFIO_PCFR1_SPI3_RM.
- *        Must not include AFIO_PCFR1_SW_CFG_MASK; use setSwjConfig().
+ * @param mask the remap field(s) to change, e.g. AFIO_PCFR1_SPI3_REMAP.
+ *        Must not include AFIO_PCFR1_SWJ_CFG; use setSwjConfig().
  * @param value the new field value(s), within mask.
  */
 void setRemap(uint32_t mask, uint32_t value);
 
 /**
  * @brief Writes remap bits in AFIO_PCFR2.
- * @param mask the remap field(s) to change, e.g. AFIO_PCFR2_USART7_RM_MASK.
+ * @param mask the remap field(s) to change, e.g. AFIO_PCFR2_USART7_REMAP.
  * @param value the new field value(s), within mask.
  */
 void setRemap2(uint32_t mask, uint32_t value);
 
 // SPI1: NSS/SCK/MISO/MOSI on PA4/PA5/PA6/PA7 (default) or PA15/PB3/PB4/PB5.
 inline void remapSpi1(bool remap) {
-   setRemap(AFIO_PCFR1_SPI1_RM, remap ? AFIO_PCFR1_SPI1_RM : 0);
+   setRemap(AFIO_PCFR1_SPI1_REMAP, remap ? AFIO_PCFR1_SPI1_REMAP : 0);
 }
 
 // SPI3: NSS/SCK/MISO/MOSI on PA15/PB3/PB4/PB5 (default) or PA4/PC10/PC11/PC12.
 inline void remapSpi3(bool remap) {
-   setRemap(AFIO_PCFR1_SPI3_RM, remap ? AFIO_PCFR1_SPI3_RM : 0);
+   setRemap(AFIO_PCFR1_SPI3_REMAP, remap ? AFIO_PCFR1_SPI3_REMAP : 0);
 }
 
 // I2C1: SCL/SDA on PB6/PB7 (default) or PB8/PB9.
 inline void remapI2c1(bool remap) {
-   setRemap(AFIO_PCFR1_I2C1_RM, remap ? AFIO_PCFR1_I2C1_RM : 0);
+   setRemap(AFIO_PCFR1_I2C1_REMAP, remap ? AFIO_PCFR1_I2C1_REMAP : 0);
 }
 
 // USART1: TX/RX on PA9/PA10 (default) or PB6/PB7. The chip has more USART1
 // maps (AFIO_PCFR2.USART1_RM1). This function does not change that bit
 // (reset value 0).
 inline void remapUsart1(bool remap) {
-   setRemap(AFIO_PCFR1_USART1_RM, remap ? AFIO_PCFR1_USART1_RM : 0);
+   setRemap(AFIO_PCFR1_USART1_REMAP, remap ? AFIO_PCFR1_USART1_REMAP : 0);
 }
 
 // USART2: TX/RX on PA2/PA3 (default) or PD5/PD6 (100-pin package only).
 inline void remapUsart2(bool remap) {
-   setRemap(AFIO_PCFR1_USART2_RM, remap ? AFIO_PCFR1_USART2_RM : 0);
+   setRemap(AFIO_PCFR1_USART2_REMAP, remap ? AFIO_PCFR1_USART2_REMAP : 0);
 }
 
 enum class Usart3Remap : uint32_t {
@@ -76,7 +76,7 @@ enum class Usart3Remap : uint32_t {
 };
 
 inline void remapUsart3(Usart3Remap remap) {
-   setRemap(AFIO_PCFR1_USART3_RM_MASK, static_cast<uint32_t>(remap));
+   setRemap(AFIO_PCFR1_USART3_REMAP, static_cast<uint32_t>(remap));
 }
 
 enum class Tim2Remap : uint32_t {
@@ -91,7 +91,7 @@ enum class Tim2Remap : uint32_t {
 };
 
 inline void remapTim2(Tim2Remap remap) {
-   setRemap(AFIO_PCFR1_TIM2_RM_MASK, static_cast<uint32_t>(remap));
+   setRemap(AFIO_PCFR1_TIM2_REMAP, static_cast<uint32_t>(remap));
 }
 
 // The value 01 is reserved. The remap does not move TIM3_ETR (PD2).
@@ -105,7 +105,7 @@ enum class Tim3Remap : uint32_t {
 };
 
 inline void remapTim3(Tim3Remap remap) {
-   setRemap(AFIO_PCFR1_TIM3_RM_MASK, static_cast<uint32_t>(remap));
+   setRemap(AFIO_PCFR1_TIM3_REMAP, static_cast<uint32_t>(remap));
 }
 
 // UART7 (AFIO_PCFR2.USART7_RM). Packages with fewer than 64 pins have no
@@ -120,7 +120,7 @@ enum class Usart7Remap : uint32_t {
 };
 
 inline void remapUsart7(Usart7Remap remap) {
-   setRemap2(AFIO_PCFR2_USART7_RM_MASK, static_cast<uint32_t>(remap));
+   setRemap2(AFIO_PCFR2_USART7_REMAP, static_cast<uint32_t>(remap));
 }
 
 } // namespace hw::Afio

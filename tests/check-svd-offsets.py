@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check the hand-written CH32V30x device header against the vendor SVD.
+"""Check the CH32V30x device header (the WCH header) against the vendor SVD.
 
 The script reads the SVD and writes C `_Static_assert` lines. It compiles
 them with the RISC-V compiler and `-fsyntax-only`. A mismatch in a base
@@ -42,20 +42,17 @@ STRUCTS = {
     # The SVD has no I2SPR (0x20). The RM gives it for SPI2 and SPI3 (tables 20-2 and 20-3).
     "SPI1": ("SPI_TypeDef", ["CTLR1", "CTLR2", "STATR", "DATAR", "CRCR", "RCRCR", "TCRCR",
                              ("I2SCFGR", "SPI_I2S_CFGR"), "HSCR"]),
-    "USBHS": ("USBHS_TypeDef", [
-        ("CTRL", "USB_CTRL"), ("HOST_CTRL", "UHOST_CTRL"), ("INT_EN", "USB_INT_EN"),
+    "USBHS": ("USBHSD_TypeDef", [
+        ("CONTROL", "USB_CTRL"), ("HOST_CTRL", "UHOST_CTRL"), ("INT_EN", "USB_INT_EN"),
         ("DEV_AD", "USB_DEV_AD"), ("FRAME_NO", "USB_FRAME_NO"), ("SUSPEND", "USB_USB_SUSPEND"),
         ("SPEED_TYPE", "USB_SPEED_TYPE"), ("MIS_ST", "USB_MIS_ST"), ("INT_FG", "USB_INT_FG"),
-        ("INT_ST", "USB_INT_ST"), ("RX_LEN", "USB_RX_LEN"), ("UEP_CONFIG", "UEP_CONFIG__UHOST_CTRL"),
-        ("UEP_TYPE", "UEP_TYPE"), ("UEP_BUF_MOD", "UEP_BUF_MOD"), ("UEP0_DMA", "UEP0_DMA"),
-        ("UEP_RX_DMA[0]", "UEP1_RX_DMA"), ("UEP_RX_DMA[14]", "UEP15_RX_DMA"),
-        ("UEP_TX_DMA[0]", "UEP1_TX_DMA"), ("UEP_TX_DMA[14]", "UEP15_TX_DMA"),
-        ("UEP_MAX_LEN[0].MAX_LEN", "UEP0_MAX_LEN"), ("UEP_MAX_LEN[1].MAX_LEN", "UEP1_MAX_LEN"),
-        ("UEP_MAX_LEN[15].MAX_LEN", "UEP15_MAX_LEN"),
-        ("UEP[0].T_LEN", "UEP0_T_LEN"), ("UEP[0].TX_CTRL", "UEP0_TX_CTRL"), ("UEP[0].RX_CTRL", "UEP0_RX_CTRL"),
-        ("UEP[1].T_LEN", "UEP1_T_LEN"), ("UEP[1].TX_CTRL", "UEP1_TX_CTRL"), ("UEP[1].RX_CTRL", "UEP1_RX_CTRL"),
-        ("UEP[15].T_LEN", "UEP15_T_LEN"), ("UEP[15].TX_CTRL", "UEP15_TX_CTRL"),
-        ("UEP[15].RX_CTRL", "UEP15_RX_CTRL"),
+        ("INT_ST", "USB_INT_ST"), ("RX_LEN", "USB_RX_LEN"), ("ENDP_CONFIG", "UEP_CONFIG__UHOST_CTRL"),
+        ("ENDP_TYPE", "UEP_TYPE"), ("BUF_MODE", "UEP_BUF_MOD"), "UEP0_DMA",
+        "UEP1_RX_DMA", "UEP15_RX_DMA", "UEP1_TX_DMA", "UEP15_TX_DMA",
+        "UEP0_MAX_LEN", "UEP1_MAX_LEN", "UEP15_MAX_LEN",
+        ("UEP0_TX_LEN", "UEP0_T_LEN"), "UEP0_TX_CTRL", "UEP0_RX_CTRL",
+        ("UEP1_TX_LEN", "UEP1_T_LEN"), "UEP1_TX_CTRL", "UEP1_RX_CTRL",
+        ("UEP15_TX_LEN", "UEP15_T_LEN"), "UEP15_TX_CTRL", "UEP15_RX_CTRL",
     ]),
 }
 
@@ -67,15 +64,15 @@ FIELDS = {
     "RCC_HSERDY": ("CTLR", "HSERDY"),
     "RCC_PLLON": ("CTLR", "PLLON"),
     "RCC_PLLRDY": ("CTLR", "PLLRDY"),
-    "RCC_CFGR0_SW_MASK": ("CFGR0", "SW"),
-    "RCC_CFGR0_SWS_MASK": ("CFGR0", "SWS"),
-    "RCC_CFGR0_HPRE_MASK": ("CFGR0", "HPRE"),
-    "RCC_CFGR0_PPRE1_MASK": ("CFGR0", "PPRE1"),
-    "RCC_CFGR0_PPRE2_MASK": ("CFGR0", "PPRE2"),
-    "RCC_CFGR0_PLLSRC": ("CFGR0", "PLLSRC"),
-    "RCC_CFGR0_PLLMUL_MASK": ("CFGR0", "PLLMUL"),
-    "RCC_CFGR2_PREDIV1_MASK": ("CFGR2", "PREDIV1"),
-    "RCC_CFGR2_PREDIV1SRC": ("CFGR2", "PREDIV1SRC"),
+    "RCC_SW": ("CFGR0", "SW"),
+    "RCC_SWS": ("CFGR0", "SWS"),
+    "RCC_HPRE": ("CFGR0", "HPRE"),
+    "RCC_PPRE1": ("CFGR0", "PPRE1"),
+    "RCC_PPRE2": ("CFGR0", "PPRE2"),
+    "RCC_PLLSRC": ("CFGR0", "PLLSRC"),
+    "RCC_PLLMULL": ("CFGR0", "PLLMUL"),
+    "RCC_PREDIV1": ("CFGR2", "PREDIV1"),
+    "RCC_PREDIV1SRC": ("CFGR2", "PREDIV1SRC"),
     "RCC_AFIOEN": ("APB2PCENR", "AFIOEN"),
     "RCC_IOPAEN": ("APB2PCENR", "IOPAEN"),
     "RCC_IOPBEN": ("APB2PCENR", "IOPBEN"),
@@ -111,11 +108,11 @@ FIELDS = {
     "RCC_TIM10RST": ("APB2PRSTR", "TIM10RST"),
     "RCC_SPI3RST": ("APB1PRSTR", "SPI3RST"),
     "RCC_TIM3RST": ("APB1PRSTR", "TIM3RST"),
-    "RCC_CFGR2_USBHSDIV_MASK": ("CFGR2", "USBHSDIV"),
-    "RCC_CFGR2_USBHSPLLSRC": ("CFGR2", "USBHSPLLSRC"),
-    "RCC_CFGR2_USBHSCLK_MASK": ("CFGR2", "USBHSCLK"),
-    "RCC_CFGR2_USBHSPLL": ("CFGR2", "USBHSPLL"),
-    "RCC_CFGR2_USBFSSRC": ("CFGR2", "USBFSSRC"),
+    "RCC_USBHSDIV": ("CFGR2", "USBHSDIV"),
+    "RCC_USBHSPLLSRC": ("CFGR2", "USBHSPLLSRC"),
+    "RCC_USBHSCLK": ("CFGR2", "USBHSCLK"),
+    "RCC_USBHSPLL": ("CFGR2", "USBHSPLL"),
+    "RCC_USBFSSRC": ("CFGR2", "USBFSSRC"),
 }
 
 # Same, for the timer bits. TIM1 has all registers of the other timers. A
@@ -155,12 +152,12 @@ DMA_FIELDS = {
 # value of the header (100) is a value of the field, not a mask, so it is not
 # checked.
 AFIO_FIELDS = {
-    "AFIO_PCFR1_SPI1_RM": ("PCFR1", "SPI1_RM"), "AFIO_PCFR1_I2C1_RM": ("PCFR1", "I2C1_RM"),
-    "AFIO_PCFR1_USART1_RM": ("PCFR1", "USART1_RM"), "AFIO_PCFR1_USART2_RM": ("PCFR1", "USART2_RM"),
-    "AFIO_PCFR1_USART3_RM_MASK": ("PCFR1", "USART3_RM"), "AFIO_PCFR1_SW_CFG_MASK": ("PCFR1", "SW_CFG"),
-    "AFIO_PCFR1_SPI3_RM": ("PCFR1", "SPI3_RM"),
-    "AFIO_PCFR1_TIM2_RM_MASK": ("PCFR1", "TIM2_RM"), "AFIO_PCFR1_TIM3_RM_MASK": ("PCFR1", "TIM3_RM"),
-    "AFIO_PCFR2_USART7_RM_MASK": ("PCFR2", "UART7_RM"),
+    "AFIO_PCFR1_SPI1_REMAP": ("PCFR1", "SPI1_RM"), "AFIO_PCFR1_I2C1_REMAP": ("PCFR1", "I2C1_RM"),
+    "AFIO_PCFR1_USART1_REMAP": ("PCFR1", "USART1_RM"), "AFIO_PCFR1_USART2_REMAP": ("PCFR1", "USART2_RM"),
+    "AFIO_PCFR1_USART3_REMAP": ("PCFR1", "USART3_RM"), "AFIO_PCFR1_SWJ_CFG": ("PCFR1", "SW_CFG"),
+    "AFIO_PCFR1_SPI3_REMAP": ("PCFR1", "SPI3_RM"),
+    "AFIO_PCFR1_TIM2_REMAP": ("PCFR1", "TIM2_RM"), "AFIO_PCFR1_TIM3_REMAP": ("PCFR1", "TIM3_RM"),
+    "AFIO_PCFR2_USART7_REMAP": ("PCFR2", "UART7_RM"),
 }
 
 # Same, for the bits of the FLASH registers.
@@ -168,7 +165,7 @@ FLASH_FIELDS = {
     "FLASH_STATR_BSY": ("STATR", "BSY"), "FLASH_STATR_WRBSY": ("STATR", "WRBSY"),
     "FLASH_STATR_WRPRTERR": ("STATR", "WRPRTERR"), "FLASH_STATR_EOP": ("STATR", "EOP"),
     "FLASH_CTLR_PG": ("CTLR", "PG"), "FLASH_CTLR_STRT": ("CTLR", "STRT"), "FLASH_CTLR_LOCK": ("CTLR", "LOCK"),
-    "FLASH_CTLR_FLOCK": ("CTLR", "FLOCK"), "FLASH_CTLR_PAGE_PG": ("CTLR", "FTPG"),
+    "FLASH_CTLR_FAST_LOCK": ("CTLR", "FLOCK"), "FLASH_CTLR_PAGE_PG": ("CTLR", "FTPG"),
     "FLASH_CTLR_PAGE_ER": ("CTLR", "FTER"), "FLASH_CTLR_PG_STRT": ("CTLR", "PGSTRT"),
 }
 
@@ -209,9 +206,9 @@ SPI_FIELDS = {
 # (SETUP_ACT, ISO_ACT, DEV_NAK), so these bits are not checked.
 USBHS_FIELDS = {
     "USBHS_UC_DMA_EN": ("USB_CTRL", "RB_UC_DMA_EN"), "USBHS_UC_CLR_ALL": ("USB_CTRL", "RB_UC_CLR_ALL"),
-    "USBHS_UC_RST_SIE": ("USB_CTRL", "RB_UC_RST_SIE"), "USBHS_UC_INT_BUSY": ("USB_CTRL", "RB_UC_INT_BUSY"),
+    "USBHS_UC_RESET_SIE": ("USB_CTRL", "RB_UC_RST_SIE"), "USBHS_UC_INT_BUSY": ("USB_CTRL", "RB_UC_INT_BUSY"),
     "USBHS_UC_DEV_PU_EN": ("USB_CTRL", "RB_UC_DEV_PU_EN"),
-    "USBHS_UC_SPEED_MASK": ("USB_CTRL", "RB_UC_SPEED_TYPE"),
+    "USBHS_UC_SPEED_TYPE": ("USB_CTRL", "RB_UC_SPEED_TYPE"),
     "USBHS_UC_HOST_MODE": ("USB_CTRL", "RB_UC_HOST_MODE"),
     "USBHS_UH_PHY_SUSPENDM": ("UHOST_CTRL", "RB_UH_PHY_SUSPENDM"),
     "USBHS_UIE_BUS_RST": ("USB_INT_EN", "RB_UIE_BUS_RST__RB_UIE_DETECT"),
@@ -219,8 +216,8 @@ USBHS_FIELDS = {
     "USBHS_UIE_SUSPEND": ("USB_INT_EN", "RB_UIE_SUSPEND"),
     "USBHS_UIE_SOF_ACT": ("USB_INT_EN", "RB_UIE_HST_SOF"),
     "USBHS_UIE_FIFO_OV": ("USB_INT_EN", "RB_UIE_FIFO_OV"),
-    "USBHS_DEV_AD_MASK": ("USB_DEV_AD", "MASK_USB_ADDR"),
-    "USBHS_SPEED_TYPE_MASK": ("USB_SPEED_TYPE", "USB_SPEED_TYPE"),
+    "USBHS_MASK_USB_ADDR": ("USB_DEV_AD", "MASK_USB_ADDR"),
+    "USBHS_USB_SPEED_TYPE": ("USB_SPEED_TYPE", "USB_SPEED_TYPE"),
     "USBHS_UMS_SUSPEND": ("USB_MIS_ST", "RB_UMS_SUSPEND"),
     "USBHS_UMS_BUS_RESET": ("USB_MIS_ST", "RB_UMS_BUS_RESET"),
     "USBHS_UMS_SIE_FREE": ("USB_MIS_ST", "RB_UMS_SIE_FREE"),
@@ -257,8 +254,8 @@ BASES = {"RCC_BASE": "RCC", "AFIO_BASE": "AFIO", "EXTI_BASE": "EXTI", "GPIOA_BAS
 # The SVD lists the DMA channel registers flat (CFGR1, CNTR1, ... CFGR7).
 # DMAx_Channel<n>_BASE must point at CFGR<n>, and DMA_Channel_TypeDef must
 # match the offsets of channel 1. DMA2 has 11 channels. The SVD has no
-# EXTEM_INTFR and EXTEM_INTFCR, so these two registers are not checked
-# (offsets 0xD0 and 0xD4 are from the RM, tables 11-8).
+# extend flag registers of the channels 8 to 11. The header gives them as
+# DMA2_EXTEN, a DMA_TypeDef at DMA2 + 0xD0 (RM, table 11-8).
 DMA_CHANNELS = {"DMA1": 7, "DMA2": 11}
 DMA_CHANNEL_MEMBERS = [("CNTR", "CNTR1"), ("PADDR", "PADDR1"), ("MADDR", "MADDR1")]
 
@@ -296,7 +293,7 @@ def field_position(periph, reg_name, field_name):
 
 def build_asserts(periphs):
     # wch_device.h first: the checks then see the same macros as a consumer.
-    lines = ['#include "wch_device.h"', '#include <stddef.h>', '']
+    lines = ['#include "wch_device.h"', '#include <ch32v30x_usb.h>', '#include <stddef.h>', '']
     for base_macro, svd_name in BASES.items():
         base = int(periphs[svd_name].findtext("baseAddress"), 0)
         lines.append(f'_Static_assert({base_macro} == 0x{base:08X}UL, "{base_macro} differs from SVD");')
@@ -317,9 +314,8 @@ def build_asserts(periphs):
             addr = base + register_offset(dma, f"CFGR{n}")
             lines.append(f'_Static_assert({dma_name}_Channel{n}_BASE == 0x{addr:08X}UL, '
                          f'"{dma_name}_Channel{n}_BASE differs from SVD");')
-    for member, off in (("EXTEM_INTFR", 0xD0), ("EXTEM_INTFCR", 0xD4)):
-        lines.append(f'_Static_assert(offsetof(DMA_TypeDef, {member}) == 0x{off:02X}, '
-                     f'"DMA_TypeDef.{member} differs from RM");')
+    dma2 = int(periphs["DMA2"].findtext("baseAddress"), 0)
+    lines.append(f'_Static_assert(DMA2_EXTEN_BASE == 0x{dma2 + 0xD0:08X}UL, "DMA2_EXTEN_BASE differs from RM");')
     lines.append('_Static_assert(offsetof(SPI_TypeDef, I2SPR) == 0x20, "SPI_TypeDef.I2SPR differs from RM");')
     cfgr1 = register_offset(dma1, "CFGR1")
     for member, reg in DMA_CHANNEL_MEMBERS:

@@ -52,10 +52,13 @@ endforeach()
 add_executable(test-usb-v307
         test_usb_v307.cpp
         ${_src}/families/ch32v30x/UsbDevice.cpp)
+# The family directory gives the WCH header <ch32v30x_usb.h> (macros only).
+# The stub <wch_device.h> comes first.
 target_include_directories(test-usb-v307 PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/stubs-usb-v307
         ${CMAKE_CURRENT_SOURCE_DIR}
-        ${_src})
+        ${_src}
+        ${_src}/families/ch32v30x)
 target_compile_options(test-usb-v307 PRIVATE -Wall -Wextra -Werror)
 add_test(NAME usb-v307 COMMAND test-usb-v307)
 

@@ -85,8 +85,10 @@ CH32V20X. `tests/check-svd-offsets.py` checks the bits against the SVD.
 
 - **Register width.** The manual gives 16-bit registers (`R16`). The
   exceptions are `CNT`, `ATRLR` and `CH1CVR` to `CH4CVR` of TIM2 to TIM4
-  (`R32`). Each register is 4 bytes from the next. The CH32V30X header
-  declares 32-bit fields. A 32-bit access works.
+  (`R32`). Each register is 4 bytes from the next. The CH32V30X header,
+  like the CH32V20X header, declares 16-bit fields. The driver thus uses
+  16-bit accesses. Only `setCompare()` and `getCompare()` use a 32-bit
+  pointer.
 - **Counter width.** All counters are 16 bits. The 32-bit TIM5 is only on
   CH32V20x_D8 and D8W. `setAutoReload()` and `setCounter()` write 16 bits
   there, because the CH32V20X header declares 16-bit fields.

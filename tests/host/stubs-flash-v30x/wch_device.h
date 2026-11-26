@@ -22,8 +22,8 @@ typedef struct {
 extern RCC_TypeDef hostRcc;
 #define RCC (&hostRcc)
 
-#define RCC_CFGR0_HPRE_MASK (0xFu << 4)
-#define RCC_CFGR0_HPRE_DIV2 (8u << 4)
+#define RCC_HPRE (0xFu << 4)
+#define RCC_HPRE_DIV2 (8u << 4)
 
 #define FLASH_STATR_BSY (1u << 0)
 #define FLASH_STATR_WRBSY (1u << 1)
@@ -33,7 +33,7 @@ extern RCC_TypeDef hostRcc;
 #define FLASH_CTLR_PG (1u << 0)
 #define FLASH_CTLR_STRT (1u << 6)
 #define FLASH_CTLR_LOCK (1u << 7)
-#define FLASH_CTLR_FLOCK (1u << 15)
+#define FLASH_CTLR_FAST_LOCK (1u << 15)
 #define FLASH_CTLR_PAGE_PG (1u << 16)
 #define FLASH_CTLR_PAGE_ER (1u << 17)
 #define FLASH_CTLR_PG_STRT (1u << 21)
@@ -42,8 +42,8 @@ struct HostFlash;
 extern HostFlash hostFlash;
 
 struct ControlRegister {
-   uint32_t value = FLASH_CTLR_LOCK | FLASH_CTLR_FLOCK; // reset value 0x8080
-   static constexpr uint32_t setOnly = FLASH_CTLR_LOCK | FLASH_CTLR_FLOCK;
+   uint32_t value = FLASH_CTLR_LOCK | FLASH_CTLR_FAST_LOCK; // reset value 0x8080
+   static constexpr uint32_t setOnly = FLASH_CTLR_LOCK | FLASH_CTLR_FAST_LOCK;
    operator uint32_t() const {
       return value;
    }
@@ -84,7 +84,7 @@ struct HostFlash {
    uint32_t RESERVED1;
    uint32_t OBR;
    uint32_t WPR;
-   KeyRegister MODEKEYR{ FLASH_CTLR_FLOCK };
+   KeyRegister MODEKEYR{ FLASH_CTLR_FAST_LOCK };
 
    // Test state
    bool keyError = false;
@@ -97,7 +97,7 @@ struct HostFlash {
 inline StatusRegister::operator uint32_t() {
    constexpr uint32_t operations = FLASH_CTLR_PG | FLASH_CTLR_PAGE_ER | FLASH_CTLR_PAGE_PG;
    if((hostFlash.CTLR.value & operations) != 0u) {
-      hostFlash.hpreDuringOperation = hostRcc.CFGR0 & RCC_CFGR0_HPRE_MASK;
+      hostFlash.hpreDuringOperation = hostRcc.CFGR0 & RCC_HPRE;
       if(hostFlash.injectWrprtErr) {
          value |= FLASH_STATR_WRPRTERR;
       }

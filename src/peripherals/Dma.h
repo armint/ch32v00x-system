@@ -143,25 +143,26 @@ struct Channel {
    }
 
    // Interrupt flag registers and the first flag bit of this channel.
-   // On CH32V30X the flags of the DMA2 channels 8 to 11 are in the extend registers.
+   // On CH32V30X the flags of the DMA2 channels 8 to 11 are in the extend
+   // registers (DMA2_EXTEN).
    inline volatile uint32_t &flagRegister() const {
-#if defined(DMA2_Channel8_BASE)
-      return _channelPosition < 7 ? _dma.INTFR : _dma.EXTEM_INTFR;
+#if defined(DMA2_EXTEN_BASE)
+      return _channelPosition < 7 ? _dma.INTFR : DMA2_EXTEN->INTFR;
 #else
       return _dma.INTFR;
 #endif
    }
 
    inline volatile uint32_t &flagClearRegister() const {
-#if defined(DMA2_Channel8_BASE)
-      return _channelPosition < 7 ? _dma.INTFCR : _dma.EXTEM_INTFCR;
+#if defined(DMA2_EXTEN_BASE)
+      return _channelPosition < 7 ? _dma.INTFCR : DMA2_EXTEN->INTFCR;
 #else
       return _dma.INTFCR;
 #endif
    }
 
    inline uint32_t flagShift() const {
-#if defined(DMA2_Channel8_BASE)
+#if defined(DMA2_EXTEN_BASE)
       return (_channelPosition < 7 ? _channelPosition : _channelPosition - 7) * 4;
 #else
       return _channelPosition * 4;

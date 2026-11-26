@@ -25,12 +25,12 @@ void update(volatile uint32_t &reg, uint32_t mask, uint32_t value) {
 } // namespace
 
 void setSwjConfig(SwjConfig config) {
-   update(AFIO->PCFR1, AFIO_PCFR1_SW_CFG_MASK, static_cast<uint32_t>(config));
+   update(AFIO->PCFR1, AFIO_PCFR1_SWJ_CFG, static_cast<uint32_t>(config));
 }
 
 void setRemap(uint32_t mask, uint32_t value) {
-   assert((mask & AFIO_PCFR1_SW_CFG_MASK) == 0);
-   update(AFIO->PCFR1, mask & ~AFIO_PCFR1_SW_CFG_MASK, value);
+   assert((mask & AFIO_PCFR1_SWJ_CFG) == 0);
+   update(AFIO->PCFR1, mask & ~AFIO_PCFR1_SWJ_CFG, value);
 }
 
 void setRemap2(uint32_t mask, uint32_t value) {

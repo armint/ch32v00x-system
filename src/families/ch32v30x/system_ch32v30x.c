@@ -3,7 +3,7 @@
 
 #if defined(CH32V30x_D8C)
 
-#define HSE_STARTUP_TIMEOUT 0x5000u
+#define HSE_READY_TIMEOUT 0x5000u
 #define SYSCLK_PLL_HZ 144000000u /* HSE x 18 */
 
 /* SetSysClock() fixes PLLMUL at x18, so only an 8 MHz HSE gives SYSCLK_PLL_HZ. */
@@ -21,8 +21,8 @@ void SystemInit(void) {
    /* PLLMUL, PLLSRC and PREDIV1 can change only while the PLL is off. A start
     * from a warm PLL (for example a boot loader) moves SYSCLK to HSI first. */
    RCC->CTLR |= RCC_HSION;
-   RCC->CFGR0 &= ~RCC_CFGR0_SW_MASK;
-   while ((RCC->CFGR0 & RCC_CFGR0_SWS_MASK) != 0) {
+   RCC->CFGR0 &= ~RCC_SW;
+   while((RCC->CFGR0 & RCC_SWS) != 0) {
    }
    RCC->CTLR &= ~RCC_PLLON;
    while (RCC->CTLR & RCC_PLLRDY) {
@@ -30,28 +30,26 @@ void SystemInit(void) {
 
    RCC->CTLR |= RCC_HSEON;
    while (!(RCC->CTLR & RCC_HSERDY)) {
-      if (++timeout > HSE_STARTUP_TIMEOUT) {
+      if(++timeout > HSE_READY_TIMEOUT) {
          return; /* SYSCLK stays on HSI */
       }
    }
 
    /* The PLL input must not change while the PLL runs, so set it first:
     * HSE with PREDIV1 undivided, PLL fed by PREDIV1, PLLMUL x18, no AHB or APB division. */
-   RCC->CFGR2 &= ~(RCC_CFGR2_PREDIV1_MASK | RCC_CFGR2_PREDIV1SRC);
-   RCC->CFGR0 = (RCC->CFGR0 & ~(RCC_CFGR0_PLLMUL_MASK | RCC_CFGR0_HPRE_MASK | RCC_CFGR0_PPRE1_MASK |
-                                RCC_CFGR0_PPRE2_MASK)) |
-                RCC_CFGR0_PLLSRC | RCC_CFGR0_PLLMUL_X18;
+   RCC->CFGR2 &= ~(RCC_PREDIV1 | RCC_PREDIV1SRC);
+   RCC->CFGR0 = (RCC->CFGR0 & ~(RCC_PLLMULL | RCC_HPRE | RCC_PPRE1 | RCC_PPRE2)) | RCC_PLLSRC | RCC_PLLMULL18_EXTEN;
 
    RCC->CTLR |= RCC_PLLON;
    timeout = 0;
    while (!(RCC->CTLR & RCC_PLLRDY)) {
-      if (++timeout > HSE_STARTUP_TIMEOUT) {
+      if(++timeout > HSE_READY_TIMEOUT) {
          return; /* SYSCLK stays on HSI */
       }
    }
 
-   RCC->CFGR0 = (RCC->CFGR0 & ~RCC_CFGR0_SW_MASK) | RCC_CFGR0_SW_PLL;
-   while ((RCC->CFGR0 & RCC_CFGR0_SWS_MASK) != RCC_CFGR0_SWS_PLL) {
+   RCC->CFGR0 = (RCC->CFGR0 & ~RCC_SW) | RCC_SW_PLL;
+   while((RCC->CFGR0 & RCC_SWS) != RCC_SWS_PLL) {
    }
 
    SystemCoreClock = SYSCLK_PLL_HZ;
@@ -59,11 +57,11 @@ void SystemInit(void) {
 
 /* Read the clock source of SYSCLK. The PLL value is the one set by SystemInit(). */
 void SystemCoreClockUpdate(void) {
-   switch (RCC->CFGR0 & RCC_CFGR0_SWS_MASK) {
+   switch(RCC->CFGR0 & RCC_SWS) {
    case 0:
       SystemCoreClock = HSI_VALUE;
       break;
-   case RCC_CFGR0_SWS_PLL:
+   case RCC_SWS_PLL:
       SystemCoreClock = SYSCLK_PLL_HZ;
       break;
    default:
