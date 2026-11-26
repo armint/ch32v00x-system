@@ -104,6 +104,31 @@ sources with the flags of your project. If the superproject defines the
 target `art-build-config`, the library links it. The examples use this
 target to pass their compiler flags to the library.
 
+## Linker scripts
+
+`ldscripts/` has one memory script for each chip (`mem-<chip>.ld`), and the
+shared scripts `sections.ld` and `noheap.ld`. Give the memory script first.
+
+`mem-ch32v307.ld` accepts two parameters for an image behind a bootloader.
+Give them with `-Wl,--defsym`. With `-Wl,-T` or a direct ld call, give them
+before the scripts: ld reads a `--defsym` after a script too late and uses
+the default without a message. The gcc driver moves each `-T` option to the
+end, so `-T<script>` has no order rule. An offset of 256 KB or more stops the
+link.
+
+| Symbol | Default | Use |
+|---|---|---|
+| `__flash_offset` | 0 | Flash in front of the image, for example 8 KB for a bootloader. The image links at the flash alias at 0, so its FLASH region starts at this offset. |
+| `__flash_length` | the rest of the 256 KB zero-wait flash | Length of the FLASH region. The link fails when the image does not fit. |
+
+Example: an image behind an 8 KB bootloader, with 248 KB for the image.
+
+```cmake
+target_link_options(app PRIVATE -Wl,--defsym=__flash_offset=8192
+        -Wl,--defsym=__flash_length=253952
+        -Tmem-ch32v307.ld -Tsections.ld -Tnoheap.ld)
+```
+
 ## Installed package
 
 `cmake --install` installs the headers of the shared tree and of the selected
