@@ -2,9 +2,9 @@
  * word can select another split (see the datasheet, note 2).
  *
  * The image links at the flash alias at 0, as the boot from the user flash
- * maps it. FLASH parameters: give them with -Wl,--defsym=<symbol>=<bytes>
- * before the scripts (-T). A --defsym after a script comes too late, and ld
- * silently uses the default.
+ * maps it. FLASH parameters: give them with -Wl,--defsym=<symbol>=<bytes>.
+ * With -Wl,-T or a direct ld call, give them before the scripts: ld reads a
+ * --defsym after a script too late and silently uses the default.
  *   __flash_offset  Flash in front of the image, for example for a
  *                   bootloader. Default 0.
  *   __flash_length  Length of FLASH. Default: from the image start to the
@@ -16,3 +16,5 @@ MEMORY
 	FLASH (rx) : ORIGIN = __flash_origin, LENGTH = DEFINED(__flash_length) ? __flash_length : 256K - __flash_origin
 	RAM (xrw)  : ORIGIN = 0x20000000, LENGTH = 64K
 }
+
+ASSERT(__flash_origin < 256K, "__flash_offset is past the 256K zero-wait flash")

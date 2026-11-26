@@ -110,8 +110,11 @@ target to pass their compiler flags to the library.
 shared scripts `sections.ld` and `noheap.ld`. Give the memory script first.
 
 `mem-ch32v307.ld` accepts two parameters for an image behind a bootloader.
-Give them with `-Wl,--defsym` before the scripts. ld reads a `--defsym`
-after a script too late and uses the default without a message.
+Give them with `-Wl,--defsym`. With `-Wl,-T` or a direct ld call, give them
+before the scripts: ld reads a `--defsym` after a script too late and uses
+the default without a message. The gcc driver moves each `-T` option to the
+end, so `-T<script>` has no order rule. An offset of 256 KB or more stops the
+link.
 
 | Symbol | Default | Use |
 |---|---|---|

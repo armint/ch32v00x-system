@@ -127,5 +127,10 @@ jobs:
             -D CMAKE_EXE_LINKER_FLAGS=-Wl,--defsym=__flash_offset=8192
           cmake --build build-offset --target test-image-v307 -j"$(nproc)"
           NM="$GCC_TOOLCHAIN_PREFIX/bin/riscv-none-elf-nm"
-          reset=$("$NM" build-offset/tests/ch32v30x/test-image-v307 | awk '$3 == "Reset_Handler" {print $1}')
+          elf=build-offset/tests/ch32v30x/test-image-v307
+          vectors=$("$NM" "$elf" | awk '$3 == "g_pfnVectors" {print $1}')
+          reset=$("$NM" "$elf" | awk '$3 == "Reset_Handler" {print $1}')
+          [ "$vectors" = 00002004 ] || { echo "g_pfnVectors at '$vectors', expected 00002004"; exit 1; }
           [ "$reset" = 00002000 ] || { echo "Reset_Handler at '$reset', expected 00002000"; exit 1; }
+          # The default length ends at the 256 KB zero-wait flash: 0x40000 - 0x2000.
+          grep -Eq '^FLASH +0x0*2000 +0x0*3e000' "$elf.map" || { echo "FLASH region of $elf.map is not 0x2000, 0x3e000"; exit 1; }
