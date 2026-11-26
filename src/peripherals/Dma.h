@@ -162,7 +162,7 @@ struct Channel {
    }
 
    inline uint32_t flagShift() const {
-#if defined(DMA2_Channel8_BASE)
+#if defined(DMA2_EXTEN_BASE)
       return (_channelPosition < 7 ? _channelPosition : _channelPosition - 7) * 4;
 #else
       return _channelPosition * 4;
