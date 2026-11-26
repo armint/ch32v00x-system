@@ -119,8 +119,7 @@ void UsbDevice::begin(usb::EventCallback callback, void *context) {
 
    // Clock sequence of the WCH USBHS examples: PHY PLL from HSE at 4 MHz,
    // 48 MHz USB clock from the PHY, PLL on, then the AHB clock.
-   RCC->CFGR2 = (RCC->CFGR2 & ~(RCC_USBHSDIV | RCC_USBHSPLLSRC | RCC_USBHSCLK)) |
-                UsbHsDiv | USBHS_PLL_CKREF_4M | RCC_USBFSSRC;
+   RCC->CFGR2 = (RCC->CFGR2 & ~(RCC_USBHSDIV | RCC_USBHSPLLSRC | RCC_USBHSCLK)) | UsbHsDiv | USBHS_PLL_CKREF_4M | RCC_USBFSSRC;
    RCC->CFGR2 |= RCC_USBHSPLL;
    RCC->AHBPCENR |= RCC_USBHSEN;
 
@@ -131,8 +130,7 @@ void UsbDevice::begin(usb::EventCallback callback, void *context) {
    delayuS(50);
    USBHSD->CONTROL = 0;
    USBHSD->HOST_CTRL = USBHS_UH_PHY_SUSPENDM;
-   USBHSD->CONTROL = USBHS_UC_DMA_EN | USBHS_UC_INT_BUSY |
-                 (_maxSpeed == Speed::High ? USBHS_UC_SPEED_HIGH : USBHS_UC_SPEED_FULL);
+   USBHSD->CONTROL = USBHS_UC_DMA_EN | USBHS_UC_INT_BUSY | (_maxSpeed == Speed::High ? USBHS_UC_SPEED_HIGH : USBHS_UC_SPEED_FULL);
    USBHSD->INT_EN = 0;
    USBHSD->INT_FG = 0xFF;
    resetEndpoints();
@@ -506,7 +504,8 @@ void UsbDevice::handleTransfer(uint8_t status, bool setupPending) {
          // hardware. A STALL that the main loop set after the packet stays.
          Direction &in = _endpoints[n].in;
          in.toggle ^= 1;
-         const uint8_t response = (txCtrl(n) & USBHS_UEP_T_RES_MASK) == USBHS_UEP_T_RES_STALL ? USBHS_UEP_T_RES_STALL : USBHS_UEP_T_RES_NAK;
+         const uint8_t response =
+         (txCtrl(n) & USBHS_UEP_T_RES_MASK) == USBHS_UEP_T_RES_STALL ? USBHS_UEP_T_RES_STALL : USBHS_UEP_T_RES_NAK;
          txCtrl(n) = controlByte(in.toggle, response);
       }
       report(EventType::InComplete, static_cast<uint8_t>(n | usb::EndpointDirectionIn));

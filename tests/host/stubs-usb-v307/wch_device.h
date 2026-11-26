@@ -50,11 +50,11 @@ extern RCC_TypeDef hostRcc;
 /* AHB peripheral clock enable bits (RCC_AHBPCENR) */
 #define RCC_USBHSEN (1ul << 11)
 
-#define RCC_USBHSDIV (7ul << 24) /* USBHS PHY PLL input: source / (USBHSDIV + 1) */
-#define RCC_USBHSPLLSRC (1ul << 27)   /* 0: HSE, 1: HSI */
-#define RCC_USBHSCLK (3ul << 28) /* Input frequency of the PHY PLL */
-#define RCC_USBHSPLL (1ul << 30) /* PHY PLL on */
-#define RCC_USBFSSRC (1ul << 31) /* RM: USBHSSRC. 48 MHz USB clock: 0: PLL, 1: USBHS PHY */
+#define RCC_USBHSDIV (7ul << 24)    /* USBHS PHY PLL input: source / (USBHSDIV + 1) */
+#define RCC_USBHSPLLSRC (1ul << 27) /* 0: HSE, 1: HSI */
+#define RCC_USBHSCLK (3ul << 28)    /* Input frequency of the PHY PLL */
+#define RCC_USBHSPLL (1ul << 30)    /* PHY PLL on */
+#define RCC_USBFSSRC (1ul << 31)    /* RM: USBHSSRC. 48 MHz USB clock: 0: PLL, 1: USBHS PHY */
 
 /* USBHSD_TypeDef of src/families/ch32v30x/ch32v30x.h (the WCH header) */
 typedef struct {

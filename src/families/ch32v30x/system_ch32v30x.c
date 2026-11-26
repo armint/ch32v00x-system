@@ -22,7 +22,7 @@ void SystemInit(void) {
     * from a warm PLL (for example a boot loader) moves SYSCLK to HSI first. */
    RCC->CTLR |= RCC_HSION;
    RCC->CFGR0 &= ~RCC_SW;
-   while ((RCC->CFGR0 & RCC_SWS) != 0) {
+   while((RCC->CFGR0 & RCC_SWS) != 0) {
    }
    RCC->CTLR &= ~RCC_PLLON;
    while (RCC->CTLR & RCC_PLLRDY) {
@@ -30,7 +30,7 @@ void SystemInit(void) {
 
    RCC->CTLR |= RCC_HSEON;
    while (!(RCC->CTLR & RCC_HSERDY)) {
-      if (++timeout > HSE_READY_TIMEOUT) {
+      if(++timeout > HSE_READY_TIMEOUT) {
          return; /* SYSCLK stays on HSI */
       }
    }
@@ -38,20 +38,18 @@ void SystemInit(void) {
    /* The PLL input must not change while the PLL runs, so set it first:
     * HSE with PREDIV1 undivided, PLL fed by PREDIV1, PLLMUL x18, no AHB or APB division. */
    RCC->CFGR2 &= ~(RCC_PREDIV1 | RCC_PREDIV1SRC);
-   RCC->CFGR0 = (RCC->CFGR0 & ~(RCC_PLLMULL | RCC_HPRE | RCC_PPRE1 |
-                                RCC_PPRE2)) |
-                RCC_PLLSRC | RCC_PLLMULL18_EXTEN;
+   RCC->CFGR0 = (RCC->CFGR0 & ~(RCC_PLLMULL | RCC_HPRE | RCC_PPRE1 | RCC_PPRE2)) | RCC_PLLSRC | RCC_PLLMULL18_EXTEN;
 
    RCC->CTLR |= RCC_PLLON;
    timeout = 0;
    while (!(RCC->CTLR & RCC_PLLRDY)) {
-      if (++timeout > HSE_READY_TIMEOUT) {
+      if(++timeout > HSE_READY_TIMEOUT) {
          return; /* SYSCLK stays on HSI */
       }
    }
 
    RCC->CFGR0 = (RCC->CFGR0 & ~RCC_SW) | RCC_SW_PLL;
-   while ((RCC->CFGR0 & RCC_SWS) != RCC_SWS_PLL) {
+   while((RCC->CFGR0 & RCC_SWS) != RCC_SWS_PLL) {
    }
 
    SystemCoreClock = SYSCLK_PLL_HZ;
@@ -59,7 +57,7 @@ void SystemInit(void) {
 
 /* Read the clock source of SYSCLK. The PLL value is the one set by SystemInit(). */
 void SystemCoreClockUpdate(void) {
-   switch (RCC->CFGR0 & RCC_SWS) {
+   switch(RCC->CFGR0 & RCC_SWS) {
    case 0:
       SystemCoreClock = HSI_VALUE;
       break;
