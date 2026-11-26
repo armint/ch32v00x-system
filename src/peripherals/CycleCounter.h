@@ -38,4 +38,19 @@ namespace hw::CycleCounter {
    return SysTick->CNT;
 }
 
+/**
+ * @brief Returns the full 64-bit count of core clock cycles. It does not wrap in practice
+ * (4000 years at 144 MHz).
+ */
+inline uint64_t count64() {
+   // CNTH, CNT, CNTH again: a carry from the low word between the two reads shows as a changed high word.
+   uint32_t high;
+   uint32_t low;
+   do {
+      high = SysTick->CNTH;
+      low = SysTick->CNT;
+   } while(high != SysTick->CNTH);
+   return (static_cast<uint64_t>(high) << 32) | low;
+}
+
 } // namespace hw::CycleCounter

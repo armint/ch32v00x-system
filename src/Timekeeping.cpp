@@ -1,6 +1,10 @@
 #include "utils/Timekeeping.h"
 #include "utils/Interrupt.h"
 #include <wch_device.h>
+// SYSTICK_64BIT comes from the family header (wch_device.h)
+#if defined(SYSTICK_64BIT)
+#include "peripherals/CycleCounter.h"
+#endif
 
 // SysTick CTLR bits (QingKe V2/V4 processor manuals)
 #define SYSTICK_CTRL_STRE (1ul << 3)  /* Auto reload enable */
@@ -30,14 +34,7 @@ static uint32_t sysTickPeriod;
 static uint64_t sysTickNextCompare;
 
 static uint64_t readSysTickCounter() {
-   // CNTH, CNT, CNTH again: a carry from the low word between the two reads shows as a changed high word.
-   uint32_t high;
-   uint32_t low;
-   do {
-      high = SysTick->CNTH;
-      low = SysTick->CNT;
-   } while(high != SysTick->CNTH);
-   return (static_cast<uint64_t>(high) << 32) | low;
+   return hw::CycleCounter::count64();
 }
 
 // High word first: the in-between value (new high, old low) is later than both the old and the new compare value,

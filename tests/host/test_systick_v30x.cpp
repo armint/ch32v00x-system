@@ -147,6 +147,7 @@ void testCycleCounter() {
    const uint32_t before = hw::CycleCounter::count();
    setCounter(0x0000'0002'0000'0010ull);
    CHECK(hw::CycleCounter::count() - before == 0x20u); // the difference is correct across the wrap
+   CHECK(hw::CycleCounter::count64() == 0x0000'0002'0000'0010ull);
 
    hostSysTick.CTLR = 0;
    hw::CycleCounter::start();
