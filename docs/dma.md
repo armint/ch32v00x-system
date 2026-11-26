@@ -34,8 +34,9 @@ The old names `setDataCount()`, `hasTransferCompleteInterruptFlag()` and
 DMA2 has 11 channels. The TIM9 and TIM10 requests are on DMA2 channels 6 to
 11. The registers of channels 8 to 11 are 0x10 apart from 0x90. The flags of
 channels 8 to 11 are not in `INTFR` and `INTFCR`: they are in the extend
-registers `EXTEM_INTFR` and `EXTEM_INTFCR` (0xD0 and 0xD4 from the DMA2
-base). `Dma::Channel` selects the register. The code that uses the channel
+registers at 0xD0 and 0xD4 from the DMA2 base. The device header gives them
+as `DMA2_EXTEN->INTFR` and `DMA2_EXTEN->INTFCR`. `Dma::Channel` selects the
+register. The code that uses the channel
 does not change.
 
 DMA1 has 7 channels. On some lots, an address range limit applies to DMA1.

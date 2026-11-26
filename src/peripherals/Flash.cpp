@@ -29,7 +29,7 @@ class SlowClock {
    SlowClock()
       : _saved(RCC->CFGR0) {
       if(SystemCoreClock > 120000000u) {
-         RCC->CFGR0 = (_saved & ~RCC_CFGR0_HPRE_MASK) | RCC_CFGR0_HPRE_DIV2;
+         RCC->CFGR0 = (_saved & ~RCC_HPRE) | RCC_HPRE_DIV2;
       }
    }
    ~SlowClock() {

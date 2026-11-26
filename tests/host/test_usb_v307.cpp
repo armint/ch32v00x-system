@@ -29,10 +29,12 @@
 #include "utils/Interrupt.h"
 #include "delaybusywait.h"
 
+#include <ch32v30x_usb.h>
+
 #include <array>
 #include <cstring>
 
-USBHS_TypeDef hostUsbhs;
+USBHSD_TypeDef hostUsbhs;
 RCC_TypeDef hostRcc;
 IRQn_Type hostNvicEnabled = TIM2_IRQn;
 IRQn_Type hostNvicDisabled = TIM2_IRQn;
@@ -61,7 +63,7 @@ void resetFakes() {
    ctrlInDelay = 0;
 }
 
-using Snapshot = std::array<uint8_t, sizeof(USBHS_TypeDef)>;
+using Snapshot = std::array<uint8_t, sizeof(USBHSD_TypeDef)>;
 
 Snapshot snapshot() {
    Snapshot s;
@@ -72,8 +74,32 @@ Snapshot snapshot() {
 void onEvent(void *, const hw::usb::Event &) {
 }
 
-auto &ep(uint8_t n) {
-   return hostUsbhs.UEP[n];
+// The endpoint registers of USBHSD_TypeDef: one field for each endpoint,
+// 4 bytes apart (the driver checks this with static_asserts).
+struct Ep {
+   volatile uint16_t &T_LEN;
+   volatile uint8_t &TX_CTRL;
+   volatile uint8_t &RX_CTRL;
+};
+
+Ep ep(uint8_t n) {
+   return { (&hostUsbhs.UEP0_TX_LEN)[2 * n], (&hostUsbhs.UEP0_TX_CTRL)[4 * n], (&hostUsbhs.UEP0_RX_CTRL)[4 * n] };
+}
+
+volatile uint16_t &maxLen(uint8_t n) {
+   return (&hostUsbhs.UEP0_MAX_LEN)[2 * n];
+}
+
+constexpr uint32_t txEnable(uint8_t n) {
+   return USBHS_UEP0_T_EN << n;
+}
+
+constexpr uint32_t rxEnable(uint8_t n) {
+   return USBHS_UEP0_R_EN << n;
+}
+
+constexpr uint32_t bufMode(uint8_t n) {
+   return USBHS_UEP0_BUF_MOD << n;
 }
 
 // Offset of a DMA buffer in the UsbDevice object. Modulo 2^32, so it is
@@ -93,11 +119,11 @@ const uint8_t *bufferAt(const UsbDevice &usb, uint32_t dma) {
 }
 
 uint32_t txDma(uint8_t n) {
-   return hostUsbhs.UEP_TX_DMA[n - 1];
+   return (&hostUsbhs.UEP1_TX_DMA)[n - 1];
 }
 
 uint32_t rxDma(uint8_t n) {
-   return hostUsbhs.UEP_RX_DMA[n - 1];
+   return (&hostUsbhs.UEP1_RX_DMA)[n - 1];
 }
 
 constexpr uint8_t TxOpen = USBHS_UEP_T_TOG_AUTO | USBHS_UEP_T_RES_NAK;
@@ -113,33 +139,33 @@ void testBegin() {
    // Values from before begin() that resetEndpoints() must overwrite.
    ep(0).TX_CTRL = USBHS_UEP_T_RES_STALL;
    ep(3).RX_CTRL = USBHS_UEP_R_RES_ACK;
-   hostUsbhs.UEP_CONFIG = 0xFFFFFFFF;
+   hostUsbhs.ENDP_CONFIG = 0xFFFFFFFF;
    hostUsbhs.DEV_AD = 5;
-   hostRcc.CFGR2 = RCC_CFGR2_USBHSPLLSRC | 0x7; // HSI source bit set, PREDIV1 bits
+   hostRcc.CFGR2 = RCC_USBHSPLLSRC | 0x7; // HSI source bit set, PREDIV1 bits
    UsbDevice usb;
    usb.begin(&onEvent, nullptr);
 
    // HSE_VALUE 8 MHz: USBHSDIV 1 gives the 4 MHz PHY reference. The
    // PREDIV1 bits stay the same.
-   CHECK(hostRcc.CFGR2 == ((1ul << 24) | RCC_CFGR2_USBHSCLK_4MHZ | RCC_CFGR2_USBFSSRC | RCC_CFGR2_USBHSPLL | 0x7));
+   CHECK(hostRcc.CFGR2 == ((1ul << 24) | USBHS_PLL_CKREF_4M | RCC_USBFSSRC | RCC_USBHSPLL | 0x7));
    CHECK(hostRcc.AHBPCENR == RCC_USBHSEN);
    // The SIE reset is on during the delay and off after it.
    CHECK(delayUs >= 10);
-   CHECK(ctrlInDelay == (USBHS_UC_CLR_ALL | USBHS_UC_RST_SIE));
-   CHECK(hostUsbhs.CTRL == (USBHS_UC_DMA_EN | USBHS_UC_INT_BUSY | USBHS_UC_SPEED_HIGH));
+   CHECK(ctrlInDelay == (USBHS_UC_CLR_ALL | USBHS_UC_RESET_SIE));
+   CHECK(hostUsbhs.CONTROL == (USBHS_UC_DMA_EN | USBHS_UC_INT_BUSY | USBHS_UC_SPEED_HIGH));
    CHECK(hostUsbhs.HOST_CTRL == USBHS_UH_PHY_SUSPENDM);
    CHECK(hostUsbhs.INT_EN == (USBHS_UIE_BUS_RST | USBHS_UIE_TRANSFER | USBHS_UIE_SUSPEND | USBHS_UIE_SETUP_ACT));
    CHECK(hostUsbhs.INT_FG == 0xFF);
 
    // EP0: one 64-byte buffer for both directions, OUT ready, IN NAK.
    CHECK(validBuffer(usb, hostUsbhs.UEP0_DMA, UsbDevice::Ep0MaxPacketSize));
-   CHECK(hostUsbhs.UEP_MAX_LEN[0].MAX_LEN == UsbDevice::Ep0MaxPacketSize);
+   CHECK(maxLen(0) == UsbDevice::Ep0MaxPacketSize);
    CHECK(ep(0).T_LEN == 0);
    CHECK(ep(0).TX_CTRL == USBHS_UEP_T_RES_NAK);
    CHECK(ep(0).RX_CTRL == USBHS_UEP_R_RES_ACK);
-   CHECK(hostUsbhs.UEP_CONFIG == 0);
-   CHECK(hostUsbhs.UEP_TYPE == 0);
-   CHECK(hostUsbhs.UEP_BUF_MOD == 0);
+   CHECK(hostUsbhs.ENDP_CONFIG == 0);
+   CHECK(hostUsbhs.ENDP_TYPE == 0);
+   CHECK(hostUsbhs.BUF_MODE == 0);
    CHECK(hostUsbhs.DEV_AD == 0);
    for(uint8_t n = 1; n < UsbDevice::EndpointCount; ++n) {
       CHECK(ep(n).TX_CTRL == USBHS_UEP_T_RES_NAK);
@@ -155,7 +181,7 @@ void testBeginFullSpeed() {
    resetFakes();
    UsbDevice usb(UsbDevice::EndpointCount, UsbDevice::Speed::Full);
    usb.begin(&onEvent, nullptr);
-   CHECK(hostUsbhs.CTRL == (USBHS_UC_DMA_EN | USBHS_UC_INT_BUSY | USBHS_UC_SPEED_FULL));
+   CHECK(hostUsbhs.CONTROL == (USBHS_UC_DMA_EN | USBHS_UC_INT_BUSY | USBHS_UC_SPEED_FULL));
 }
 
 void testEnd() {
@@ -166,22 +192,22 @@ void testEnd() {
    usb.end();
    CHECK(hostNvicDisabled == USBHS_IRQn);
    CHECK(hostUsbhs.INT_EN == 0);
-   CHECK(hostUsbhs.CTRL == (USBHS_UC_CLR_ALL | USBHS_UC_RST_SIE));
+   CHECK(hostUsbhs.CONTROL == (USBHS_UC_CLR_ALL | USBHS_UC_RESET_SIE));
    CHECK(hostUsbhs.HOST_CTRL == 0);
    CHECK((hostRcc.AHBPCENR & RCC_USBHSEN) == 0);
-   CHECK((hostRcc.CFGR2 & RCC_CFGR2_USBHSPLL) == 0);
+   CHECK((hostRcc.CFGR2 & RCC_USBHSPLL) == 0);
    CHECK((hostRcc.CFGR2 & 0x7) == 0x7);
 }
 
 void testConnectAddressSpeed() {
    UsbDevice usb;
    begin(usb);
-   const uint8_t ctrl = hostUsbhs.CTRL;
+   const uint8_t ctrl = hostUsbhs.CONTROL;
    usb.connect();
-   CHECK(hostUsbhs.CTRL == (ctrl | USBHS_UC_DEV_PU_EN));
+   CHECK(hostUsbhs.CONTROL == (ctrl | USBHS_UC_DEV_PU_EN));
    CHECK(usb.isConnected());
    usb.disconnect();
-   CHECK(hostUsbhs.CTRL == ctrl);
+   CHECK(hostUsbhs.CONTROL == ctrl);
    CHECK(!usb.isConnected());
 
    usb.setAddress(42);
@@ -189,11 +215,11 @@ void testConnectAddressSpeed() {
    usb.setAddress(0xFF); // 7-bit address
    CHECK(hostUsbhs.DEV_AD == 0x7F);
 
-   hostUsbhs.SPEED_TYPE = USBHS_SPEED_TYPE_HIGH;
+   hostUsbhs.SPEED_TYPE = USBHS_USB_SPEED_HIGH;
    CHECK(usb.speed() == UsbDevice::Speed::High);
-   hostUsbhs.SPEED_TYPE = USBHS_SPEED_TYPE_FULL;
+   hostUsbhs.SPEED_TYPE = USBHS_USB_SPEED_FULL;
    CHECK(usb.speed() == UsbDevice::Speed::Full);
-   hostUsbhs.SPEED_TYPE = static_cast<uint8_t>(0xFC | USBHS_SPEED_TYPE_HIGH); // upper bits ignored
+   hostUsbhs.SPEED_TYPE = static_cast<uint8_t>(0xFC | USBHS_USB_SPEED_HIGH); // upper bits ignored
    CHECK(usb.speed() == UsbDevice::Speed::High);
 }
 
@@ -206,27 +232,27 @@ void testOpenEndpointRegisters() {
    CHECK(validBuffer(usb, txDma(1), 512));
    CHECK(ep(1).T_LEN == 0);
    CHECK(ep(1).TX_CTRL == TxOpen);
-   CHECK(hostUsbhs.UEP_CONFIG == USBHS_UEP_T_EN(1));
+   CHECK(hostUsbhs.ENDP_CONFIG == txEnable(1));
 
    CHECK(usb.openEndpoint(0x01, EndpointType::Bulk, 512));
    CHECK(validBuffer(usb, rxDma(1), 512));
-   CHECK(hostUsbhs.UEP_MAX_LEN[1].MAX_LEN == 512);
+   CHECK(maxLen(1) == 512);
    CHECK(ep(1).RX_CTRL == RxOpen);
    CHECK(ep(1).TX_CTRL == TxOpen); // the IN direction stays the same
-   CHECK(hostUsbhs.UEP_CONFIG == (USBHS_UEP_T_EN(1) | USBHS_UEP_R_EN(1)));
+   CHECK(hostUsbhs.ENDP_CONFIG == (txEnable(1) | rxEnable(1)));
 
    // Endpoint 15 uses the last DMA register and the bits 15 and 31.
    CHECK(usb.openEndpoint(0x8F, EndpointType::Interrupt, 8));
    CHECK(usb.openEndpoint(0x0F, EndpointType::Interrupt, 8));
    CHECK(validBuffer(usb, txDma(15), 8));
    CHECK(validBuffer(usb, rxDma(15), 8));
-   CHECK(hostUsbhs.UEP_MAX_LEN[15].MAX_LEN == 8);
-   CHECK(hostUsbhs.UEP_CONFIG == (USBHS_UEP_T_EN(1) | USBHS_UEP_R_EN(1) | 0x80008000u));
+   CHECK(maxLen(15) == 8);
+   CHECK(hostUsbhs.ENDP_CONFIG == (txEnable(1) | rxEnable(1) | 0x80008000u));
 
    // The two directions of one number can have different types.
    CHECK(usb.openEndpoint(0x82, EndpointType::Interrupt, 900));
    CHECK(usb.openEndpoint(0x02, EndpointType::Bulk, 64));
-   CHECK(hostUsbhs.UEP_MAX_LEN[2].MAX_LEN == 64);
+   CHECK(maxLen(2) == 64);
 
    CHECK(blockingSections == 6);
    CHECK(blockedIrq == USBHS_IRQn);
@@ -269,7 +295,7 @@ void testPoolFull() {
 
    // closeAllEndpoints() frees the pool and disables endpoints 1 to 15.
    usb.closeAllEndpoints();
-   CHECK(hostUsbhs.UEP_CONFIG == 0);
+   CHECK(hostUsbhs.ENDP_CONFIG == 0);
    for(uint8_t n = 1; n < UsbDevice::EndpointCount; ++n) {
       CHECK(ep(n).TX_CTRL == USBHS_UEP_T_RES_NAK);
       CHECK(ep(n).RX_CTRL == USBHS_UEP_R_RES_NAK);
@@ -420,11 +446,11 @@ void testDoubleBufferedOpen() {
    // Two buffers, in the pool one after the other. The IN register is buffer 1.
    CHECK(validBuffer(usb, rxDma(1), 512) && validBuffer(usb, txDma(1), 512));
    CHECK(txDma(1) == rxDma(1) + 512);
-   CHECK(hostUsbhs.UEP_BUF_MOD == USBHS_UEP_BUF_MOD(1));
-   CHECK((hostUsbhs.UEP_CONFIG & USBHS_UEP_R_EN(1)) != 0);
-   CHECK((hostUsbhs.UEP_CONFIG & USBHS_UEP_T_EN(1)) == 0);
+   CHECK(hostUsbhs.BUF_MODE == bufMode(1));
+   CHECK((hostUsbhs.ENDP_CONFIG & rxEnable(1)) != 0);
+   CHECK((hostUsbhs.ENDP_CONFIG & txEnable(1)) == 0);
    CHECK(ep(1).RX_CTRL == RxOpen);
-   CHECK(hostUsbhs.UEP_MAX_LEN[1].MAX_LEN == 512);
+   CHECK(maxLen(1) == 512);
 
    // The IN direction of that number cannot open, and a double-buffered
    // endpoint cannot open on a number with an open IN direction.
@@ -445,7 +471,7 @@ void testDoubleBufferedOpen() {
    CHECK(!usb.openEndpoint(0x05, EndpointType::Bulk, 512, true));
    CHECK(usb.openEndpoint(0x05, EndpointType::Bulk, 256, true));
    usb.closeAllEndpoints();
-   CHECK(hostUsbhs.UEP_BUF_MOD == 0);
+   CHECK(hostUsbhs.BUF_MODE == 0);
 }
 
 void testDoubleBufferedReceive() {
@@ -922,7 +948,7 @@ BlockingSection::~BlockingSection() {
 
 extern "C" void delayuS(uint32_t usec) {
    delayUs += usec;
-   ctrlInDelay = hostUsbhs.CTRL;
+   ctrlInDelay = hostUsbhs.CONTROL;
 }
 
 int main() {

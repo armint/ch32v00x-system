@@ -2,8 +2,10 @@
 
 // Host stand-in for <wch_device.h> of CH32V30X for the Dma driver
 // (src/peripherals/Dma.h). The DMA types and bits are copies from
-// src/families/ch32v30x/ch32v30x.h. test_dma_v30x.cpp points a DMA_TypeDef at a
-// block of host memory, so the channel registers have their real offsets.
+// src/families/ch32v30x/ch32v30x.h (the WCH header). test_dma_v30x.cpp points a
+// DMA_TypeDef at a block of host memory, so the channel registers have their
+// real offsets. DMA2_EXTEN (the flags of the channels 8 to 11) is at offset
+// 0xD0 of that block.
 
 #include <stddef.h>
 #include <stdint.h>
@@ -11,6 +13,7 @@
 #define DMA1_BASE 0x40020000UL
 #define DMA2_BASE 0x40020400UL
 #define DMA2_Channel8_BASE (DMA2_BASE + 0x90UL)
+#define DMA2_EXTEN_BASE (DMA2_BASE + 0xD0UL)
 
 typedef struct {
    volatile uint32_t CFGR;
@@ -22,10 +25,10 @@ typedef struct {
 typedef struct {
    volatile uint32_t INTFR;
    volatile uint32_t INTFCR;
-   volatile uint32_t RESERVED[50];
-   volatile uint32_t EXTEM_INTFR;
-   volatile uint32_t EXTEM_INTFCR;
 } DMA_TypeDef;
+
+extern DMA_TypeDef *hostDma2Exten;
+#define DMA2_EXTEN hostDma2Exten
 
 #define DMA_GIF1 (1ul << 0)
 #define DMA_TCIF1 (1ul << 1)

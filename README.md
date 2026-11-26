@@ -117,9 +117,9 @@ Use a commit of `main` in your submodule.
 ch32v00x-system uses the MIT license. See [LICENSE](LICENSE).
 Third-party files keep the copyright and the terms in their file headers:
 
-- The WCH device files, for example `src/core_riscv.h` and the CH32V00x and
-  CH32V20x headers in `src/families/`, come from the WCH example packages.
-  They keep the WCH copyright and terms.
+- The WCH device files, for example `src/core_riscv.h` and the CH32V00x,
+  CH32V20x and CH32V30x headers in `src/families/`, come from the WCH example
+  packages. They keep the WCH copyright and terms.
 - The start-up code and the vector tables come from µOS++ by Liviu Ionescu
   (MIT), for example `src/bare-metal/startup.cpp` and
   `src/families/*/vectors_*.c`.

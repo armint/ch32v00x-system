@@ -19,7 +19,7 @@ HostFlash hostFlash;
 
 namespace {
 
-constexpr uint32_t locks = FLASH_CTLR_LOCK | FLASH_CTLR_FLOCK;
+constexpr uint32_t locks = FLASH_CTLR_LOCK | FLASH_CTLR_FAST_LOCK;
 constexpr uint32_t otherCfgr0Bits = 0x0028040Au; // PLLMUL, PPRE1 and SW bits: must stay
 
 void resetFlash() {
@@ -62,7 +62,7 @@ void testProgramHalfword() {
    CHECK(page[0] == 0xE339 && page[2] == 0xE339);
    CHECK((hostFlash.CTLR & FLASH_CTLR_PG) == 0u);
    // HCLK = SYSCLK / 2 during the operation, then the old CFGR0 again.
-   CHECK(hostFlash.hpreDuringOperation == RCC_CFGR0_HPRE_DIV2);
+   CHECK(hostFlash.hpreDuringOperation == RCC_HPRE_DIV2);
    CHECK(hostRcc.CFGR0 == otherCfgr0Bits);
 
    // Odd address: no write.
@@ -99,7 +99,7 @@ void testErasePage() {
    }
    CHECK(hostFlash.ADDR == static_cast<uint32_t>(reinterpret_cast<uintptr_t>(page)));
    CHECK((hostFlash.CTLR & FLASH_CTLR_PAGE_ER) == 0u);
-   CHECK(hostFlash.hpreDuringOperation == RCC_CFGR0_HPRE_DIV2);
+   CHECK(hostFlash.hpreDuringOperation == RCC_HPRE_DIV2);
    CHECK(hostRcc.CFGR0 == otherCfgr0Bits);
 }
 
@@ -120,7 +120,7 @@ void testWriteBuffer() {
    }
    CHECK(padded);
    CHECK((hostFlash.CTLR & FLASH_CTLR_PAGE_PG) == 0u);
-   CHECK(hostFlash.hpreDuringOperation == RCC_CFGR0_HPRE_DIV2);
+   CHECK(hostFlash.hpreDuringOperation == RCC_HPRE_DIV2);
    CHECK(hostRcc.CFGR0 == otherCfgr0Bits);
 }
 

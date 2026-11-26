@@ -1,5 +1,9 @@
 #include "UsbDevice.h"
 
+#include <ch32v30x_usb.h>
+
+#include <cstddef>
+
 #include "utils/Interrupt.h"
 #include "delaybusywait.h"
 
@@ -20,16 +24,48 @@ constexpr uint32_t UsbHsDiv = (HSE_VALUE / PhyReferenceHz - 1) << 24;
 
 constexpr uint8_t InterruptMask = USBHS_UIE_BUS_RST | USBHS_UIE_TRANSFER | USBHS_UIE_SUSPEND | USBHS_UIE_SETUP_ACT;
 
-USBHS_EpCtrl_TypeDef &ctrl(uint8_t n) {
-   return USBHS->UEP[n];
+// The endpoint registers of USBHSD_TypeDef. The official header has one
+// field for each endpoint. The fields of one kind are contiguous (see the
+// static_asserts), so the driver indexes them from the field of endpoint 0
+// or 1.
+static_assert(offsetof(USBHSD_TypeDef, UEP15_TX_LEN) - offsetof(USBHSD_TypeDef, UEP0_TX_LEN) == 15 * 4);
+static_assert(offsetof(USBHSD_TypeDef, UEP0_TX_CTRL) == offsetof(USBHSD_TypeDef, UEP0_TX_LEN) + 2);
+static_assert(offsetof(USBHSD_TypeDef, UEP0_RX_CTRL) == offsetof(USBHSD_TypeDef, UEP0_TX_LEN) + 3);
+static_assert(offsetof(USBHSD_TypeDef, UEP15_MAX_LEN) - offsetof(USBHSD_TypeDef, UEP0_MAX_LEN) == 15 * 4);
+static_assert(offsetof(USBHSD_TypeDef, UEP15_RX_DMA) - offsetof(USBHSD_TypeDef, UEP1_RX_DMA) == 14 * 4);
+static_assert(offsetof(USBHSD_TypeDef, UEP15_TX_DMA) - offsetof(USBHSD_TypeDef, UEP1_TX_DMA) == 14 * 4);
+
+volatile uint16_t &txLen(uint8_t n) {
+   return (&USBHSD->UEP0_TX_LEN)[2 * n];
+}
+
+volatile uint8_t &txCtrl(uint8_t n) {
+   return (&USBHSD->UEP0_TX_CTRL)[4 * n];
+}
+
+volatile uint8_t &rxCtrl(uint8_t n) {
+   return (&USBHSD->UEP0_RX_CTRL)[4 * n];
+}
+
+volatile uint16_t &maxLen(uint8_t n) {
+   return (&USBHSD->UEP0_MAX_LEN)[2 * n];
+}
+
+// n = 1..15
+volatile uint32_t &rxDma(uint8_t n) {
+   return (&USBHSD->UEP1_RX_DMA)[n - 1];
+}
+
+volatile uint32_t &txDma(uint8_t n) {
+   return (&USBHSD->UEP1_TX_DMA)[n - 1];
 }
 
 void setTxResponse(uint8_t n, uint8_t response) {
-   ctrl(n).TX_CTRL = static_cast<uint8_t>((ctrl(n).TX_CTRL & ~USBHS_UEP_T_RES_MASK) | response);
+   txCtrl(n) = static_cast<uint8_t>((txCtrl(n) & ~USBHS_UEP_T_RES_MASK) | response);
 }
 
 void setRxResponse(uint8_t n, uint8_t response) {
-   ctrl(n).RX_CTRL = static_cast<uint8_t>((ctrl(n).RX_CTRL & ~USBHS_UEP_R_RES_MASK) | response);
+   rxCtrl(n) = static_cast<uint8_t>((rxCtrl(n) & ~USBHS_UEP_R_RES_MASK) | response);
 }
 
 // The control byte that the handler writes for endpoints 1..15: the auto toggle, the data toggle
@@ -48,8 +84,8 @@ struct TransferStatus {
 };
 
 TransferStatus readTransferStatus() {
-   const uint8_t status = USBHS->INT_ST;
-   const bool setupPending = (USBHS->INT_FG & USBHS_UIF_SETUP_ACT) != 0;
+   const uint8_t status = USBHSD->INT_ST;
+   const bool setupPending = (USBHSD->INT_FG & USBHS_UIF_SETUP_ACT) != 0;
    return { status, setupPending };
 }
 
@@ -83,24 +119,24 @@ void UsbDevice::begin(usb::EventCallback callback, void *context) {
 
    // Clock sequence of the WCH USBHS examples: PHY PLL from HSE at 4 MHz,
    // 48 MHz USB clock from the PHY, PLL on, then the AHB clock.
-   RCC->CFGR2 = (RCC->CFGR2 & ~(RCC_CFGR2_USBHSDIV_MASK | RCC_CFGR2_USBHSPLLSRC | RCC_CFGR2_USBHSCLK_MASK)) |
-                UsbHsDiv | RCC_CFGR2_USBHSCLK_4MHZ | RCC_CFGR2_USBFSSRC;
-   RCC->CFGR2 |= RCC_CFGR2_USBHSPLL;
+   RCC->CFGR2 = (RCC->CFGR2 & ~(RCC_USBHSDIV | RCC_USBHSPLLSRC | RCC_USBHSCLK)) |
+                UsbHsDiv | USBHS_PLL_CKREF_4M | RCC_USBFSSRC;
+   RCC->CFGR2 |= RCC_USBHSPLL;
    RCC->AHBPCENR |= RCC_USBHSEN;
 
    // RST_SIE must be cleared by software (RM 22.2.1.1). delayuS() counts
    // 6 cycles per loop; the V4F core needs fewer, so ask for more than the
    // 10 us of the WCH examples.
-   USBHS->CTRL = USBHS_UC_CLR_ALL | USBHS_UC_RST_SIE;
+   USBHSD->CONTROL = USBHS_UC_CLR_ALL | USBHS_UC_RESET_SIE;
    delayuS(50);
-   USBHS->CTRL = 0;
-   USBHS->HOST_CTRL = USBHS_UH_PHY_SUSPENDM;
-   USBHS->CTRL = USBHS_UC_DMA_EN | USBHS_UC_INT_BUSY |
+   USBHSD->CONTROL = 0;
+   USBHSD->HOST_CTRL = USBHS_UH_PHY_SUSPENDM;
+   USBHSD->CONTROL = USBHS_UC_DMA_EN | USBHS_UC_INT_BUSY |
                  (_maxSpeed == Speed::High ? USBHS_UC_SPEED_HIGH : USBHS_UC_SPEED_FULL);
-   USBHS->INT_EN = 0;
-   USBHS->INT_FG = 0xFF;
+   USBHSD->INT_EN = 0;
+   USBHSD->INT_FG = 0xFF;
    resetEndpoints();
-   USBHS->INT_EN = InterruptMask;
+   USBHSD->INT_EN = InterruptMask;
 
    Interrupt::connectMemberHandler<UsbDevice, &UsbDevice::handleInterrupt>(UsbIrq, *this);
    NVIC_ClearPendingIRQ(UsbIrq);
@@ -110,31 +146,31 @@ void UsbDevice::begin(usb::EventCallback callback, void *context) {
 void UsbDevice::end() {
    disconnect();
    NVIC_DisableIRQ(UsbIrq);
-   USBHS->INT_EN = 0;
-   USBHS->CTRL = USBHS_UC_CLR_ALL | USBHS_UC_RST_SIE;
-   USBHS->HOST_CTRL = 0;
+   USBHSD->INT_EN = 0;
+   USBHSD->CONTROL = USBHS_UC_CLR_ALL | USBHS_UC_RESET_SIE;
+   USBHSD->HOST_CTRL = 0;
    RCC->AHBPCENR &= ~RCC_USBHSEN;
-   RCC->CFGR2 &= ~RCC_CFGR2_USBHSPLL;
+   RCC->CFGR2 &= ~RCC_USBHSPLL;
 }
 
 void UsbDevice::connect() {
-   USBHS->CTRL |= USBHS_UC_DEV_PU_EN;
+   USBHSD->CONTROL |= USBHS_UC_DEV_PU_EN;
 }
 
 void UsbDevice::disconnect() {
-   USBHS->CTRL &= static_cast<uint8_t>(~USBHS_UC_DEV_PU_EN);
+   USBHSD->CONTROL &= static_cast<uint8_t>(~USBHS_UC_DEV_PU_EN);
 }
 
 bool UsbDevice::isConnected() const {
-   return (USBHS->CTRL & USBHS_UC_DEV_PU_EN) != 0;
+   return (USBHSD->CONTROL & USBHS_UC_DEV_PU_EN) != 0;
 }
 
 UsbDevice::Speed UsbDevice::speed() const {
-   return (USBHS->SPEED_TYPE & USBHS_SPEED_TYPE_MASK) == USBHS_SPEED_TYPE_HIGH ? Speed::High : Speed::Full;
+   return (USBHSD->SPEED_TYPE & USBHS_USB_SPEED_TYPE) == USBHS_USB_SPEED_HIGH ? Speed::High : Speed::Full;
 }
 
 void UsbDevice::setAddress(uint8_t address) {
-   USBHS->DEV_AD = address & USBHS_DEV_AD_MASK;
+   USBHSD->DEV_AD = address & USBHS_MASK_USB_ADDR;
 }
 
 UsbDevice::Direction *UsbDevice::direction(uint8_t address) {
@@ -195,34 +231,34 @@ bool UsbDevice::openEndpoint(uint8_t address, EndpointType type, uint16_t maxPac
    dir->open = true;
 
    if(usb::isInEndpoint(address)) {
-      USBHS->UEP_TX_DMA[n - 1] = dmaAddress(dir->buffer);
-      ctrl(n).T_LEN = 0;
-      ctrl(n).TX_CTRL = USBHS_UEP_T_TOG_AUTO | USBHS_UEP_T_RES_NAK;
-      USBHS->UEP_CONFIG |= USBHS_UEP_T_EN(n);
+      txDma(n) = dmaAddress(dir->buffer);
+      txLen(n) = 0;
+      txCtrl(n) = USBHS_UEP_T_TOG_AUTO | USBHS_UEP_T_RES_NAK;
+      USBHSD->ENDP_CONFIG |= (USBHS_UEP0_T_EN << (n));
    } else {
-      USBHS->UEP_RX_DMA[n - 1] = dmaAddress(dir->buffer);
-      USBHS->UEP_MAX_LEN[n].MAX_LEN = maxPacketSize;
-      ctrl(n).RX_CTRL = USBHS_UEP_R_TOG_AUTO | USBHS_UEP_R_RES_NAK;
+      rxDma(n) = dmaAddress(dir->buffer);
+      maxLen(n) = maxPacketSize;
+      rxCtrl(n) = USBHS_UEP_R_TOG_AUTO | USBHS_UEP_R_RES_NAK;
       if(doubleBuffered) {
          // Buffer 0 is UEPn_RX_DMA, buffer 1 is UEPn_TX_DMA (table 21-3). The
          // toggle bit RX_TOG[0] selects the buffer and flips after each packet.
-         USBHS->UEP_TX_DMA[n - 1] = dmaAddress(dir->buffer1);
-         USBHS->UEP_BUF_MOD |= USBHS_UEP_BUF_MOD(n);
+         txDma(n) = dmaAddress(dir->buffer1);
+         USBHSD->BUF_MODE |= (USBHS_UEP0_BUF_MOD << (n));
          resetDoubleBuffer(n);
       }
-      USBHS->UEP_CONFIG |= USBHS_UEP_R_EN(n);
+      USBHSD->ENDP_CONFIG |= (USBHS_UEP0_R_EN << (n));
    }
    return true;
 }
 
 void UsbDevice::closeAllEndpoints() {
    Interrupt::BlockingSection block(UsbIrq);
-   USBHS->UEP_CONFIG = 0;
-   USBHS->UEP_BUF_MOD = 0;
+   USBHSD->ENDP_CONFIG = 0;
+   USBHSD->BUF_MODE = 0;
    for(uint8_t n = 1; n < EndpointCount; ++n) {
-      ctrl(n).TX_CTRL = USBHS_UEP_T_RES_NAK;
-      ctrl(n).RX_CTRL = USBHS_UEP_R_RES_NAK;
-      ctrl(n).T_LEN = 0;
+      txCtrl(n) = USBHS_UEP_T_RES_NAK;
+      rxCtrl(n) = USBHS_UEP_R_RES_NAK;
+      txLen(n) = 0;
       _endpoints[n] = {};
    }
    _poolNext = 0;
@@ -230,24 +266,24 @@ void UsbDevice::closeAllEndpoints() {
 
 void UsbDevice::resetEndpoints() {
    closeAllEndpoints();
-   USBHS->UEP_TYPE = 0;
-   USBHS->UEP_BUF_MOD = 0;
+   USBHSD->ENDP_TYPE = 0;
+   USBHSD->BUF_MODE = 0;
 
    // EP0: one buffer for both directions. OUT answers ACK, so the first
    // control transfer after the reset finds EP0 ready. IN answers NAK
    // until startIn().
-   USBHS->UEP0_DMA = dmaAddress(_ep0Buffer);
-   USBHS->UEP_MAX_LEN[0].MAX_LEN = Ep0MaxPacketSize;
-   ctrl(0).T_LEN = 0;
-   ctrl(0).TX_CTRL = USBHS_UEP_T_RES_NAK;
-   ctrl(0).RX_CTRL = USBHS_UEP_R_RES_ACK;
+   USBHSD->UEP0_DMA = dmaAddress(_ep0Buffer);
+   maxLen(0) = Ep0MaxPacketSize;
+   txLen(0) = 0;
+   txCtrl(0) = USBHS_UEP_T_RES_NAK;
+   rxCtrl(0) = USBHS_UEP_R_RES_ACK;
    for(Direction *d : { &_endpoints[0].in, &_endpoints[0].out }) {
       *d = {};
       d->buffer = _ep0Buffer;
       d->maxPacketSize = Ep0MaxPacketSize;
       d->open = true;
    }
-   USBHS->DEV_AD = 0;
+   USBHSD->DEV_AD = 0;
 }
 
 bool UsbDevice::startIn(uint8_t address, hw::span<const uint8_t> data) {
@@ -257,13 +293,13 @@ bool UsbDevice::startIn(uint8_t address, hw::span<const uint8_t> data) {
       return false;
    }
    uint8_t n = usb::endpointNumber(address);
-   if((ctrl(n).TX_CTRL & USBHS_UEP_T_RES_MASK) == USBHS_UEP_T_RES_ACK) {
+   if((txCtrl(n) & USBHS_UEP_T_RES_MASK) == USBHS_UEP_T_RES_ACK) {
       return false; // the previous packet waits for its IN token
    }
    for(size_t i = 0; i < data.size(); ++i) {
       dir->buffer[i] = data[i];
    }
-   ctrl(n).T_LEN = static_cast<uint16_t>(data.size());
+   txLen(n) = static_cast<uint16_t>(data.size());
    setTxResponse(n, USBHS_UEP_T_RES_ACK);
    return true;
 }
@@ -286,7 +322,7 @@ bool UsbDevice::armOut(uint8_t address) {
       }
       // The endpoint stays ACK after a packet while the buffer that the hardware fills next is free (the
       // handler sets NAK when it is not). Write only when it is NAK: no packet is in flight then.
-      if((ctrl(n).RX_CTRL & USBHS_UEP_R_RES_MASK) != USBHS_UEP_R_RES_ACK) {
+      if((rxCtrl(n) & USBHS_UEP_R_RES_MASK) != USBHS_UEP_R_RES_ACK) {
          setRxResponse(n, USBHS_UEP_R_RES_ACK);
       }
       return true;
@@ -334,14 +370,14 @@ void UsbDevice::setStall(uint8_t address, bool stall) {
          setTxResponse(n, USBHS_UEP_T_RES_STALL);
       } else {
          // DATA0 and NAK; keep the auto toggle of endpoints 1..15.
-         ctrl(n).TX_CTRL = static_cast<uint8_t>((ctrl(n).TX_CTRL & USBHS_UEP_T_TOG_AUTO) | USBHS_UEP_T_RES_NAK);
+         txCtrl(n) = static_cast<uint8_t>((txCtrl(n) & USBHS_UEP_T_TOG_AUTO) | USBHS_UEP_T_RES_NAK);
          _endpoints[n].in.toggle = 0;
       }
    } else {
       if(stall) {
          setRxResponse(n, USBHS_UEP_R_RES_STALL);
       } else {
-         ctrl(n).RX_CTRL = static_cast<uint8_t>((ctrl(n).RX_CTRL & USBHS_UEP_R_TOG_AUTO) | USBHS_UEP_R_RES_NAK);
+         rxCtrl(n) = static_cast<uint8_t>((rxCtrl(n) & USBHS_UEP_R_TOG_AUTO) | USBHS_UEP_R_RES_NAK);
          _endpoints[n].out.toggle = 0;
          if(dir->doubleBuffered) {
             resetDoubleBuffer(n); // DATA0 selects buffer 0 again
@@ -356,9 +392,9 @@ bool UsbDevice::isStalled(uint8_t address) const {
       return false;
    }
    if(usb::isInEndpoint(address)) {
-      return (ctrl(n).TX_CTRL & USBHS_UEP_T_RES_MASK) == USBHS_UEP_T_RES_STALL;
+      return (txCtrl(n) & USBHS_UEP_T_RES_MASK) == USBHS_UEP_T_RES_STALL;
    }
-   return (ctrl(n).RX_CTRL & USBHS_UEP_R_RES_MASK) == USBHS_UEP_R_RES_STALL;
+   return (rxCtrl(n) & USBHS_UEP_R_RES_MASK) == USBHS_UEP_R_RES_STALL;
 }
 
 bool UsbDevice::transferPending(uint8_t address, uint8_t status, bool setupPending) const {
@@ -381,7 +417,7 @@ bool UsbDevice::outToggleOk(uint8_t status, bool setupPending) const {
    if(!setupPending || n == 0 || n >= _endpointCount) {
       return (status & USBHS_UIS_TOG_OK) != 0;
    }
-   const uint8_t hardware = (ctrl(n).RX_CTRL & USBHS_UEP_R_TOG_DATA1) != 0 ? 1 : 0;
+   const uint8_t hardware = (rxCtrl(n) & USBHS_UEP_R_TOG_DATA1) != 0 ? 1 : 0;
    return hardware != _endpoints[n].out.toggle;
 }
 
@@ -389,13 +425,13 @@ bool UsbDevice::outToggleOk(uint8_t status, bool setupPending) const {
 // interrupt masked (the caller holds the BlockingSection). Then no completion of this direction comes later
 // and undoes a reset or a NAK of the main loop.
 void UsbDevice::drainCompleted(uint8_t address) {
-   if((USBHS->INT_FG & (USBHS_UIF_BUS_RST | USBHS_UIF_TRANSFER)) != USBHS_UIF_TRANSFER) {
+   if((USBHSD->INT_FG & (USBHS_UIF_BUS_RST | USBHS_UIF_TRANSFER)) != USBHS_UIF_TRANSFER) {
       return;
    }
    const TransferStatus t = readTransferStatus(); // one read for the check and the handler
    if(transferPending(address, t.status, t.setupPending)) {
       handleTransfer(t.status, t.setupPending);
-      USBHS->INT_FG = USBHS_UIF_TRANSFER;
+      USBHSD->INT_FG = USBHS_UIF_TRANSFER;
    }
 }
 
@@ -424,10 +460,10 @@ void UsbDevice::resetDirection(uint8_t address) {
    dir.toggle = 0;
    dir.nakHeld = false;
    if(usb::isInEndpoint(address)) {
-      ctrl(n).T_LEN = 0;
-      ctrl(n).TX_CTRL = USBHS_UEP_T_TOG_AUTO | USBHS_UEP_T_RES_NAK;
+      txLen(n) = 0;
+      txCtrl(n) = USBHS_UEP_T_TOG_AUTO | USBHS_UEP_T_RES_NAK;
    } else {
-      ctrl(n).RX_CTRL = USBHS_UEP_R_TOG_AUTO | USBHS_UEP_R_RES_NAK;
+      rxCtrl(n) = USBHS_UEP_R_TOG_AUTO | USBHS_UEP_R_RES_NAK;
       if(dir.doubleBuffered) {
          resetDoubleBuffer(n);
       }
@@ -463,20 +499,20 @@ void UsbDevice::handleTransfer(uint8_t status, bool setupPending) {
       // IN token must not send the same packet again.
       if(n == 0) {
          setTxResponse(n, USBHS_UEP_T_RES_NAK);
-         ctrl(0).TX_CTRL ^= USBHS_UEP_T_TOG_DATA1;
+         txCtrl(0) ^= USBHS_UEP_T_TOG_DATA1;
       } else if(n < _endpointCount) {
          // The data toggle comes from the software copy, and the write puts it back in the hardware: a
          // read-modify-write of the main loop (setNak(), setStall()) can have undone the flip of the
          // hardware. A STALL that the main loop set after the packet stays.
          Direction &in = _endpoints[n].in;
          in.toggle ^= 1;
-         const uint8_t response = (ctrl(n).TX_CTRL & USBHS_UEP_T_RES_MASK) == USBHS_UEP_T_RES_STALL ? USBHS_UEP_T_RES_STALL : USBHS_UEP_T_RES_NAK;
-         ctrl(n).TX_CTRL = controlByte(in.toggle, response);
+         const uint8_t response = (txCtrl(n) & USBHS_UEP_T_RES_MASK) == USBHS_UEP_T_RES_STALL ? USBHS_UEP_T_RES_STALL : USBHS_UEP_T_RES_NAK;
+         txCtrl(n) = controlByte(in.toggle, response);
       }
       report(EventType::InComplete, static_cast<uint8_t>(n | usb::EndpointDirectionIn));
       break;
    case USBHS_UIS_TOKEN_OUT: {
-      uint16_t size = USBHS->RX_LEN;
+      uint16_t size = USBHSD->RX_LEN;
       if(!outToggleOk(status, setupPending)) {
          break; // repeated packet: the host lost the ACK. Stay armed.
       }
@@ -486,7 +522,7 @@ void UsbDevice::handleTransfer(uint8_t status, bool setupPending) {
          Direction &out = _endpoints[n].out;
          const uint8_t buffer = out.toggle;
          out.toggle ^= 1;
-         uint8_t response = (ctrl(n).RX_CTRL & USBHS_UEP_R_RES_MASK) == USBHS_UEP_R_RES_STALL ? USBHS_UEP_R_RES_STALL : USBHS_UEP_R_RES_NAK;
+         uint8_t response = (rxCtrl(n) & USBHS_UEP_R_RES_MASK) == USBHS_UEP_R_RES_STALL ? USBHS_UEP_R_RES_STALL : USBHS_UEP_R_RES_NAK;
          if(out.doubleBuffered) {
             (buffer == 0 ? out.received : out.received1) = size;
             if(out.reported == NoBuffer) {
@@ -495,17 +531,17 @@ void UsbDevice::handleTransfer(uint8_t status, bool setupPending) {
                if(response == USBHS_UEP_R_RES_NAK && !out.nakHeld) {
                   response = USBHS_UEP_R_RES_ACK;
                }
-               ctrl(n).RX_CTRL = controlByte(out.toggle, response);
+               rxCtrl(n) = controlByte(out.toggle, response);
                reportDoubleBuffered(n, buffer);
             } else {
                // The software reads the other buffer, which the hardware would fill next: NAK until armOut()
                // reports this packet.
                out.pending = buffer;
-               ctrl(n).RX_CTRL = controlByte(out.toggle, response);
+               rxCtrl(n) = controlByte(out.toggle, response);
             }
             break;
          }
-         ctrl(n).RX_CTRL = controlByte(out.toggle, response);
+         rxCtrl(n) = controlByte(out.toggle, response);
       }
       if(n == 0) {
          if(setupPending) {
@@ -513,7 +549,7 @@ void UsbDevice::handleTransfer(uint8_t status, bool setupPending) {
             // control transfer anyway, so drop the packet.
             break;
          }
-         ctrl(0).RX_CTRL ^= USBHS_UEP_R_TOG_DATA1;
+         rxCtrl(0) ^= USBHS_UEP_R_TOG_DATA1;
          if(size > Ep0MaxPacketSize) {
             size = Ep0MaxPacketSize;
          }
@@ -533,11 +569,11 @@ void UsbDevice::handleTransfer(uint8_t status, bool setupPending) {
 }
 
 void UsbDevice::handleInterrupt() {
-   uint8_t flags = USBHS->INT_FG;
+   uint8_t flags = USBHSD->INT_FG;
 
    if(flags & USBHS_UIF_BUS_RST) {
       // A transfer flag from before the reset is stale.
-      USBHS->INT_FG = flags & (USBHS_UIF_BUS_RST | USBHS_UIF_TRANSFER);
+      USBHSD->INT_FG = flags & (USBHS_UIF_BUS_RST | USBHS_UIF_TRANSFER);
       flags &= static_cast<uint8_t>(~USBHS_UIF_TRANSFER);
       resetEndpoints();
       report(EventType::Reset, 0);
@@ -552,30 +588,30 @@ void UsbDevice::handleInterrupt() {
    if(flags & USBHS_UIF_TRANSFER) {
       const TransferStatus t = readTransferStatus();
       handleTransfer(t.status, t.setupPending);
-      USBHS->INT_FG = USBHS_UIF_TRANSFER;
+      USBHSD->INT_FG = USBHS_UIF_TRANSFER;
    }
 
    if(flags & USBHS_UIF_SETUP_ACT) {
-      ctrl(0).TX_CTRL = USBHS_UEP_T_TOG_DATA1 | USBHS_UEP_T_RES_NAK;
-      ctrl(0).RX_CTRL = USBHS_UEP_R_TOG_DATA1 | USBHS_UEP_R_RES_NAK;
+      txCtrl(0) = USBHS_UEP_T_TOG_DATA1 | USBHS_UEP_T_RES_NAK;
+      rxCtrl(0) = USBHS_UEP_R_TOG_DATA1 | USBHS_UEP_R_RES_NAK;
       usb::Event event{ EventType::Setup, 0, 8, {} };
       for(uint8_t i = 0; i < 8; ++i) {
          event.setup[i] = _ep0Buffer[i];
       }
       // Clear after the copy: the next SETUP overwrites the buffer.
-      USBHS->INT_FG = USBHS_UIF_SETUP_ACT;
+      USBHSD->INT_FG = USBHS_UIF_SETUP_ACT;
       if(_callback != nullptr) {
          _callback(_context, event);
       }
    }
 
    if(flags & USBHS_UIF_SUSPEND) {
-      USBHS->INT_FG = USBHS_UIF_SUSPEND;
-      report((USBHS->MIS_ST & USBHS_UMS_SUSPEND) ? EventType::Suspend : EventType::Resume, 0);
+      USBHSD->INT_FG = USBHS_UIF_SUSPEND;
+      report((USBHSD->MIS_ST & USBHS_UMS_SUSPEND) ? EventType::Suspend : EventType::Resume, 0);
    }
 
    // Sources that are not enabled can still be flagged; clear them.
-   USBHS->INT_FG = flags & (USBHS_UIF_HST_SOF | USBHS_UIF_FIFO_OV | USBHS_UIF_ISO_ACT);
+   USBHSD->INT_FG = flags & (USBHS_UIF_HST_SOF | USBHS_UIF_FIFO_OV | USBHS_UIF_ISO_ACT);
 }
 
 } // namespace hw

@@ -8,6 +8,7 @@
 #include <cstring>
 
 alignas(8) static uint8_t dmaMemory[0x100];
+DMA_TypeDef *hostDma2Exten = reinterpret_cast<DMA_TypeDef *>(dmaMemory + 0xD0);
 
 int main() {
    auto *dma = reinterpret_cast<DMA_TypeDef *>(dmaMemory);
@@ -43,20 +44,22 @@ int main() {
    ch3.clearTransferErrorInterruptFlag();
    CHECK(dma->INTFCR == (DMA_CTEIF1 << 8));
 
-   // Flags of channels 8 to 11 are in the extend registers, 4 bits each from bit 0.
+   // Flags of channels 8 to 11 are in the extend registers (DMA2_EXTEN), 4 bits
+   // each from bit 0.
+   DMA_TypeDef *exten = hostDma2Exten;
    Dma::Channel ch8(dma, 8);
    Dma::Channel ch11(dma, 11);
    dma->INTFR = 0;
-   dma->EXTEM_INTFR = (DMA_TCIF1 << 0) | (DMA_CHTIF1 << 12);
+   exten->INTFR = (DMA_TCIF1 << 0) | (DMA_CHTIF1 << 12);
    CHECK(ch8.isTransferCompleteInterruptFlagSet());
    CHECK(!ch8.isHalfTransferInterruptFlagSet());
    CHECK(ch11.isHalfTransferInterruptFlagSet());
    CHECK(!ch11.isTransferCompleteInterruptFlagSet());
    dma->INTFCR = 0;
    ch11.clearGlobalInterruptFlag();
-   CHECK(dma->EXTEM_INTFCR == (DMA_GIF1 << 12));
+   CHECK(exten->INTFCR == (DMA_GIF1 << 12));
    CHECK(dma->INTFCR == 0);
    ch8.clearTransferCompleteInterruptFlag();
-   CHECK(dma->EXTEM_INTFCR == DMA_TCIF1);
+   CHECK(exten->INTFCR == DMA_TCIF1);
    return 0;
 }
