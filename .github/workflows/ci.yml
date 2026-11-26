@@ -114,3 +114,18 @@ jobs:
             echo "an .sbss output section exists: small zero variables are not cleared"
             exit 1
           fi
+      - name: Check the flash offset of mem-ch32v307.ld
+        run: |
+          # An image behind an 8 KB bootloader: __flash_offset moves the image to 0x2000.
+          flags="-DCH32V30x_D8C -march=rv32imafc_zicsr_zifencei -mabi=ilp32f"
+          cmake -B build-offset -G "Unix Makefiles" \
+            -D CMAKE_TOOLCHAIN_FILE=cmake/gcc_riscv.cmake \
+            -D GCC_TOOLCHAIN_PREFIX="$GCC_TOOLCHAIN_PREFIX" \
+            -D CMAKE_BUILD_TYPE=Release -D CMAKE_CXX_STANDARD=23 \
+            -D CH32_FAMILY=CH32V30X -D CH32V00X_SYSTEM_BUILD_TEST_IMAGE=ON \
+            -D "CMAKE_C_FLAGS=$flags" -D "CMAKE_CXX_FLAGS=$flags" \
+            -D CMAKE_EXE_LINKER_FLAGS=-Wl,--defsym=__flash_offset=8192
+          cmake --build build-offset --target test-image-v307 -j"$(nproc)"
+          NM="$GCC_TOOLCHAIN_PREFIX/bin/riscv-none-elf-nm"
+          reset=$("$NM" build-offset/tests/ch32v30x/test-image-v307 | awk '$3 == "Reset_Handler" {print $1}')
+          [ "$reset" = 00002000 ] || { echo "Reset_Handler at '$reset', expected 00002000"; exit 1; }
