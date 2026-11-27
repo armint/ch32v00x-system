@@ -8,7 +8,7 @@
 //   key write, and a key write while unlocked, sets keyError.
 // - LOCK and FLOCK in CTLR are write-1 bits: a write of 0 does not clear them.
 // - Each read of STATR records the HPRE field of RCC_CFGR0 while an operation
-//   bit (PG, PAGE_ER, PAGE_PG) is set, and can raise WRPRTERR (injectWrprtErr).
+//   bit (PG, PER, PAGE_ER, PAGE_PG) is set, and can raise WRPRTERR (injectWrprtErr).
 //   A write of 1 clears a STATR bit.
 
 #include <cstdint>
@@ -31,6 +31,7 @@ extern RCC_TypeDef hostRcc;
 #define FLASH_STATR_EOP (1u << 5)
 
 #define FLASH_CTLR_PG (1u << 0)
+#define FLASH_CTLR_PER (1u << 1)
 #define FLASH_CTLR_STRT (1u << 6)
 #define FLASH_CTLR_LOCK (1u << 7)
 #define FLASH_CTLR_FAST_LOCK (1u << 15)
@@ -95,7 +96,7 @@ struct HostFlash {
 #define FLASH (&hostFlash)
 
 inline StatusRegister::operator uint32_t() {
-   constexpr uint32_t operations = FLASH_CTLR_PG | FLASH_CTLR_PAGE_ER | FLASH_CTLR_PAGE_PG;
+   constexpr uint32_t operations = FLASH_CTLR_PG | FLASH_CTLR_PER | FLASH_CTLR_PAGE_ER | FLASH_CTLR_PAGE_PG;
    if((hostFlash.CTLR.value & operations) != 0u) {
       hostFlash.hpreDuringOperation = hostRcc.CFGR0 & RCC_HPRE;
       if(hostFlash.injectWrprtErr) {

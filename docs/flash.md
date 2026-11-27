@@ -12,6 +12,7 @@ and CH32V30X.
 |---|---|---|
 | `writable_section` | Unlocks the controller and the fast mode. The destructor locks both again. | - |
 | `erase_page()` | Fast page erase (RM 32.5.7) | 256 bytes |
+| `erase_sector()` | Standard sector erase (RM 32.5.4). Only on CH32V20X and CH32V30X. Give a 4 KB aligned address. | 4 KB |
 | `write_buffer()` | Fast page programming (RM 32.5.6). Pads the page with `0xFF`. | 256 bytes |
 | `program_halfword()` | Standard programming (RM 32.5.3). Returns `false` for an odd address, a write protection error, or a value that does not read back. | 2 bytes |
 
@@ -25,8 +26,10 @@ reset.
 
 **Erase size.** The standard mode erases 4 KB (`PER`, 16 pages of 256
 bytes, RM 32.5.4). The fast mode erases 256 bytes (`FTER`) or 32 KB
-(`BER32`). `erase_page()` uses the 256-byte fast erase. The driver has no
-function for the 4 KB erase.
+(`BER32`). `erase_page()` uses the 256-byte fast erase. `erase_sector()` uses the
+4 KB standard erase. The datasheet gives 16 ms (typical) for both erase
+sizes (CH32V307DS0, table 4-20). Thus use `erase_sector()` for a large
+area: it is 16 times faster for each byte.
 
 **Half-word programming.** The standard mode programs one half-word for
 each write while `PG` is set (RM 32.5.3). A write of another size causes

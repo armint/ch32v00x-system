@@ -103,6 +103,19 @@ void testErasePage() {
    CHECK(hostRcc.CFGR0 == otherCfgr0Bits);
 }
 
+void testEraseSector() {
+   resetFlash();
+   alignas(4096) static uint8_t sector[4096];
+   {
+      Flash::writable_section unlock;
+      Flash::erase_sector(sector);
+   }
+   CHECK(hostFlash.ADDR == static_cast<uint32_t>(reinterpret_cast<uintptr_t>(sector)));
+   CHECK((hostFlash.CTLR & (FLASH_CTLR_PER | FLASH_CTLR_PAGE_ER)) == 0u);
+   CHECK(hostFlash.hpreDuringOperation == RCC_HPRE_DIV2);
+   CHECK(hostRcc.CFGR0 == otherCfgr0Bits);
+}
+
 void testWriteBuffer() {
    resetFlash();
    alignas(256) static uint8_t page[256];
@@ -131,6 +144,7 @@ int main() {
    testProgramHalfword();
    testClockAt120MHz();
    testErasePage();
+   testEraseSector();
    testWriteBuffer();
    return failures;
 }
