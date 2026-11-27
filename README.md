@@ -57,6 +57,7 @@ The family list is in [Chip families](docs/families.md).
 | Chip ID | `hw::Uid` in `peripherals/Uid.h`: the 96-bit unique ID (CH32V00X, CH32V20X, CH32V30X) |
 | Analog and timing | `Adc` (CH32V00X and CH32V30X), `hw::Timer` (see [Timer driver](docs/timer.md)), `Dma` |
 | Clocks and resets | `Rcc` in `peripherals/Rcc.h`: peripheral clock enables, peripheral resets and the bus clocks. See [RCC driver](docs/rcc.md). |
+| Backup registers and CRC | `hw::Bkp`, `hw::Pwr` and `hw::Crc` (CH32V30X only). See [Backup registers and CRC unit](docs/backup-crc.md). |
 | Other | `Flash`, `Interrupt` (connects C++ member functions as interrupt handlers) |
 
 ## Quick start
@@ -95,7 +96,8 @@ toolchain file `cmake/gcc_riscv.cmake`. For all options, see
 | [Building and using ch32v00x-system](docs/building.md) | Requirements, CMake variables, C++ standard, `hw::span`, compiler flags, installed package |
 | [Chip families](docs/families.md) | `CH32_FAMILY`, family directories, device-specific code, adding a family |
 | [ADC](docs/adc.md) | Calibration on CH32V002 and CH32V006. The ADC of CH32V30X |
-| [RCC driver](docs/rcc.md) | `Rcc`: peripheral clock enables, peripheral resets, bus clocks, per family |
+| [RCC driver](docs/rcc.md) | `Rcc`: peripheral clock enables, peripheral resets, bus clocks, system clock source, APB2 prescaler, per family |
+| [Backup registers and CRC unit](docs/backup-crc.md) | `hw::Bkp`, `hw::Pwr` and `hw::Crc` on CH32V30X |
 | [SPI driver](docs/spi.md) | `hw::Spi`: names, NSS modes, DMA channels, bus clock, limits |
 | [DMA driver](docs/dma.md) | `Dma::Channel`: names, DMA2 channels 8 to 11, interrupt flags |
 | [Timer driver](docs/timer.md) | `hw::Timer`: names, old names, check against the CH32V30x manual, DMA requests of the timers |
