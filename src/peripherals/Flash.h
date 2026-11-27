@@ -26,6 +26,14 @@ class writable_section {
 void erase_page(void *address);
 
 /**
+   Erase one 4 KB sector in standard mode (RM 32.5.4): 16 pages of 256 bytes in one
+   operation. Defined on CH32V20x and CH32V30x. The address must be 4 KB aligned.
+   Use it to erase large areas: a sector takes about as long as one 256-byte page.
+   Preconditions: Flash must be unlocked (e.g., via Flash::writable_section lifetime)
+*/
+void erase_sector(void *address);
+
+/**
    Program a buffer into Flash starting at address.
    Uses fast page programming (64-byte pages on CH32V00x, 256-byte pages on CH32V20x and CH32V30x).
    Data will be padded to the page boundary if needed.

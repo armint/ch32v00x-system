@@ -94,6 +94,18 @@ void erase_page(void *address) {
    FLASH->CTLR &= ~FLASH_CTLR_PAGE_ER;
 }
 
+#if defined(CH32V20x_D8W) || defined(CH32V20x_D8) || defined(CH32V20x_D6) || defined(CH32V30x_D8C)
+void erase_sector(void *address) {
+   [[maybe_unused]] SlowClock slow_clock;
+   wait_ready();
+   FLASH->CTLR = FLASH_CTLR_PER;
+   FLASH->ADDR = reinterpret_cast<uintptr_t>(address);
+   FLASH->CTLR |= FLASH_CTLR_STRT;
+   wait_ready();
+   FLASH->CTLR &= ~FLASH_CTLR_PER;
+}
+#endif
+
 bool write_buffer(void *address, hw::span<uint8_t> data) {
    // Preconditions: address must be 16-byte aligned.
    // For fast page programming, we should ideally be on a page boundary.
