@@ -32,7 +32,17 @@ CH32FV2x_V3xRM, chapter 3 ("RM" below), and the WCH device headers.
 | `enableDMA1Clock()` | yes | yes | yes |
 | `enableDMA2Clock()` | no | no | yes |
 | `resetSPI1()` | yes | yes | yes |
+| `enableGPIODClock()` | no | no | yes |
+| `enableUART5Clock()`, `enableUART7Clock()` | no | no | yes |
+| `isUSART2ClockEnabled()`, `isUSART3ClockEnabled()` | no | no | yes |
+| `enableTIM5Clock()`, `disableTIM5Clock()`, `resetTIM5()` | no | no | yes |
+| `enableDACClock()`, `disableDACClock()`, `resetDAC()` | no | no | yes |
+| `disableOTGFSClock()`, `resetOTGFS()` | no | no | yes |
+| `enablePWRClock()`, `disablePWRClock()`, `enableBKPClock()`, `disableBKPClock()` | no | no | yes |
+| `enableCRCClock()`, `disableCRCClock()` | no | no | yes |
 | `getAHBClock()`, `getAPBClock()`, `getAPB2Clock()` | yes | yes | yes |
+| `getSystemClockSource()` | yes | yes | yes |
+| `setAPB2Prescaler()` | no | yes | yes |
 
 A function is available when the device header has its bit. The CH32V20X
 device header has no enable bit for USART3 and SPI2. Thus these two
@@ -50,11 +60,14 @@ It does not change the other bits. Then it reads the register back. The
 read makes sure that the clock is on before the next access to the
 peripheral.
 
+A disable function clears one bit. A test function (`isUSART2ClockEnabled()`)
+reads one bit. It tells if other code uses the peripheral.
+
 ### Peripheral reset
 
-The reset functions (`resetSPI1()`, `resetSPI3()`, `resetTIM1()`,
-`resetTIM3()` and `resetTIM10()`) set the reset bit of the peripheral in
-`APB2PRSTR` or `APB1PRSTR` and then clear it. After the
+The reset functions (for example `resetSPI1()`, `resetTIM5()` and
+`resetOTGFS()`) set the reset bit of the peripheral in `APB2PRSTR`,
+`APB1PRSTR` or `AHBRSTR` and then clear it. After the
 call, all registers of the peripheral have their reset values. The clock
 enable bit does not change.
 
@@ -73,6 +86,26 @@ CH32V00X has no APB prescaler. On CH32V00X, all three functions return HCLK.
 The functions read `CFGR0` at each call. Thus they show a prescaler change
 at once. `getAHBClock()` shows a change of the system clock only after a
 call to `SystemCoreClockUpdate()`.
+
+### System clock source
+
+`getSystemClockSource()` reads the SWS field of `CFGR0`. It returns
+`SystemClockSource::HSI`, `HSE` or `PLL`. The PLL input depends on the
+family:
+
+- On CH32V30X, `SystemInit()` feeds the PLL from the crystal. It keeps HSI
+  when the crystal or the PLL does not start. Thus `PLL` also tells that the
+  crystal runs.
+- On CH32V00X and CH32V20X, `SystemInit()` feeds the PLL from HSI. Thus
+  `PLL` tells nothing about the crystal.
+
+### APB2 prescaler
+
+`setAPB2Prescaler()` writes PPRE2 and keeps the other fields of `CFGR0`.
+The values of `APBPrescaler` (`div1`, `div2`, `div4`, `div8`, `div16`) are
+the PPRE1 field values. The function moves them to PPRE2. A peripheral that
+read its clock at its setup does not follow a change. An example is the
+baud rate of a USART on APB2.
 
 **Limit on CH32V30X.** `SystemCoreClockUpdate()` of CH32V30X ignores the
 AHB prescaler (HPRE). Thus `getAHBClock()` is correct only for HPRE = /1.

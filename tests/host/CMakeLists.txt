@@ -134,8 +134,10 @@ target_compile_definitions(test-flash-v30x PRIVATE CH32V30x_D8C)
 target_compile_options(test-flash-v30x PRIVATE -Wall -Wextra -Werror)
 add_test(NAME flash-v30x COMMAND test-flash-v30x)
 
-# The CH32V30x Rcc driver: clock enables, resets and bus clocks. The stubs-rcc-v30x directory gives
-# <wch_device.h> with the RCC registers as host variables. The family directory gives Rcc_V30x.h.
+# The CH32V30x Rcc driver (clock enables, disables, resets, bus clocks, APB2 prescaler, system clock
+# source), hw::Bkp, hw::Pwr and hw::Crc. The stubs-rcc-v30x directory gives <wch_device.h> with the
+# RCC, PWR, BKP and CRC registers as host variables. The family directory gives Rcc_V30x.h, Bkp.h,
+# Pwr.h and Crc_V30x.h.
 add_executable(test-rcc-v30x
         test_rcc_v30x.cpp
         ${_src}/peripherals/Rcc.cpp)

@@ -8,9 +8,12 @@ timing loops.
 |---|---|
 | `start()` | Starts the counter if it is off. It changes nothing when the counter runs. |
 | `count()` | Returns the core clock cycles. The counter runs free and wraps at 2^32. |
+| `count64()` | Returns the full 64-bit count. It does not wrap in practice (4000 years at 144 MHz). |
 
-Both functions are inline and always inline, because bit-bang timing loops
-call them.
+`start()` and `count()` are always inline, because bit-bang timing loops call
+them. `count64()` reads `CNTH`, `CNT` and `CNTH` again. A changed high word
+shows a carry between the reads, and the function reads again. The SysTick
+time base (`utils/Timekeeping.h`) uses the same function.
 
 ## Use
 

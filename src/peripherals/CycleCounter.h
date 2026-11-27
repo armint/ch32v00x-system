@@ -6,7 +6,7 @@
 // A 32-bit core clock cycle counter. The QingKe V4 core has no mcycle CSR, so the counter is
 // SysTick->CNT, the low word of the 64-bit SysTick counter. SysTick_Config() runs that counter free
 // at the core clock (utils/Timekeeping.h). The count wraps every 2^32 cycles (29.8 s at 144 MHz):
-// use it for differences only. See docs/cycle-counter.md.
+// use it for differences only. count64() returns all 64 bits. See docs/cycle-counter.md.
 //
 // CH32V00X has no cycle counter: the QingKe V2 core has no mcycle CSR, and its 32-bit SysTick
 // counter starts again from 0 at each tick.
@@ -36,6 +36,21 @@ namespace hw::CycleCounter {
  */
 [[gnu::always_inline]] inline uint32_t count() {
    return SysTick->CNT;
+}
+
+/**
+ * @brief Returns the full 64-bit count of core clock cycles. It does not wrap in practice
+ * (4000 years at 144 MHz).
+ */
+inline uint64_t count64() {
+   // CNTH, CNT, CNTH again: a carry from the low word between the two reads shows as a changed high word.
+   uint32_t high;
+   uint32_t low;
+   do {
+      high = SysTick->CNTH;
+      low = SysTick->CNT;
+   } while(high != SysTick->CNTH);
+   return (static_cast<uint64_t>(high) << 32) | low;
 }
 
 } // namespace hw::CycleCounter
