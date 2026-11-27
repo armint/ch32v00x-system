@@ -27,9 +27,9 @@ reset.
 **Erase size.** The standard mode erases 4 KB (`PER`, 16 pages of 256
 bytes, RM 32.5.4). The fast mode erases 256 bytes (`FTER`) or 32 KB
 (`BER32`). `erase_page()` uses the 256-byte fast erase. `erase_sector()` uses the
-4 KB standard erase. The datasheet gives 16 ms (typical) for both erase
-sizes (CH32V307DS0, table 4-20). Thus use `erase_sector()` for a large
-area: it is 16 times faster for each byte.
+4 KB standard erase. The datasheet gives 16 ms (typical) for each erase
+size (CH32V307DS0, table 4-20). Thus `erase_sector()` erases 16 times
+more bytes in the same time. Use it for a large area.
 
 **Half-word programming.** The standard mode programs one half-word for
 each write while `PG` is set (RM 32.5.3). A write of another size causes

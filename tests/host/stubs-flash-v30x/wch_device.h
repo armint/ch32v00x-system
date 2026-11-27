@@ -10,6 +10,9 @@
 // - Each read of STATR records the HPRE field of RCC_CFGR0 while an operation
 //   bit (PG, PER, PAGE_ER, PAGE_PG) is set, and can raise WRPRTERR (injectWrprtErr).
 //   A write of 1 clears a STATR bit.
+// - A CTLR write with STRT records the operation bits and ADDR at that time
+//   (startedOps, addrAtStart), and clears STRT, as the hardware does at the
+//   end of the operation.
 
 #include <cstdint>
 
@@ -48,10 +51,7 @@ struct ControlRegister {
    operator uint32_t() const {
       return value;
    }
-   ControlRegister &operator=(uint32_t v) {
-      value = (value & setOnly) | v;
-      return *this;
-   }
+   ControlRegister &operator=(uint32_t v);
    ControlRegister &operator|=(uint32_t v) {
       return *this = value | v;
    }
@@ -91,9 +91,21 @@ struct HostFlash {
    bool keyError = false;
    bool injectWrprtErr = false;
    uint32_t hpreDuringOperation = 0xFFFFFFFFu; // the HPRE field at the last read in an operation
+   uint32_t startedOps = 0;                    // the operation bits of CTLR at the last STRT write
+   uint32_t addrAtStart = 0;                   // ADDR at the last STRT write
 };
 
 #define FLASH (&hostFlash)
+
+inline ControlRegister &ControlRegister::operator=(uint32_t v) {
+   value = (value & setOnly) | v;
+   if((v & FLASH_CTLR_STRT) != 0u) {
+      hostFlash.startedOps = v & (FLASH_CTLR_PG | FLASH_CTLR_PER | FLASH_CTLR_PAGE_ER | FLASH_CTLR_PAGE_PG);
+      hostFlash.addrAtStart = hostFlash.ADDR;
+      value &= ~FLASH_CTLR_STRT; // the operation ends at once: the hardware clears STRT
+   }
+   return *this;
+}
 
 inline StatusRegister::operator uint32_t() {
    constexpr uint32_t operations = FLASH_CTLR_PG | FLASH_CTLR_PER | FLASH_CTLR_PAGE_ER | FLASH_CTLR_PAGE_PG;
