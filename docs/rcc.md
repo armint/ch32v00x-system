@@ -90,9 +90,14 @@ call to `SystemCoreClockUpdate()`.
 ### System clock source
 
 `getSystemClockSource()` reads the SWS field of `CFGR0`. It returns
-`SystemClockSource::hsi`, `hse` or `pll`. `SystemInit()` keeps HSI when the
-crystal or the PLL does not start. Thus `pll` also tells that the crystal
-runs.
+`SystemClockSource::HSI`, `HSE` or `PLL`. The PLL input depends on the
+family:
+
+- On CH32V30X, `SystemInit()` feeds the PLL from the crystal. It keeps HSI
+  when the crystal or the PLL does not start. Thus `PLL` also tells that the
+  crystal runs.
+- On CH32V00X and CH32V20X, `SystemInit()` feeds the PLL from HSI. Thus
+  `PLL` tells nothing about the crystal.
 
 ### APB2 prescaler
 

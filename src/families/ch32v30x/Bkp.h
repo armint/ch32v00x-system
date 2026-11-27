@@ -1,6 +1,6 @@
 #pragma once
 
-// The backup data registers of CH32V30X (BKP_DATARx, RM chapter 5). They keep their content
+// The backup data registers of CH32V30X (BKP_DATARx, CH32FV2x_V3xRM chapter 4). They keep their content
 // over a system reset and, with VBAT supplied, over a power loss. Each register has 16 bits in a
 // 32-bit slot. A typical use is a flag that survives NVIC_SystemReset(), e.g. "enter the
 // bootloader".
@@ -25,7 +25,8 @@ inline void enable() {
 
 /**
  * @brief Locks the backup domain again and stops the PWR and BKP clocks. The data registers keep
- * their content.
+ * their content. It also stops the PWR clock and locks the backup domain for other users, for
+ * example the RTC.
  */
 inline void disable() {
    hw::Pwr::disableBackupDomainAccess();

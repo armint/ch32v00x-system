@@ -1,6 +1,6 @@
 #pragma once
 
-// The CRC unit of CH32V30X (RM chapter 12): CRC-32 with the polynomial 0x04C11DB7 on 32-bit
+// The CRC unit of CH32V30X (CH32FV2x_V3xRM chapter 5): CRC-32 with the polynomial 0x04C11DB7 on 32-bit
 // words, from the start value 0xFFFFFFFF, most significant bit first, with no final XOR
 // (CRC-32/MPEG-2 on words). Needs the CRC clock (Rcc::enableCRCClock()).
 

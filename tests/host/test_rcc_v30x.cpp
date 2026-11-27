@@ -131,11 +131,11 @@ int main() {
 
    // getSystemClockSource() reads SWS (bits 3:2) only.
    hostRcc.CFGR0 = ~uint32_t{ 3u << 2 } | (2u << 2);
-   CHECK(Rcc::getSystemClockSource() == Rcc::SystemClockSource::pll);
+   CHECK(Rcc::getSystemClockSource() == Rcc::SystemClockSource::PLL);
    hostRcc.CFGR0 = 1ul << 2;
-   CHECK(Rcc::getSystemClockSource() == Rcc::SystemClockSource::hse);
+   CHECK(Rcc::getSystemClockSource() == Rcc::SystemClockSource::HSE);
    hostRcc.CFGR0 = 3ul; // SW = 11, SWS = 00
-   CHECK(Rcc::getSystemClockSource() == Rcc::SystemClockSource::hsi);
+   CHECK(Rcc::getSystemClockSource() == Rcc::SystemClockSource::HSI);
 
    // hw::Bkp: enable() turns on the PWR and BKP clocks and sets DBP. disable() undoes it, the
    // data stay.

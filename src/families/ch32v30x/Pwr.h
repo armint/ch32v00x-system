@@ -1,6 +1,6 @@
 #pragma once
 
-// The backup domain write protection of CH32V30X (PWR_CTLR.DBP, RM chapter 4).
+// The backup domain write protection of CH32V30X (PWR_CTLR.DBP, CH32FV2x_V3xRM chapter 2).
 
 #include <wch_device.h>
 

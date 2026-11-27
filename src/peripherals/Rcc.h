@@ -30,12 +30,13 @@ uint32_t getAPBClock();
 // PCLK2, the clock of the APB2 peripherals. CH32V00X has no APB prescaler: HCLK.
 uint32_t getAPB2Clock();
 
-// The clock of SYSCLK (RCC_CFGR0.SWS). SystemInit() keeps HSI when the crystal or the PLL
-// does not start, so pll also means that the crystal runs.
+// The clock of SYSCLK (RCC_CFGR0.SWS). On CH32V30X, SystemInit() feeds the PLL from the crystal and
+// keeps HSI when the crystal or the PLL does not start, so PLL also tells that the crystal runs. On
+// CH32V00X and CH32V20X, SystemInit() feeds the PLL from HSI.
 enum class SystemClockSource : uint32_t {
-   hsi = RCC_SWS_HSI,
-   hse = RCC_SWS_HSE,
-   pll = RCC_SWS_PLL,
+   HSI = RCC_SWS_HSI,
+   HSE = RCC_SWS_HSE,
+   PLL = RCC_SWS_PLL,
 };
 
 inline SystemClockSource getSystemClockSource() {
